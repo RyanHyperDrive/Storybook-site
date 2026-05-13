@@ -10,33 +10,115 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CreateIndexRouteImport } from './routes/create.index'
+import { Route as CreateStyleRouteImport } from './routes/create.style'
+import { Route as CreateStoryRouteImport } from './routes/create.story'
+import { Route as CreateProfileRouteImport } from './routes/create.profile'
+import { Route as CreatePhotosRouteImport } from './routes/create.photos'
+import { Route as CreateCharacterSheetRouteImport } from './routes/create.character-sheet'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreateIndexRoute = CreateIndexRouteImport.update({
+  id: '/create/',
+  path: '/create/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateStyleRoute = CreateStyleRouteImport.update({
+  id: '/create/style',
+  path: '/create/style',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateStoryRoute = CreateStoryRouteImport.update({
+  id: '/create/story',
+  path: '/create/story',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateProfileRoute = CreateProfileRouteImport.update({
+  id: '/create/profile',
+  path: '/create/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatePhotosRoute = CreatePhotosRouteImport.update({
+  id: '/create/photos',
+  path: '/create/photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateCharacterSheetRoute = CreateCharacterSheetRouteImport.update({
+  id: '/create/character-sheet',
+  path: '/create/character-sheet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/create/character-sheet': typeof CreateCharacterSheetRoute
+  '/create/photos': typeof CreatePhotosRoute
+  '/create/profile': typeof CreateProfileRoute
+  '/create/story': typeof CreateStoryRoute
+  '/create/style': typeof CreateStyleRoute
+  '/create/': typeof CreateIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/create/character-sheet': typeof CreateCharacterSheetRoute
+  '/create/photos': typeof CreatePhotosRoute
+  '/create/profile': typeof CreateProfileRoute
+  '/create/story': typeof CreateStoryRoute
+  '/create/style': typeof CreateStyleRoute
+  '/create': typeof CreateIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/create/character-sheet': typeof CreateCharacterSheetRoute
+  '/create/photos': typeof CreatePhotosRoute
+  '/create/profile': typeof CreateProfileRoute
+  '/create/story': typeof CreateStoryRoute
+  '/create/style': typeof CreateStyleRoute
+  '/create/': typeof CreateIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/create/character-sheet'
+    | '/create/photos'
+    | '/create/profile'
+    | '/create/story'
+    | '/create/style'
+    | '/create/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/create/character-sheet'
+    | '/create/photos'
+    | '/create/profile'
+    | '/create/story'
+    | '/create/style'
+    | '/create'
+  id:
+    | '__root__'
+    | '/'
+    | '/create/character-sheet'
+    | '/create/photos'
+    | '/create/profile'
+    | '/create/story'
+    | '/create/style'
+    | '/create/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CreateCharacterSheetRoute: typeof CreateCharacterSheetRoute
+  CreatePhotosRoute: typeof CreatePhotosRoute
+  CreateProfileRoute: typeof CreateProfileRoute
+  CreateStoryRoute: typeof CreateStoryRoute
+  CreateStyleRoute: typeof CreateStyleRoute
+  CreateIndexRoute: typeof CreateIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,12 +130,70 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/create/': {
+      id: '/create/'
+      path: '/create'
+      fullPath: '/create/'
+      preLoaderRoute: typeof CreateIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/style': {
+      id: '/create/style'
+      path: '/create/style'
+      fullPath: '/create/style'
+      preLoaderRoute: typeof CreateStyleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/story': {
+      id: '/create/story'
+      path: '/create/story'
+      fullPath: '/create/story'
+      preLoaderRoute: typeof CreateStoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/profile': {
+      id: '/create/profile'
+      path: '/create/profile'
+      fullPath: '/create/profile'
+      preLoaderRoute: typeof CreateProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/photos': {
+      id: '/create/photos'
+      path: '/create/photos'
+      fullPath: '/create/photos'
+      preLoaderRoute: typeof CreatePhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/character-sheet': {
+      id: '/create/character-sheet'
+      path: '/create/character-sheet'
+      fullPath: '/create/character-sheet'
+      preLoaderRoute: typeof CreateCharacterSheetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CreateCharacterSheetRoute: CreateCharacterSheetRoute,
+  CreatePhotosRoute: CreatePhotosRoute,
+  CreateProfileRoute: CreateProfileRoute,
+  CreateStoryRoute: CreateStoryRoute,
+  CreateStyleRoute: CreateStyleRoute,
+  CreateIndexRoute: CreateIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
