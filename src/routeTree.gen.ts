@@ -9,38 +9,305 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as LibraryRouteImport } from './routes/library'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CreateIndexRouteImport } from './routes/create.index'
+import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
+import { Route as CreateStyleRouteImport } from './routes/create.style'
+import { Route as CreateStoryRouteImport } from './routes/create.story'
+import { Route as CreateProfileRouteImport } from './routes/create.profile'
+import { Route as CreatePhotosRouteImport } from './routes/create.photos'
+import { Route as CreateCharacterSheetRouteImport } from './routes/create.character-sheet'
+import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
+import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
+import { Route as BooksBookIdIndexRouteImport } from './routes/books.$bookId.index'
+import { Route as BooksBookIdManageRouteImport } from './routes/books.$bookId.manage'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreateIndexRoute = CreateIndexRouteImport.update({
+  id: '/create/',
+  path: '/create/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsJobIdRoute = JobsJobIdRouteImport.update({
+  id: '/jobs/$jobId',
+  path: '/jobs/$jobId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateStyleRoute = CreateStyleRouteImport.update({
+  id: '/create/style',
+  path: '/create/style',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateStoryRoute = CreateStoryRouteImport.update({
+  id: '/create/story',
+  path: '/create/story',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateProfileRoute = CreateProfileRouteImport.update({
+  id: '/create/profile',
+  path: '/create/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatePhotosRoute = CreatePhotosRouteImport.update({
+  id: '/create/photos',
+  path: '/create/photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateCharacterSheetRoute = CreateCharacterSheetRouteImport.update({
+  id: '/create/character-sheet',
+  path: '/create/character-sheet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
+  id: '/checkout/success',
+  path: '/checkout/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutCancelRoute = CheckoutCancelRouteImport.update({
+  id: '/checkout/cancel',
+  path: '/checkout/cancel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BooksBookIdIndexRoute = BooksBookIdIndexRouteImport.update({
+  id: '/books/$bookId/',
+  path: '/books/$bookId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BooksBookIdManageRoute = BooksBookIdManageRouteImport.update({
+  id: '/books/$bookId/manage',
+  path: '/books/$bookId/manage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
+  '/library': typeof LibraryRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/checkout/cancel': typeof CheckoutCancelRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
+  '/create/character-sheet': typeof CreateCharacterSheetRoute
+  '/create/photos': typeof CreatePhotosRoute
+  '/create/profile': typeof CreateProfileRoute
+  '/create/story': typeof CreateStoryRoute
+  '/create/style': typeof CreateStyleRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
+  '/create/': typeof CreateIndexRoute
+  '/books/$bookId/manage': typeof BooksBookIdManageRoute
+  '/books/$bookId/': typeof BooksBookIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
+  '/library': typeof LibraryRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/checkout/cancel': typeof CheckoutCancelRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
+  '/create/character-sheet': typeof CreateCharacterSheetRoute
+  '/create/photos': typeof CreatePhotosRoute
+  '/create/profile': typeof CreateProfileRoute
+  '/create/story': typeof CreateStoryRoute
+  '/create/style': typeof CreateStyleRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
+  '/create': typeof CreateIndexRoute
+  '/books/$bookId/manage': typeof BooksBookIdManageRoute
+  '/books/$bookId': typeof BooksBookIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
+  '/library': typeof LibraryRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/checkout/cancel': typeof CheckoutCancelRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
+  '/create/character-sheet': typeof CreateCharacterSheetRoute
+  '/create/photos': typeof CreatePhotosRoute
+  '/create/profile': typeof CreateProfileRoute
+  '/create/story': typeof CreateStoryRoute
+  '/create/style': typeof CreateStyleRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
+  '/create/': typeof CreateIndexRoute
+  '/books/$bookId/manage': typeof BooksBookIdManageRoute
+  '/books/$bookId/': typeof BooksBookIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/account'
+    | '/admin'
+    | '/library'
+    | '/pricing'
+    | '/privacy'
+    | '/terms'
+    | '/checkout/cancel'
+    | '/checkout/success'
+    | '/create/character-sheet'
+    | '/create/photos'
+    | '/create/profile'
+    | '/create/story'
+    | '/create/style'
+    | '/jobs/$jobId'
+    | '/create/'
+    | '/books/$bookId/manage'
+    | '/books/$bookId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/account'
+    | '/admin'
+    | '/library'
+    | '/pricing'
+    | '/privacy'
+    | '/terms'
+    | '/checkout/cancel'
+    | '/checkout/success'
+    | '/create/character-sheet'
+    | '/create/photos'
+    | '/create/profile'
+    | '/create/story'
+    | '/create/style'
+    | '/jobs/$jobId'
+    | '/create'
+    | '/books/$bookId/manage'
+    | '/books/$bookId'
+  id:
+    | '__root__'
+    | '/'
+    | '/account'
+    | '/admin'
+    | '/library'
+    | '/pricing'
+    | '/privacy'
+    | '/terms'
+    | '/checkout/cancel'
+    | '/checkout/success'
+    | '/create/character-sheet'
+    | '/create/photos'
+    | '/create/profile'
+    | '/create/story'
+    | '/create/style'
+    | '/jobs/$jobId'
+    | '/create/'
+    | '/books/$bookId/manage'
+    | '/books/$bookId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRoute
+  LibraryRoute: typeof LibraryRoute
+  PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
+  CheckoutCancelRoute: typeof CheckoutCancelRoute
+  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+  CreateCharacterSheetRoute: typeof CreateCharacterSheetRoute
+  CreatePhotosRoute: typeof CreatePhotosRoute
+  CreateProfileRoute: typeof CreateProfileRoute
+  CreateStoryRoute: typeof CreateStoryRoute
+  CreateStyleRoute: typeof CreateStyleRoute
+  JobsJobIdRoute: typeof JobsJobIdRoute
+  CreateIndexRoute: typeof CreateIndexRoute
+  BooksBookIdManageRoute: typeof BooksBookIdManageRoute
+  BooksBookIdIndexRoute: typeof BooksBookIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +315,106 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/create/': {
+      id: '/create/'
+      path: '/create'
+      fullPath: '/create/'
+      preLoaderRoute: typeof CreateIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs/$jobId': {
+      id: '/jobs/$jobId'
+      path: '/jobs/$jobId'
+      fullPath: '/jobs/$jobId'
+      preLoaderRoute: typeof JobsJobIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/style': {
+      id: '/create/style'
+      path: '/create/style'
+      fullPath: '/create/style'
+      preLoaderRoute: typeof CreateStyleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/story': {
+      id: '/create/story'
+      path: '/create/story'
+      fullPath: '/create/story'
+      preLoaderRoute: typeof CreateStoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/profile': {
+      id: '/create/profile'
+      path: '/create/profile'
+      fullPath: '/create/profile'
+      preLoaderRoute: typeof CreateProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/photos': {
+      id: '/create/photos'
+      path: '/create/photos'
+      fullPath: '/create/photos'
+      preLoaderRoute: typeof CreatePhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/character-sheet': {
+      id: '/create/character-sheet'
+      path: '/create/character-sheet'
+      fullPath: '/create/character-sheet'
+      preLoaderRoute: typeof CreateCharacterSheetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/success': {
+      id: '/checkout/success'
+      path: '/checkout/success'
+      fullPath: '/checkout/success'
+      preLoaderRoute: typeof CheckoutSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/cancel': {
+      id: '/checkout/cancel'
+      path: '/checkout/cancel'
+      fullPath: '/checkout/cancel'
+      preLoaderRoute: typeof CheckoutCancelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/books/$bookId/': {
+      id: '/books/$bookId/'
+      path: '/books/$bookId'
+      fullPath: '/books/$bookId/'
+      preLoaderRoute: typeof BooksBookIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/books/$bookId/manage': {
+      id: '/books/$bookId/manage'
+      path: '/books/$bookId/manage'
+      fullPath: '/books/$bookId/manage'
+      preLoaderRoute: typeof BooksBookIdManageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
+  AdminRoute: AdminRoute,
+  LibraryRoute: LibraryRoute,
+  PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
+  CheckoutCancelRoute: CheckoutCancelRoute,
+  CheckoutSuccessRoute: CheckoutSuccessRoute,
+  CreateCharacterSheetRoute: CreateCharacterSheetRoute,
+  CreatePhotosRoute: CreatePhotosRoute,
+  CreateProfileRoute: CreateProfileRoute,
+  CreateStoryRoute: CreateStoryRoute,
+  CreateStyleRoute: CreateStyleRoute,
+  JobsJobIdRoute: JobsJobIdRoute,
+  CreateIndexRoute: CreateIndexRoute,
+  BooksBookIdManageRoute: BooksBookIdManageRoute,
+  BooksBookIdIndexRoute: BooksBookIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
