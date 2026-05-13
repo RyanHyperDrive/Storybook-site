@@ -16,6 +16,9 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        ember: "bg-ember text-ember-foreground shadow-sm hover:bg-ember/90",
+        sage: "bg-sage text-sage-foreground shadow-sm hover:bg-sage/90",
+        ink: "bg-ink text-paper hover:bg-ink/90",
       },
       size: {
         default: "h-9 px-4 py-2",
