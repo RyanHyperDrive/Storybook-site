@@ -308,6 +308,11 @@ function PhotoGuidance() {
         </ul>
       </div>
     </div>
+    <p className="mt-3 text-xs text-muted-foreground">
+      You can add optional details (glasses, wheelchair, hearing aids, birthmarks, hairstyle,
+      clothing preferences, etc.) in the next step so the illustrated character feels right.
+    </p>
+    </>
   );
 }
 
