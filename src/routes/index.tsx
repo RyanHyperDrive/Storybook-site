@@ -24,6 +24,7 @@ import hero from "@/assets/hero-reading.jpg";
 import { ART_STYLES, type ArtStyleKey } from "@/lib/art-styles";
 import { StyleArtwork } from "@/components/style-artwork";
 import { SampleBookModal } from "@/components/sample-book-modal";
+import { useSampleAssets, SAMPLE_KEY_BY_STYLE } from "@/hooks/use-sample-assets";
 
 export const Route = createFileRoute("/")({
   component: Home,
