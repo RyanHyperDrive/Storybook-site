@@ -77,17 +77,20 @@ export function SampleBookModal({
                 styleKey={sample.styleKey}
                 variant="cover"
                 imageUrl={coverUrl}
-              >
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  A StoryNest book
-                </div>
-                <div className="mt-1 font-display text-xl font-semibold leading-tight text-foreground sm:text-2xl">
-                  {sample.title}
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  Starring {sample.childName}
-                </div>
-              </BookFrame>
+                jacket={
+                  <>
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      A StoryNest book
+                    </div>
+                    <div className="mt-1 font-display text-xl font-semibold leading-tight text-foreground sm:text-2xl">
+                      {sample.title}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Starring {sample.childName}
+                    </div>
+                  </>
+                }
+              />
 
               <BookFrame badge="Dedication" plain>
                 <div className="flex h-full items-center justify-center px-6 py-8 text-center">
