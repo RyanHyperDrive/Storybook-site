@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,11 +8,7 @@ import { SAMPLE_PROMPTS, ASSET_TYPES, type SampleAssetType } from "@/lib/sample-
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/samples")({
-  component: () => (
-    <AuthGate>
-      <Inner />
-    </AuthGate>
-  ),
+  component: Inner,
   head: () => ({ meta: [{ title: "Sample Art — Admin" }] }),
 });
 
