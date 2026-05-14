@@ -25,6 +25,7 @@ import { Route as CreatePhotosRouteImport } from './routes/create.photos'
 import { Route as CreateCharacterSheetRouteImport } from './routes/create.character-sheet'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
+import { Route as AdminSamplesRouteImport } from './routes/admin.samples'
 import { Route as BooksBookIdIndexRouteImport } from './routes/books.$bookId.index'
 import { Route as BooksBookIdManageRouteImport } from './routes/books.$bookId.manage'
 
@@ -108,6 +109,11 @@ const CheckoutCancelRoute = CheckoutCancelRouteImport.update({
   path: '/checkout/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSamplesRoute = AdminSamplesRouteImport.update({
+  id: '/samples',
+  path: '/samples',
+  getParentRoute: () => AdminRoute,
+} as any)
 const BooksBookIdIndexRoute = BooksBookIdIndexRouteImport.update({
   id: '/books/$bookId/',
   path: '/books/$bookId/',
@@ -122,11 +128,12 @@ const BooksBookIdManageRoute = BooksBookIdManageRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/samples': typeof AdminSamplesRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
@@ -142,11 +149,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/samples': typeof AdminSamplesRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
@@ -163,11 +171,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/samples': typeof AdminSamplesRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/admin/samples'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/create/character-sheet'
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/admin/samples'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/create/character-sheet'
@@ -230,6 +241,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/admin/samples'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/create/character-sheet'
@@ -246,7 +258,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   LibraryRoute: typeof LibraryRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -378,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/samples': {
+      id: '/admin/samples'
+      path: '/samples'
+      fullPath: '/admin/samples'
+      preLoaderRoute: typeof AdminSamplesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/books/$bookId/': {
       id: '/books/$bookId/'
       path: '/books/$bookId'
@@ -395,10 +414,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminSamplesRoute: typeof AdminSamplesRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminSamplesRoute: AdminSamplesRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   LibraryRoute: LibraryRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
