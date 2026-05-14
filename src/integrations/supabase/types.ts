@@ -22,6 +22,7 @@ export type Database = {
           image_storage_path: string | null
           needs_review: boolean
           page_number: number
+          quality_metadata: Json | null
           quality_score: number | null
           regenerations: number
           review_notes: string | null
@@ -37,6 +38,7 @@ export type Database = {
           image_storage_path?: string | null
           needs_review?: boolean
           page_number: number
+          quality_metadata?: Json | null
           quality_score?: number | null
           regenerations?: number
           review_notes?: string | null
@@ -52,6 +54,7 @@ export type Database = {
           image_storage_path?: string | null
           needs_review?: boolean
           page_number?: number
+          quality_metadata?: Json | null
           quality_score?: number | null
           regenerations?: number
           review_notes?: string | null
