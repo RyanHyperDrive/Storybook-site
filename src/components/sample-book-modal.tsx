@@ -60,7 +60,7 @@ export function SampleBookModal({
                 Sample ebook preview
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Style shown: <span className="font-semibold text-foreground">{style.name}</span> · Cover, dedication, and 2 of at least 10 story pages — concept preview, not a real customer book.
+                Style shown: <span className="font-semibold text-foreground">{style.name}</span> · Cover, dedication, and two sample story pages — concept preview, not a real customer book.
               </DialogDescription>
             </DialogHeader>
 
