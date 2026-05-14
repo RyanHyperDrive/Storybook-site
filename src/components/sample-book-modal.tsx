@@ -5,6 +5,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { StyleArtwork } from "@/components/style-artwork";
 import { getArtStyle } from "@/lib/art-styles";
 import { SAMPLE_BOOKS } from "@/lib/sample-books";
