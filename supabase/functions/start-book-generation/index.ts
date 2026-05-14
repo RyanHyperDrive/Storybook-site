@@ -48,10 +48,11 @@ serve(async (req) => {
     // Ownership check.
     const { data: book } = await admin
       .from("books")
-      .select("id, user_id, status")
+      .select("id, user_id, status, reading_level, theme, favorites, avoid")
       .eq("id", bookId)
       .maybeSingle();
     if (!book || book.user_id !== userId) return errorResponse("Not found or forbidden", 403);
+    const reading_level = (book as any).reading_level ?? "ages_4_6";
 
     // Reuse an in-flight job if one already exists.
     const { data: existing } = await admin
