@@ -26,7 +26,8 @@ import { requireUser } from "../_shared/auth.ts";
  * and returns the structured QC report.
  */
 
-const SYSTEM_PROMPT = `You are validating a personalized children's storybook page.
+function buildSystemPrompt(ageBand: string): string {
+  return `You are validating a personalized children's storybook page for a child in the age band ${ageBand}.
 
 Compare:
 1. The approved character sheet.
@@ -40,6 +41,8 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
   "character_likeness_score": 0,
   "style_consistency_score": 0,
   "scene_accuracy_score": 0,
+  "age_appropriateness_score": 0,
+  "age_appropriateness_issues": [],
   "correct_number_of_main_characters": true,
   "twin_distinction_ok": true,
   "safety_ok": true,
@@ -50,21 +53,27 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
 }
 
 Scoring rules:
-- All three scores are floats from 0.0 to 1.0.
-- Recommend regeneration (regeneration_recommended = true) if character_likeness_score,
-  style_consistency_score, or scene_accuracy_score is below 0.85, OR if the wrong number
-  of main characters appears, OR if twin_distinction_ok is false, OR if safety_ok is false.
+- All four scores are floats from 0.0 to 1.0.
+- "age_appropriateness_score" judges BOTH the page text (if any is implied by the scene) and the image specifically against ages ${ageBand}, NOT a generic "kid safe" standard. Score lower for: scary/peril imagery, weapons, injury/blood/gore, body-horror, romantic or suggestive framing, mature themes, unsafe activities depicted approvingly, or vocabulary/conflict outside the band.
+  - Ages 2-3: any peril, scary creatures, darkness, weapons, or injury -> max 0.5.
+  - Ages 4-6: weapons, injury, scary monsters, romantic framing, shame/punishment imagery -> max 0.6.
+  - Ages 7-10: gore, sexual/romantic content, realistic violence, weapons used to harm, substance use, self-harm -> max 0.5.
+- "age_appropriateness_issues" lists concrete reasons the score was reduced (or [] if 1.0).
+- safety_ok = false if there is anything genuinely unsafe in the image regardless of age.
+- Recommend regeneration (regeneration_recommended = true) if character_likeness_score, style_consistency_score, or scene_accuracy_score is below 0.85, OR age_appropriateness_score is below 0.85, OR if the wrong number of main characters appears, OR twin_distinction_ok is false, OR safety_ok is false.
 - "regeneration_instruction" is a short, concrete fix the illustrator should apply
-  (e.g. "Restore the red striped scarf and match hair length to the character sheet").
+  (e.g. "Restore the red striped scarf and match hair length to the character sheet"; or "Remove the sword — replace with a wooden walking stick to stay age-appropriate for ${ageBand}").
   Empty string if no regeneration is needed.
 - "artifact_issues" lists visible defects (extra fingers, warped face, text in image, etc).
-- "missing_required_elements" lists items from the must-include list that are absent.
-- safety_ok = false if the image contains anything inappropriate for ages 2-10.`;
+- "missing_required_elements" lists items from the must-include list that are absent.`;
+}
 
 const REQUIRED_KEYS = [
   "character_likeness_score",
   "style_consistency_score",
   "scene_accuracy_score",
+  "age_appropriateness_score",
+  "age_appropriateness_issues",
   "correct_number_of_main_characters",
   "twin_distinction_ok",
   "safety_ok",
