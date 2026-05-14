@@ -9,14 +9,21 @@ import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { Loader2, Mail } from "lucide-react";
 
-export function AuthGate({ children, message }: { children: React.ReactNode; message?: string }) {
+type AuthGateProps = {
+  children: React.ReactNode;
+  message?: string;
+  title?: string;
+  bullets?: string[];
+};
+
+export function AuthGate({ children, message, title, bullets }: AuthGateProps) {
   const { user, loading } = useAuth();
   if (loading) return <div className="grid min-h-[40vh] place-items-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
-  if (!user) return <SignInPanel message={message} />;
+  if (!user) return <SignInPanel message={message} title={title} bullets={bullets} />;
   return <>{children}</>;
 }
 
-export function SignInPanel({ message }: { message?: string }) {
+export function SignInPanel({ message, title, bullets }: { message?: string; title?: string; bullets?: string[] }) {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [oauthBusy, setOauthBusy] = useState<"google" | "apple" | null>(null);
