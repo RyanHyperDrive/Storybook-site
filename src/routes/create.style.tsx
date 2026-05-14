@@ -13,6 +13,7 @@ import {
   isArtStyleKey,
   type ArtStyleKey,
 } from "@/lib/art-styles";
+import { StyleArtwork } from "@/components/style-artwork";
 
 export const Route = createFileRoute("/create/style")({
   component: () => <AuthGate><Inner /></AuthGate>,
