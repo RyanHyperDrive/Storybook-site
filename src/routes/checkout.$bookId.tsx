@@ -97,6 +97,29 @@ function CheckoutPage() {
           </ul>
         </div>
 
+        <div className="rounded-2xl border bg-card p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="font-medium">Optional add-ons</div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Coming soon</span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">Previewing what will be available at checkout. Nothing extra is charged today.</p>
+          <ul className="mt-4 space-y-3 text-sm">
+            {[
+              { name: "Read-aloud narration", price: "+$9", note: "Beta" },
+              { name: "Printed hardcover copy", price: "+$24", note: "Coming soon" },
+              { name: "Grandparent gift copy (PDF)", price: "+$5", note: "Coming soon" },
+            ].map((a) => (
+              <li key={a.name} className="flex items-center justify-between rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 opacity-70">
+                <div>
+                  <div className="text-foreground">{a.name}</div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{a.note}</div>
+                </div>
+                <div className="text-sm text-muted-foreground">{a.price}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <Button
           variant="ember"
           className="w-full"
