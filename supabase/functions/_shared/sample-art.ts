@@ -68,16 +68,16 @@ export const SAMPLE_PROMPTS: Array<{
   prompts: { cover: string; page_1: string; page_2: string };
 }> = [
   {
-    sample_key: "classic_storybook_mira",
-    style_key: "classic_storybook",
-    title: "Mira and the Whispering Woods",
+    sample_key: "comic_book_nova",
+    style_key: "comic_book",
+    title: "Nova and the Comet Crew",
     prompts: {
       cover:
-        "A polished children's picture book cover illustration, no words or letters, no title, no typography. A warm classic storybook forest scene with a curious child explorer in a cozy red cape, soft moss, friendly fireflies, old trees, gentle golden evening light, whimsical but premium, consistent children's-book illustration, vertical 3:4 composition, leave natural quiet space for HTML title overlay.",
+        "A premium full-bleed children's comic book cover illustration filling the entire canvas with no white borders or empty margins. No words, letters, title, typography, or readable text anywhere. No branded chest emblems or copyrighted superhero symbols. Bold ink linework with halftone dot texture, vivid primary colors, dynamic action pose: a brave kid hero in a plain solid red cape and plain teal jumpsuit (no chest symbol) leaping joyfully across a sunny rooftop city, a cheerful flaming comet sidekick swooshing alongside, decorative empty speech-bubble shapes (no text), screentone shading, premium kid-friendly comic art, vertical 4:5.",
       page_1:
-        "Same child and same classic storybook art direction, no words or letters. The child kneels beside a tiny glowing door at the base of an old tree while fireflies gather, warm forest lighting, gentle wonder, vertical 3:4.",
+        "Same kid hero in plain red cape and teal jumpsuit (no chest symbol) and the same flaming comet sidekick, same comic book art direction, no words or letters anywhere. Discovering a secret rooftop garden full of glowing flowers at dusk, dynamic comic panel composition, halftone shading, vivid colors, premium kid-friendly comic art, vertical 4:5.",
       page_2:
-        "Same child and same classic storybook art direction, no words or letters. The child follows a trail of glowing leaves through a friendly moonlit forest, cozy magical atmosphere, vertical 3:4.",
+        "Same kid hero in plain red cape and teal jumpsuit (no chest symbol) and the same flaming comet sidekick, same comic book art direction, no words or letters anywhere. The two of them high-fiving as fireworks of sparkles burst behind them at sunset, dynamic comic composition, halftone shading, vivid primary colors, vertical 4:5.",
     },
   },
   {
@@ -112,11 +112,24 @@ export const SAMPLE_PROMPTS: Array<{
     title: "Yuki and the Paper Dragon",
     prompts: {
       cover:
-        "A polished manga-inspired children's adventure book cover illustration, no words or letters, no title, no typography. A brave child holding a folded red paper dragon that comes alive above mountain rooftops, expressive but age-appropriate, clean linework, dynamic composition, soft screen-tone texture, premium kid-friendly manga, vertical 3:4, leave quiet space for HTML title overlay.",
+        "A polished manga-inspired children's adventure book cover illustration, no words or letters, no title, no typography. A brave child holding a folded red paper dragon that comes alive above mountain rooftops, expressive but age-appropriate, clean precise linework, dynamic cinematic composition, soft screentone texture, premium kid-friendly manga, vertical 4:5, leave quiet space for HTML title overlay.",
       page_1:
-        "Same child and paper dragon, same manga-inspired art direction, no words or letters. The red paper dragon lifts from the child's hands in a swirl of wind, expressive wonder, vertical 3:4.",
+        "Same child and paper dragon, same manga-inspired art direction, no words or letters. The red paper dragon lifts from the child's hands in a swirl of wind, expressive wonder, vertical 4:5.",
       page_2:
-        "Same child and paper dragon, same manga-inspired art direction, no words or letters. The child rides a trail of folded paper shapes across a moonlit village sky, dynamic but gentle, vertical 3:4.",
+        "Same child and paper dragon, same manga-inspired art direction, no words or letters. The child rides a trail of folded paper shapes across a moonlit village sky, dynamic but gentle, vertical 4:5.",
+    },
+  },
+  {
+    sample_key: "pixel_quinn",
+    style_key: "pixel_art",
+    title: "Quinn's Pixel Quest",
+    prompts: {
+      cover:
+        "A premium children's 8-bit pixel art book cover illustration, no words or letters, no title, no typography, no readable text or pseudo-text glyphs. Charming retro 16-bit RPG style with crisp chunky pixels, limited cheerful palette, a brave kid pixel hero with a tiny pet pixel fox standing on a hill in front of a magical castle at dawn, glittering pixel stars, parallax pixel mountains, premium nostalgic pixel art, vertical 4:5, leave quiet pixel sky space at the top for an HTML title.",
+      page_1:
+        "Same kid pixel hero and pet pixel fox, same 8-bit pixel art direction, no words or letters or pseudo-text glyphs. Crossing a tiny pixel bridge over a sparkling river full of pixel fish, crisp chunky pixel blocks, limited cheerful palette, charming retro RPG feel, vertical 4:5.",
+      page_2:
+        "Same kid pixel hero and pet pixel fox, same 8-bit pixel art direction, no words or letters or pseudo-text glyphs. Finding a glowing pixel treasure chest in a friendly pixel forest clearing with sparkles, crisp chunky pixels, limited cheerful palette, charming retro RPG feel, vertical 4:5.",
     },
   },
 ];
