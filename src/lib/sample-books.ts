@@ -16,8 +16,8 @@ export const SAMPLE_BOOKS: Record<ArtStyleKey, SampleBook> = {
     dedication:
       "For Nova — who knows that being brave isn't being un-scared, it's helping the team anyway.",
     pages: [
-      "Nova snapped the red cape closed and ran for the rooftop edge. \"Ready?\" called Sparks, the friendly little comet. Nova grinned. \"Always ready for you!\"",
-      "Together they swooshed over the bright city, cheering for the bakers and the bus drivers and the tiny dogs. The whole town waved up at their two best heroes.",
+      "Nova clipped on the bright red cape and waved from the friendly rooftop garden. \"Ready?\" giggled Sparkle, the little smiling star. Nova grinned. \"Always ready for you!\"",
+      "Together they wandered the cheerful neighborhood, cheering for the bakers and the bus drivers and the tiny dogs. The whole town smiled up at their two best friends.",
     ],
   },
   soft_cartoon: {
