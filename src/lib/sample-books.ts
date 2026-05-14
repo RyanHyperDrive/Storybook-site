@@ -11,13 +11,13 @@ export type SampleBook = {
 export const SAMPLE_BOOKS: Record<ArtStyleKey, SampleBook> = {
   comic_book: {
     styleKey: "comic_book",
-    title: "Nova and the Comet Crew",
+    title: "Nova and the Treehouse Owl",
     childName: "Nova",
     dedication:
-      "For Nova — who knows that being brave isn't being un-scared, it's helping the team anyway.",
+      "For Nova — who knows the best adventures start in your own backyard, with a good friend by your side.",
     pages: [
-      "Nova clipped on the bright red cape and waved from the friendly rooftop garden. \"Ready?\" giggled Sparkle, the little smiling star. Nova grinned. \"Always ready for you!\"",
-      "Together they wandered the cheerful neighborhood, cheering for the bakers and the bus drivers and the tiny dogs. The whole town smiled up at their two best friends.",
+      "Nova clipped on the yellow rain jacket and climbed up to the treehouse. \"Ready?\" hooted Pip, the little owl on the railing. Nova grinned. \"Always ready with you.\"",
+      "Down in the garden they found a patch of glowing wildflowers, full of friendly bumblebees humming a soft good-morning song. Nova waved, and the whole backyard waved back.",
     ],
   },
   soft_cartoon: {

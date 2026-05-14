@@ -70,14 +70,14 @@ export const SAMPLE_PROMPTS: Array<{
   {
     sample_key: "comic_book_nova",
     style_key: "comic_book",
-    title: "Nova and the Comet Crew",
+    title: "Nova and the Treehouse Owl",
     prompts: {
       cover:
-        "A premium full-bleed children's comic book cover illustration filling the entire canvas with no white borders or empty margins. No words, letters, title, typography, or readable text anywhere. No branded chest emblems or copyrighted superhero symbols. Bold ink linework with halftone dot texture, vivid primary colors, dynamic action pose: a brave kid hero in a plain solid red cape and plain teal jumpsuit (no chest symbol) leaping joyfully across a sunny rooftop city, a cheerful flaming comet sidekick swooshing alongside, decorative empty speech-bubble shapes (no text), screentone shading, premium kid-friendly comic art, vertical 4:5.",
+        "A premium full-bleed children's storybook cover illustration in a cozy adventure comic book style, filling the entire canvas with no white borders or empty margins. Bold ink outlines, halftone dot shading, comic-panel energy, vivid but warm cozy palette. A cheerful kid in everyday adventure clothes — yellow rain jacket, denim shorts, sneakers, small explorer backpack — standing on a wooden treehouse platform in a sunny backyard, waving hello. A small friendly cartoon owl sidekick perches on the railing beside them. String lights, leafy branches, paper-folded pennants, soft afternoon sky. A few decorative empty speech-bubble shapes are okay if they look intentional. Absolutely no fire, no flames, no candles, no lanterns, no weapons, no peril, no superhero cape, no flying. Absolutely no readable text, no letters, no title, no typography anywhere. Vertical 4:5.",
       page_1:
-        "Same kid hero in plain red cape and teal jumpsuit (no chest symbol) and the same flaming comet sidekick, same comic book art direction, no words or letters anywhere. Discovering a secret rooftop garden full of glowing flowers at dusk, dynamic comic panel composition, halftone shading, vivid colors, premium kid-friendly comic art, vertical 4:5.",
+        "Same kid in yellow rain jacket, denim shorts, sneakers, and small explorer backpack, and the same small friendly cartoon owl sidekick, same cozy adventure comic book art direction. Kneeling in a sunny neighborhood backyard discovering a hidden patch of glowing wildflowers and friendly bumblebees, owl peeking from a leafy branch, butterflies, garden fence, soft daylight. Absolutely no fire, no flames, no weapons, no peril, no cape, no flying. Absolutely no readable text, no letters, no speech-bubble text. Vertical 4:5.",
       page_2:
-        "Same kid hero in plain red cape and teal jumpsuit (no chest symbol) and the same flaming comet sidekick, same comic book art direction, no words or letters anywhere. The two of them high-fiving as fireworks of sparkles burst behind them at sunset, dynamic comic composition, halftone shading, vivid primary colors, vertical 4:5.",
+        "Same kid in yellow rain jacket, denim shorts, sneakers, and explorer backpack, and the same small friendly cartoon owl sidekick, same cozy adventure comic book art direction. Sitting cross-legged on the warm wooden floor of a backyard treehouse reading nook, surrounded by neat stacks of picture books with PLAIN BLANK COVERS and a folded paper map, owl perched on a stack of books beside them. Soft golden afternoon daylight through a round window, paper stars hanging on strings, tiny paper confetti drifting. Absolutely no fire, no flames, no candles, no lanterns, no lit objects, no weapons, no peril. Absolutely no readable text, no letters, no pseudo-text, no writing on book covers, no speech bubbles. Vertical 4:5.",
     },
   },
   {

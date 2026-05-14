@@ -15,7 +15,7 @@ export const SAMPLE_PROMPTS: SamplePromptDef[] = [
   {
     sample_key: "comic_book_nova",
     style_key: "comic_book",
-    title: "Nova and the Comet Crew",
+    title: "Nova and the Treehouse Owl",
     prompts: {
       cover:
         "A premium full-bleed children's storybook cover illustration in a cozy adventure comic book style, filling the entire canvas with no white borders or empty margins. Bold ink outlines, halftone dot shading, comic-panel energy, vivid but warm cozy palette. A cheerful kid in everyday adventure clothes — yellow rain jacket, denim shorts, sneakers, small explorer backpack — standing on a wooden treehouse platform in a sunny backyard, waving hello. A small friendly cartoon owl sidekick perches on the railing beside them. String lights, leafy branches, paper-folded pennants, soft afternoon sky. A few decorative empty speech-bubble shapes are okay if they look intentional. Absolutely no fire, no flames, no candles, no lanterns, no weapons, no peril, no superhero cape, no flying. Absolutely no readable text, no letters, no title, no typography anywhere. Vertical 4:5.",
