@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Camera, Heart, ShieldCheck, Wand2 } from "lucide-react";
 
+
 export const Route = createFileRoute("/create/")({
   component: CreateLanding,
   head: () => ({ meta: [{ title: "Create your storybook — StoryNest" }] }),
