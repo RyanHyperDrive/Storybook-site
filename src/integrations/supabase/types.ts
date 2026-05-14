@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      book_pages: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          image_storage_path: string | null
+          page_number: number
+          regenerations: number
+          status: string
+          text_content: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          image_storage_path?: string | null
+          page_number: number
+          regenerations?: number
+          status?: string
+          text_content?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          image_storage_path?: string | null
+          page_number?: number
+          regenerations?: number
+          status?: string
+          text_content?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_pages_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           art_style: string | null
@@ -112,6 +159,139 @@ export type Database = {
           },
         ]
       }
+      child_profiles: {
+        Row: {
+          age: number | null
+          created_at: string
+          default_art_style: string | null
+          id: string
+          loves: string | null
+          name: string
+          notes: string | null
+          pronouns: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string
+          default_art_style?: string | null
+          id?: string
+          loves?: string | null
+          name: string
+          notes?: string | null
+          pronouns?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age?: number | null
+          created_at?: string
+          default_art_style?: string | null
+          id?: string
+          loves?: string | null
+          name?: string
+          notes?: string | null
+          pronouns?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      child_subjects: {
+        Row: {
+          approved: boolean
+          child_profile_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          locked: boolean
+          reference_storage_path: string | null
+          regenerations: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved?: boolean
+          child_profile_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          locked?: boolean
+          reference_storage_path?: string | null
+          regenerations?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved?: boolean
+          child_profile_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          locked?: boolean
+          reference_storage_path?: string | null
+          regenerations?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_subjects_child_profile_id_fkey"
+            columns: ["child_profile_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generation_jobs: {
+        Row: {
+          book_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          kind: string
+          payload: Json | null
+          progress: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          kind: string
+          payload?: Json | null
+          progress?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          kind?: string
+          payload?: Json | null
+          progress?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_jobs_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           book_id: string
@@ -156,6 +336,56 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount_cents: number | null
+          book_id: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          provider: string
+          provider_payment_intent: string | null
+          provider_session_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          book_id?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          provider?: string
+          provider_payment_intent?: string | null
+          provider_session_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number | null
+          book_id?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          provider?: string
+          provider_payment_intent?: string | null
+          provider_session_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos: {
         Row: {
           book_id: string
@@ -187,6 +417,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      print_interest: {
+        Row: {
+          child_age: number | null
+          created_at: string
+          email: string
+          id: string
+          notes: string | null
+          user_id: string | null
+        }
+        Insert: {
+          child_age?: number | null
+          created_at?: string
+          email: string
+          id?: string
+          notes?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          child_age?: number | null
+          created_at?: string
+          email?: string
+          id?: string
+          notes?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -259,6 +516,60 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      uploaded_photos: {
+        Row: {
+          book_id: string | null
+          child_profile_id: string | null
+          created_at: string
+          exif_stripped: boolean
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_bucket: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          book_id?: string | null
+          child_profile_id?: string | null
+          created_at?: string
+          exif_stripped?: boolean
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_bucket?: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string | null
+          child_profile_id?: string | null
+          created_at?: string
+          exif_stripped?: boolean
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_bucket?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uploaded_photos_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uploaded_photos_child_profile_id_fkey"
+            columns: ["child_profile_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
