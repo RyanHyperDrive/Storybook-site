@@ -149,6 +149,7 @@ serve(async (req) => {
       isTwins,
       characterSheetUrl,
       pageImageUrl,
+      readingLevel,
     } = body ?? {};
 
     if (!bookId) return errorResponse("bookId is required");
@@ -157,14 +158,21 @@ serve(async (req) => {
       return errorResponse("sceneDescription is required");
     }
 
-    // Verify book ownership.
+    // Verify book ownership and pull reading_level so we can score against the
+    // child's actual age band rather than a generic "kid safe" standard.
     const { data: book, error: bookErr } = await admin
       .from("books")
-      .select("id, user_id, is_twins, child_name, child_age, child_pronouns, child_loves, details_include, details_avoid")
+      .select("id, user_id, is_twins, child_name, child_age, child_pronouns, child_loves, details_include, details_avoid, reading_level")
       .eq("id", bookId)
       .maybeSingle();
     if (bookErr) return errorResponse(bookErr.message, 500);
     if (!book || book.user_id !== user.id) return errorResponse("Book not found or forbidden", 403);
+
+    const lvl = String(readingLevel ?? book.reading_level ?? "ages_4_6");
+    const ageBand =
+      lvl === "ages_2_3" || lvl === "ages_3_5" ? "2-3" :
+      lvl === "ages_7_10" || lvl === "ages_6_8" ? "7-10" :
+      "4-6";
 
     // Resolve page image URL.
     let pageUrl = pageImageUrl as string | undefined;
