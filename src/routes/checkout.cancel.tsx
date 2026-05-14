@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { WizardLayout } from "@/components/create/WizardLayout";
+import { WizardLayout } from "@/components/wizard-layout";
 
 const searchSchema = z.object({
   book_id: z.string().uuid().optional(),

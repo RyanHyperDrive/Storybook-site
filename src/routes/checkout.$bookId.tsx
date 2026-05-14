@@ -5,7 +5,7 @@ import { ArrowLeft, Loader2, Lock, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { WizardLayout } from "@/components/create/WizardLayout";
+import { WizardLayout } from "@/components/wizard-layout";
 import { createCheckoutSession } from "@/lib/checkout.functions";
 
 const PRICE_USD = 29.99;

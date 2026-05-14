@@ -4,7 +4,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { WizardLayout } from "@/components/create/WizardLayout";
+import { WizardLayout } from "@/components/wizard-layout";
 
 const searchSchema = z.object({
   book_id: z.string().uuid().optional(),
