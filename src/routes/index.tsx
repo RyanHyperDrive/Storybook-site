@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,7 +21,9 @@ import {
   FileText,
 } from "lucide-react";
 import hero from "@/assets/hero-reading.jpg";
-import { ART_STYLES } from "@/lib/art-styles";
+import { ART_STYLES, type ArtStyleKey } from "@/lib/art-styles";
+import { StyleArtwork } from "@/components/style-artwork";
+import { SampleBookModal } from "@/components/sample-book-modal";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -28,11 +31,10 @@ export const Route = createFileRoute("/")({
 
 // Sample books: one per MVP art style so parents see the full range.
 const samples = ART_STYLES.map((s) => ({
+  key: s.key,
   title: s.sampleTitle,
   age: "Ages 4–7",
   styleName: s.name,
-  tone: s.sampleTone,
-  accent: s.sampleAccent,
 }));
 
 const faqs = [
