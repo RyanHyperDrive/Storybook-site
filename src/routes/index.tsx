@@ -45,7 +45,7 @@ export const Route = createFileRoute("/")({
 const samples = ART_STYLES.map((s) => ({
   key: s.key,
   title: s.sampleTitle,
-  age: "Ages 4–7",
+  age: "Personalized for ages 2–10",
   styleName: s.name,
 }));
 
