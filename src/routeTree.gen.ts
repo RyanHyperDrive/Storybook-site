@@ -26,6 +26,7 @@ import { Route as CreatePhotosRouteImport } from './routes/create.photos'
 import { Route as CreateCharacterSheetRouteImport } from './routes/create.character-sheet'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
+import { Route as CheckoutBookIdRouteImport } from './routes/checkout.$bookId'
 import { Route as AdminSamplesRouteImport } from './routes/admin.samples'
 import { Route as BooksBookIdIndexRouteImport } from './routes/books.$bookId.index'
 import { Route as BooksBookIdManageRouteImport } from './routes/books.$bookId.manage'
@@ -115,6 +116,11 @@ const CheckoutCancelRoute = CheckoutCancelRouteImport.update({
   path: '/checkout/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutBookIdRoute = CheckoutBookIdRouteImport.update({
+  id: '/checkout/$bookId',
+  path: '/checkout/$bookId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSamplesRoute = AdminSamplesRouteImport.update({
   id: '/samples',
   path: '/samples',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/admin/samples': typeof AdminSamplesRoute
+  '/checkout/$bookId': typeof CheckoutBookIdRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/admin/samples': typeof AdminSamplesRoute
+  '/checkout/$bookId': typeof CheckoutBookIdRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/admin/samples': typeof AdminSamplesRoute
+  '/checkout/$bookId': typeof CheckoutBookIdRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/admin/samples'
+    | '/checkout/$bookId'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/create/character-sheet'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/admin/samples'
+    | '/checkout/$bookId'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/create/character-sheet'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/admin/samples'
+    | '/checkout/$bookId'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/create/character-sheet'
@@ -273,6 +285,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  CheckoutBookIdRoute: typeof CheckoutBookIdRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   CreateCharacterSheetRoute: typeof CreateCharacterSheetRoute
@@ -407,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/$bookId': {
+      id: '/checkout/$bookId'
+      path: '/checkout/$bookId'
+      fullPath: '/checkout/$bookId'
+      preLoaderRoute: typeof CheckoutBookIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/samples': {
       id: '/admin/samples'
       path: '/samples'
@@ -451,6 +471,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  CheckoutBookIdRoute: CheckoutBookIdRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   CreateCharacterSheetRoute: CreateCharacterSheetRoute,
