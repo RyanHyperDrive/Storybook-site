@@ -20,13 +20,19 @@ function Inner() {
   const { user } = useAuth();
   const id = getDraftId();
   const [sheet, setSheet] = useState<any>(null);
+  const [book, setBook] = useState<any>(null);
   const [generating, setGenerating] = useState(false);
   const [approving, setApproving] = useState(false);
+  const style = getArtStyle(book?.art_style);
 
   async function load() {
     if (!id) return;
-    const { data } = await supabase.from("character_sheets").select("*").eq("book_id", id).maybeSingle();
-    setSheet(data);
+    const [{ data: cs }, { data: b }] = await Promise.all([
+      supabase.from("character_sheets").select("*").eq("book_id", id).maybeSingle(),
+      supabase.from("books").select("*").eq("id", id).maybeSingle(),
+    ]);
+    setSheet(cs);
+    setBook(b);
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
 
