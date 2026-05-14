@@ -70,9 +70,15 @@ export type Database = {
           child_pronouns: string | null
           cover_url: string | null
           created_at: string
+          dedication: string | null
+          details_avoid: string | null
+          details_include: string | null
           ebook_url: string | null
+          guardian_consent_at: string | null
           id: string
+          is_twins: boolean
           page_count: number | null
+          reading_level: string | null
           status: string
           story_prompt: string | null
           story_theme: string | null
@@ -88,9 +94,15 @@ export type Database = {
           child_pronouns?: string | null
           cover_url?: string | null
           created_at?: string
+          dedication?: string | null
+          details_avoid?: string | null
+          details_include?: string | null
           ebook_url?: string | null
+          guardian_consent_at?: string | null
           id?: string
+          is_twins?: boolean
           page_count?: number | null
+          reading_level?: string | null
           status?: string
           story_prompt?: string | null
           story_theme?: string | null
@@ -106,9 +118,15 @@ export type Database = {
           child_pronouns?: string | null
           cover_url?: string | null
           created_at?: string
+          dedication?: string | null
+          details_avoid?: string | null
+          details_include?: string | null
           ebook_url?: string | null
+          guardian_consent_at?: string | null
           id?: string
+          is_twins?: boolean
           page_count?: number | null
+          reading_level?: string | null
           status?: string
           story_prompt?: string | null
           story_theme?: string | null
@@ -161,42 +179,68 @@ export type Database = {
       }
       child_profiles: {
         Row: {
+          accessibility_details: string | null
           age: number | null
+          book_id: string | null
           created_at: string
           default_art_style: string | null
+          favorite_activities: string | null
+          favorite_color: string | null
           id: string
           loves: string | null
           name: string
           notes: string | null
+          personality_traits: string | null
           pronouns: string | null
+          slot: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          accessibility_details?: string | null
           age?: number | null
+          book_id?: string | null
           created_at?: string
           default_art_style?: string | null
+          favorite_activities?: string | null
+          favorite_color?: string | null
           id?: string
           loves?: string | null
           name: string
           notes?: string | null
+          personality_traits?: string | null
           pronouns?: string | null
+          slot?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          accessibility_details?: string | null
           age?: number | null
+          book_id?: string | null
           created_at?: string
           default_art_style?: string | null
+          favorite_activities?: string | null
+          favorite_color?: string | null
           id?: string
           loves?: string | null
           name?: string
           notes?: string | null
+          personality_traits?: string | null
           pronouns?: string | null
+          slot?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "child_profiles_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       child_subjects: {
         Row: {
