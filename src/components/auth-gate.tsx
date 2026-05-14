@@ -89,9 +89,6 @@ export function SignInPanel({ message }: { message?: string }) {
         <Link to="/terms" className="underline">Terms</Link> and{" "}
         <Link to="/privacy" className="underline">Privacy</Link>.
       </p>
-
-      {/* Suppress the "navigate" lint without changing behavior */}
-      <span className="hidden">{String(!!navigate)}</span>
     </div>
   );
 }
