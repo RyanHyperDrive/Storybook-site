@@ -570,6 +570,8 @@ export type Database = {
           id: string
           mime_type: string | null
           size_bytes: number | null
+          slot: string | null
+          status: string
           storage_bucket: string
           storage_path: string
           user_id: string
@@ -582,6 +584,8 @@ export type Database = {
           id?: string
           mime_type?: string | null
           size_bytes?: number | null
+          slot?: string | null
+          status?: string
           storage_bucket?: string
           storage_path: string
           user_id: string
@@ -594,6 +598,8 @@ export type Database = {
           id?: string
           mime_type?: string | null
           size_bytes?: number | null
+          slot?: string | null
+          status?: string
           storage_bucket?: string
           storage_path?: string
           user_id?: string
