@@ -278,11 +278,17 @@ serve(async (req) => {
     if (!check.ok) return errorResponse(`Validator schema check failed: ${check.error}`, 502);
     const report = check.data;
 
-    // Persist QC outcome onto the page row.
+    // Persist QC outcome onto the page row. Aggregate now includes age fitness.
     const aggregateScore =
-      (report.character_likeness_score + report.style_consistency_score + report.scene_accuracy_score) / 3;
+      (report.character_likeness_score +
+        report.style_consistency_score +
+        report.scene_accuracy_score +
+        report.age_appropriateness_score) / 4;
     const reviewNotes = [
       report.regeneration_instruction,
+      report.age_appropriateness_score < 0.85
+        ? `Age-fit (band ${ageBand}) ${report.age_appropriateness_score.toFixed(2)}: ${report.age_appropriateness_issues.join("; ") || "below threshold"}`
+        : "",
       report.artifact_issues.length ? `Artifacts: ${report.artifact_issues.join("; ")}` : "",
       report.missing_required_elements.length ? `Missing: ${report.missing_required_elements.join("; ")}` : "",
     ].filter(Boolean).join(" | ") || null;
@@ -298,7 +304,7 @@ serve(async (req) => {
       .eq("page_number", pageNumber);
     if (updErr) console.warn("validate-page persist warning:", updErr.message);
 
-    return jsonResponse({ ok: true, bookId, pageNumber, report });
+    return jsonResponse({ ok: true, bookId, pageNumber, ageBand, report });
   } catch (e: any) {
     if (e instanceof Response) return e;
     console.error("validate-page error", e);
