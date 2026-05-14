@@ -17,6 +17,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CreateIndexRouteImport } from './routes/create.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
 import { Route as CreateStyleRouteImport } from './routes/create.style'
 import { Route as CreateStoryRouteImport } from './routes/create.story'
@@ -25,6 +26,7 @@ import { Route as CreatePhotosRouteImport } from './routes/create.photos'
 import { Route as CreateCharacterSheetRouteImport } from './routes/create.character-sheet'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
+import { Route as AdminSamplesRouteImport } from './routes/admin.samples'
 import { Route as BooksBookIdIndexRouteImport } from './routes/books.$bookId.index'
 import { Route as BooksBookIdManageRouteImport } from './routes/books.$bookId.manage'
 
@@ -68,6 +70,11 @@ const CreateIndexRoute = CreateIndexRouteImport.update({
   path: '/create/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const JobsJobIdRoute = JobsJobIdRouteImport.update({
   id: '/jobs/$jobId',
   path: '/jobs/$jobId',
@@ -108,6 +115,11 @@ const CheckoutCancelRoute = CheckoutCancelRouteImport.update({
   path: '/checkout/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSamplesRoute = AdminSamplesRouteImport.update({
+  id: '/samples',
+  path: '/samples',
+  getParentRoute: () => AdminRoute,
+} as any)
 const BooksBookIdIndexRoute = BooksBookIdIndexRouteImport.update({
   id: '/books/$bookId/',
   path: '/books/$bookId/',
@@ -122,11 +134,12 @@ const BooksBookIdManageRoute = BooksBookIdManageRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/samples': typeof AdminSamplesRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
@@ -135,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/create/story': typeof CreateStoryRoute
   '/create/style': typeof CreateStyleRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/create/': typeof CreateIndexRoute
   '/books/$bookId/manage': typeof BooksBookIdManageRoute
   '/books/$bookId/': typeof BooksBookIdIndexRoute
@@ -142,11 +156,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/samples': typeof AdminSamplesRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
@@ -155,6 +169,7 @@ export interface FileRoutesByTo {
   '/create/story': typeof CreateStoryRoute
   '/create/style': typeof CreateStyleRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/admin': typeof AdminIndexRoute
   '/create': typeof CreateIndexRoute
   '/books/$bookId/manage': typeof BooksBookIdManageRoute
   '/books/$bookId': typeof BooksBookIdIndexRoute
@@ -163,11 +178,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/samples': typeof AdminSamplesRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
@@ -176,6 +192,7 @@ export interface FileRoutesById {
   '/create/story': typeof CreateStoryRoute
   '/create/style': typeof CreateStyleRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/create/': typeof CreateIndexRoute
   '/books/$bookId/manage': typeof BooksBookIdManageRoute
   '/books/$bookId/': typeof BooksBookIdIndexRoute
@@ -190,6 +207,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/admin/samples'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/create/character-sheet'
@@ -198,6 +216,7 @@ export interface FileRouteTypes {
     | '/create/story'
     | '/create/style'
     | '/jobs/$jobId'
+    | '/admin/'
     | '/create/'
     | '/books/$bookId/manage'
     | '/books/$bookId/'
@@ -205,11 +224,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
-    | '/admin'
     | '/library'
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/admin/samples'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/create/character-sheet'
@@ -218,6 +237,7 @@ export interface FileRouteTypes {
     | '/create/story'
     | '/create/style'
     | '/jobs/$jobId'
+    | '/admin'
     | '/create'
     | '/books/$bookId/manage'
     | '/books/$bookId'
@@ -230,6 +250,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/admin/samples'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/create/character-sheet'
@@ -238,6 +259,7 @@ export interface FileRouteTypes {
     | '/create/story'
     | '/create/style'
     | '/jobs/$jobId'
+    | '/admin/'
     | '/create/'
     | '/books/$bookId/manage'
     | '/books/$bookId/'
@@ -246,7 +268,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   LibraryRoute: typeof LibraryRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -322,6 +344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreateIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/jobs/$jobId': {
       id: '/jobs/$jobId'
       path: '/jobs/$jobId'
@@ -378,6 +407,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/samples': {
+      id: '/admin/samples'
+      path: '/samples'
+      fullPath: '/admin/samples'
+      preLoaderRoute: typeof AdminSamplesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/books/$bookId/': {
       id: '/books/$bookId/'
       path: '/books/$bookId'
@@ -395,10 +431,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminSamplesRoute: typeof AdminSamplesRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminSamplesRoute: AdminSamplesRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   LibraryRoute: LibraryRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,

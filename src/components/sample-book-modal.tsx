@@ -9,6 +9,7 @@ import { StyleArtwork } from "@/components/style-artwork";
 import { getArtStyle } from "@/lib/art-styles";
 import { SAMPLE_BOOKS } from "@/lib/sample-books";
 import type { ArtStyleKey } from "@/lib/art-styles";
+import { useSampleAssets, SAMPLE_KEY_BY_STYLE } from "@/hooks/use-sample-assets";
 
 export function SampleBookModal({
   styleKey,
@@ -21,6 +22,9 @@ export function SampleBookModal({
 }) {
   const sample = styleKey ? SAMPLE_BOOKS[styleKey] : null;
   const style = styleKey ? getArtStyle(styleKey) : null;
+  const { assets } = useSampleAssets();
+  const sampleKey = styleKey ? SAMPLE_KEY_BY_STYLE[styleKey] : null;
+  const generated = sampleKey ? assets[sampleKey] ?? {} : {};
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -42,6 +46,7 @@ export function SampleBookModal({
                 badge="Cover"
                 styleKey={sample.styleKey}
                 variant="cover"
+                imageUrl={generated.cover}
               >
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   A StoryNest book
@@ -68,6 +73,7 @@ export function SampleBookModal({
                 variant="page-a"
                 pageNumber={1}
                 bodyText={sample.pages[0]}
+                imageUrl={generated.page_1}
               />
 
               <BookFrame
@@ -76,6 +82,7 @@ export function SampleBookModal({
                 variant="page-b"
                 pageNumber={2}
                 bodyText={sample.pages[1]}
+                imageUrl={generated.page_2}
               />
 
               <p className="text-center text-[11px] text-muted-foreground">
@@ -97,6 +104,7 @@ function BookFrame({
   pageNumber,
   bodyText,
   plain,
+  imageUrl,
   children,
 }: {
   badge: string;
@@ -105,8 +113,16 @@ function BookFrame({
   pageNumber?: number;
   bodyText?: string;
   plain?: boolean;
+  imageUrl?: string;
   children?: React.ReactNode;
 }) {
+  const Art = ({ v }: { v: "cover" | "page-a" | "page-b" }) =>
+    imageUrl ? (
+      <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+    ) : styleKey ? (
+      <StyleArtwork styleKey={styleKey} variant={v} />
+    ) : null;
+
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -116,8 +132,8 @@ function BookFrame({
 
       {variant === "cover" && styleKey ? (
         <div className="relative">
-          <div className="aspect-[4/5] w-full overflow-hidden">
-            <StyleArtwork styleKey={styleKey} variant="cover" />
+          <div className="aspect-[4/5] w-full overflow-hidden bg-paper">
+            <Art v="cover" />
           </div>
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/95 via-background/70 to-transparent p-4 sm:p-6">
             {children}
@@ -126,8 +142,8 @@ function BookFrame({
       ) : variant && styleKey ? (
         <div className="grid gap-0 sm:grid-cols-5">
           <div className="sm:col-span-3">
-            <div className="aspect-[4/3] w-full overflow-hidden sm:aspect-auto sm:h-full">
-              <StyleArtwork styleKey={styleKey} variant={variant} />
+            <div className="aspect-[4/3] w-full overflow-hidden bg-paper sm:aspect-auto sm:h-full">
+              <Art v={variant} />
             </div>
           </div>
           <div className="flex min-h-[10rem] flex-col justify-center p-5 font-display text-[15px] leading-relaxed text-foreground sm:col-span-2 sm:text-base">

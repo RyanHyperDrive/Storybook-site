@@ -24,6 +24,7 @@ import hero from "@/assets/hero-reading.jpg";
 import { ART_STYLES, type ArtStyleKey } from "@/lib/art-styles";
 import { StyleArtwork } from "@/components/style-artwork";
 import { SampleBookModal } from "@/components/sample-book-modal";
+import { useSampleAssets, SAMPLE_KEY_BY_STYLE } from "@/hooks/use-sample-assets";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -74,6 +75,7 @@ const faqs = [
 
 function Home() {
   const [openKey, setOpenKey] = useState<ArtStyleKey | null>(null);
+  const { assets } = useSampleAssets();
   return (
     <div className="overflow-x-hidden">
       <SampleBookModal
@@ -189,8 +191,17 @@ function Home() {
               className="group overflow-hidden rounded-lg border border-border bg-background text-left transition-all hover:-translate-y-0.5 hover:border-ember/50 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ember"
               aria-label={`Preview sample book in ${s.styleName} style`}
             >
-              <div className="relative aspect-[4/5] overflow-hidden">
-                <StyleArtwork styleKey={s.key} variant="cover" />
+              <div className="relative aspect-[4/5] overflow-hidden bg-paper">
+                {assets[SAMPLE_KEY_BY_STYLE[s.key]]?.cover ? (
+                  <img
+                    src={assets[SAMPLE_KEY_BY_STYLE[s.key]]!.cover!}
+                    alt={`${s.title} sample cover in ${s.styleName} style`}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                    loading="lazy"
+                  />
+                ) : (
+                  <StyleArtwork styleKey={s.key} variant="cover" />
+                )}
                 <div className="absolute left-3 top-3 rounded-full bg-background/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
                   {s.styleName}
                 </div>
