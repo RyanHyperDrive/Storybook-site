@@ -81,6 +81,11 @@ function Inner() {
       <p className="mt-2 text-sm text-muted-foreground">
         Review the parent-approved character below. Free regeneration if something looks off.
       </p>
+      <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-paper/60 px-3 py-1 text-xs text-muted-foreground">
+        <Sparkles className="h-3.5 w-3.5 text-ember" />
+        Style: <span className="font-semibold text-foreground">{style.name}</span>
+        <Link to="/create/style" className="underline-offset-4 hover:underline">Change</Link>
+      </div>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
         <div className="overflow-hidden rounded-lg border border-border bg-paper/40">
