@@ -10,6 +10,17 @@ import { getArtStyle } from "@/lib/art-styles";
 import { SAMPLE_BOOKS } from "@/lib/sample-books";
 import type { ArtStyleKey } from "@/lib/art-styles";
 import { useSampleAssets, SAMPLE_KEY_BY_STYLE } from "@/hooks/use-sample-assets";
+import sampleClassic from "@/assets/sample-classic-mira.jpg";
+import sampleCartoon from "@/assets/sample-cartoon-leo.jpg";
+import sampleWatercolor from "@/assets/sample-watercolor-pip.jpg";
+import sampleManga from "@/assets/sample-manga-yuki.jpg";
+
+const FALLBACK_COVER: Record<ArtStyleKey, string> = {
+  classic_storybook: sampleClassic,
+  soft_cartoon: sampleCartoon,
+  watercolor_adventure: sampleWatercolor,
+  manga_inspired: sampleManga,
+};
 
 export function SampleBookModal({
   styleKey,
