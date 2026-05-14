@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Camera, Heart, ShieldCheck, Wand2 } from "lucide-react";
 
+
 export const Route = createFileRoute("/create/")({
   component: CreateLanding,
   head: () => ({ meta: [{ title: "Create your storybook — StoryNest" }] }),
@@ -19,13 +20,17 @@ function CreateLanding() {
         story pages — ready in about 10–20 minutes. We'll email you when it's done.
       </p>
 
-      <div className="mt-8 flex justify-center">
+      <div className="mt-8 flex flex-col items-center gap-3">
         <Link to="/create/profile">
           <Button size="lg" variant="ember">
-            Start — Step 1 of 5
+            Start free character preview
             <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>
+        <p className="flex items-center gap-2 text-xs font-medium text-sage">
+          <ShieldCheck className="h-4 w-4 shrink-0" />
+          No payment until you approve the character preview.
+        </p>
       </div>
 
       <ol className="mx-auto mt-12 grid max-w-2xl gap-3 text-left sm:grid-cols-2">

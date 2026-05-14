@@ -94,19 +94,23 @@ function Pricing() {
         Simple pricing
       </h1>
       <p className="mx-auto mt-3 max-w-lg text-center text-muted-foreground">
-        One book at a time. No subscription. You only pay once you've approved the character.
+        One book at a time. No subscription. You'll see your child's illustrated character before you ever pay.
+      </p>
+      <p className="mx-auto mt-3 flex max-w-lg items-center justify-center gap-2 text-center text-sm font-medium text-sage">
+        <Check className="h-4 w-4 shrink-0" />
+        No payment until you approve the character preview.
       </p>
 
       <div className="mt-10 rounded-lg border border-border bg-background p-6 shadow-sm sm:p-8">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-baseline">
           <div>
-            <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">One book</div>
+            <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">One book · pay after approval</div>
             <div className="mt-1 font-display text-4xl font-semibold sm:text-5xl">
-              $29.99 <span className="text-base font-normal text-muted-foreground">one-time</span>
+              $29.99 <span className="text-base font-normal text-muted-foreground">one-time · no subscription</span>
             </div>
           </div>
           <Link to="/create" className="w-full sm:w-auto">
-            <Button variant="ember" size="lg" className="w-full sm:w-auto">Create a book</Button>
+            <Button variant="ember" size="lg" className="w-full sm:w-auto">Start free character preview</Button>
           </Link>
         </div>
         <ul className="mt-8 grid gap-2 text-sm sm:grid-cols-2">
