@@ -21,10 +21,21 @@ import {
   FileText,
 } from "lucide-react";
 import hero from "@/assets/hero-reading.jpg";
+import sampleClassic from "@/assets/sample-classic-mira.jpg";
+import sampleCartoon from "@/assets/sample-cartoon-leo.jpg";
+import sampleWatercolor from "@/assets/sample-watercolor-pip.jpg";
+import sampleManga from "@/assets/sample-manga-yuki.jpg";
 import { ART_STYLES, type ArtStyleKey } from "@/lib/art-styles";
 import { StyleArtwork } from "@/components/style-artwork";
 import { SampleBookModal } from "@/components/sample-book-modal";
 import { useSampleAssets, SAMPLE_KEY_BY_STYLE } from "@/hooks/use-sample-assets";
+
+const SAMPLE_COVER_FALLBACK: Record<ArtStyleKey, string> = {
+  classic_storybook: sampleClassic,
+  soft_cartoon: sampleCartoon,
+  watercolor_adventure: sampleWatercolor,
+  manga_inspired: sampleManga,
+};
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -192,16 +203,22 @@ function Home() {
               aria-label={`Preview sample book in ${s.styleName} style`}
             >
               <div className="relative aspect-[4/5] overflow-hidden bg-paper">
-                {assets[SAMPLE_KEY_BY_STYLE[s.key]]?.cover ? (
-                  <img
-                    src={assets[SAMPLE_KEY_BY_STYLE[s.key]]!.cover!}
-                    alt={`${s.title} sample cover in ${s.styleName} style`}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                    loading="lazy"
-                  />
-                ) : (
-                  <StyleArtwork styleKey={s.key} variant="cover" />
-                )}
+                {(() => {
+                  const dbCover = assets[SAMPLE_KEY_BY_STYLE[s.key]]?.cover;
+                  const cover = dbCover ?? SAMPLE_COVER_FALLBACK[s.key];
+                  return cover ? (
+                    <img
+                      src={cover}
+                      alt={`${s.title} sample cover in ${s.styleName} style`}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      loading="lazy"
+                      width={1024}
+                      height={1280}
+                    />
+                  ) : (
+                    <StyleArtwork styleKey={s.key} variant="cover" />
+                  );
+                })()}
                 <div className="absolute left-3 top-3 rounded-full bg-background/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
                   {s.styleName}
                 </div>
