@@ -37,7 +37,15 @@ type PhotoRow = {
 
 export const Route = createFileRoute("/create/photos")({
   component: () => (
-    <AuthGate>
+    <AuthGate
+      title="Sign in to upload photos securely"
+      message="Your child's photo stays private to your account and is not used to train models."
+      bullets={[
+        "Use a clear, well-lit photo with only the child in frame.",
+        "For twins, you'll upload one clear photo of each child.",
+        "We use the photo only to design the illustrated character — originals stay in your private folder.",
+      ]}
+    >
       <Inner />
     </AuthGate>
   ),
