@@ -44,7 +44,7 @@ export function SiteHeader() {
               to={l.to}
               className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               activeProps={{ className: "rounded-md px-3 py-2 text-sm font-medium text-foreground bg-muted" }}
-              activeOptions={{ exact: l.to === "/" }}
+              activeOptions={{ exact: false }}
             >
               {l.label}
             </Link>
