@@ -310,7 +310,7 @@ function MangaPageB() {
   );
 }
 
-const SCENES: Record<ArtStyleKey, Record<Variant, () => JSX.Element>> = {
+const SCENES: Record<ArtStyleKey, Record<Variant, () => ReactElement>> = {
   classic_storybook: { cover: ClassicCover, "page-a": ClassicPageA, "page-b": ClassicPageB },
   soft_cartoon: { cover: SoftCover, "page-a": SoftPageA, "page-b": SoftPageB },
   watercolor_adventure: { cover: WaterCover, "page-a": WaterPageA, "page-b": WaterPageB },
