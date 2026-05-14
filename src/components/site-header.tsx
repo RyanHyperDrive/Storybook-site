@@ -68,14 +68,14 @@ export function SiteHeader() {
             </Link>
           )}
           <Link to="/create">
-            <Button size="sm" variant="ember">Create a book</Button>
+            <Button size="sm" variant="ember">Start free preview</Button>
           </Link>
         </div>
 
         {/* Mobile cluster: compact CTA + hamburger */}
         <div className="flex items-center gap-2 md:hidden">
           <Link to="/create">
-            <Button size="sm" variant="ember">Create</Button>
+            <Button size="sm" variant="ember">Start free</Button>
           </Link>
           <button
             aria-label={open ? "Close menu" : "Open menu"}
