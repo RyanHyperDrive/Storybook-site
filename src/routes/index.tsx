@@ -181,32 +181,31 @@ function Home() {
         </div>
       </section>
 
-      {/* SAMPLES — illustration-only placeholder cards, all text rendered as HTML */}
+      {/* SAMPLES — book-cover cards with HTML title in a clean lower jacket band */}
       <section id="examples" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 sm:py-16">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-              Sample style previews
+              Five art styles. One starring child.
             </h2>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Four sample books — one per supported art style — to show what a finished StoryNest ebook looks like. These are concept previews, not real customer books.
+              Tap a cover to flip through a sample. Choose a style, approve the character, then we build the full book — at least 10 illustrated story pages, personalized for ages 2–10.
             </p>
           </div>
           <Link to="/create" className="text-sm font-medium text-ember underline-offset-4 hover:underline">
-            Create yours →
+            Start free preview →
           </Link>
         </div>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           {samples.map((s) => (
             <button
               type="button"
               key={s.key}
               onClick={() => setOpenKey(s.key)}
-              className="group relative overflow-hidden rounded-md border border-border bg-background text-left shadow-[0_10px_30px_-15px_oklch(0.22_0.03_260/0.45)] transition-all hover:-translate-y-0.5 hover:border-ember/50 hover:shadow-[0_18px_40px_-15px_oklch(0.22_0.03_260/0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ember"
+              className="group relative flex flex-col overflow-hidden rounded-md border border-border bg-background text-left shadow-[0_10px_30px_-15px_oklch(0.22_0.03_260/0.45)] transition-all hover:-translate-y-0.5 hover:border-ember/60 hover:shadow-[0_18px_40px_-15px_oklch(0.22_0.03_260/0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ember"
               aria-label={`Preview sample book in ${s.styleName} style`}
             >
-              {/* book spine */}
-              <span aria-hidden className="absolute inset-y-0 left-0 w-[6px] bg-gradient-to-b from-foreground/15 via-foreground/5 to-foreground/15" />
+              <span aria-hidden className="absolute inset-y-0 left-0 z-10 w-[5px] bg-gradient-to-b from-foreground/20 via-foreground/5 to-foreground/20" />
               <div className="relative aspect-[4/5] overflow-hidden bg-paper">
                 {(() => {
                   const dbCover = assets[SAMPLE_KEY_BY_STYLE[s.key]]?.cover;
@@ -224,29 +223,24 @@ function Home() {
                     <StyleArtwork styleKey={s.key} variant="cover" />
                   );
                 })()}
-                {/* gentle vignette to make HTML title block legible */}
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
-                <div className="absolute left-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
-                  Style shown · {s.styleName}
+                <div className="absolute left-2 top-2 rounded-full bg-foreground/75 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background backdrop-blur">
+                  {s.styleName}
                 </div>
-                <div className="absolute right-3 top-3 rounded-full bg-foreground/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-background opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+                <div className="absolute right-2 top-2 rounded-full bg-ember px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-ember-foreground opacity-0 shadow transition-opacity group-hover:opacity-100">
                   Preview →
                 </div>
-                {/* HTML title block layered on the cover, so the image stays text-free */}
-                <div className="absolute inset-x-0 bottom-0 p-4">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-background/80 drop-shadow">
+              </div>
+              {/* Lower jacket band — clean, no gradient over artwork */}
+              <div className="flex flex-1 flex-col justify-between border-t border-border bg-background p-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     A StoryNest book
                   </div>
-                  <div className="mt-1 font-display text-base font-semibold leading-tight text-background drop-shadow sm:text-lg">
+                  <div className="mt-0.5 font-display text-[15px] font-semibold leading-snug text-foreground">
                     {s.title}
                   </div>
                 </div>
-              </div>
-              <div className="border-t border-border p-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Sample cover concept · {s.age}
-                </div>
-                <div className="mt-0.5 text-xs font-medium text-ember">
+                <div className="mt-2 text-[11px] font-medium text-ember">
                   Preview this style →
                 </div>
               </div>
@@ -254,7 +248,7 @@ function Home() {
           ))}
         </div>
         <p className="mt-6 text-xs text-muted-foreground">
-          Stories and illustrations are created with AI and reviewed through parent approval and quality checks.
+          Concept previews — not real customer books. Stories and illustrations are created with AI and reviewed through parent approval and quality checks.
         </p>
       </section>
 
