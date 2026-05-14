@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,7 +21,9 @@ import {
   FileText,
 } from "lucide-react";
 import hero from "@/assets/hero-reading.jpg";
-import { ART_STYLES } from "@/lib/art-styles";
+import { ART_STYLES, type ArtStyleKey } from "@/lib/art-styles";
+import { StyleArtwork } from "@/components/style-artwork";
+import { SampleBookModal } from "@/components/sample-book-modal";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -28,11 +31,10 @@ export const Route = createFileRoute("/")({
 
 // Sample books: one per MVP art style so parents see the full range.
 const samples = ART_STYLES.map((s) => ({
+  key: s.key,
   title: s.sampleTitle,
   age: "Ages 4–7",
   styleName: s.name,
-  tone: s.sampleTone,
-  accent: s.sampleAccent,
 }));
 
 const faqs = [
@@ -71,8 +73,14 @@ const faqs = [
 ];
 
 function Home() {
+  const [openKey, setOpenKey] = useState<ArtStyleKey | null>(null);
   return (
     <div className="overflow-x-hidden">
+      <SampleBookModal
+        styleKey={openKey}
+        open={openKey !== null}
+        onOpenChange={(v) => !v && setOpenKey(null)}
+      />
       {/* HERO */}
       <section className="bg-warm-grad">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:py-16 md:grid-cols-2 md:py-24">
@@ -174,35 +182,34 @@ function Home() {
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {samples.map((s) => (
-            <article
-              key={s.title}
-              className="overflow-hidden rounded-lg border border-border bg-background"
+            <button
+              type="button"
+              key={s.key}
+              onClick={() => setOpenKey(s.key)}
+              className="group overflow-hidden rounded-lg border border-border bg-background text-left transition-all hover:-translate-y-0.5 hover:border-ember/50 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ember"
+              aria-label={`Preview sample book in ${s.styleName} style`}
             >
-              <div className={`relative aspect-[4/5] overflow-hidden bg-gradient-to-br ${s.tone}`}>
-                {/* Decorative shapes only — no baked-in text */}
-                <div className={`absolute -right-10 -top-10 h-40 w-40 rounded-full ${s.accent} blur-2xl`} />
-                <div className={`absolute -bottom-12 -left-8 h-44 w-44 rounded-full ${s.accent} blur-2xl`} />
+              <div className="relative aspect-[4/5] overflow-hidden">
+                <StyleArtwork styleKey={s.key} variant="cover" />
                 <div className="absolute left-3 top-3 rounded-full bg-background/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
                   {s.styleName}
                 </div>
-                <div className="absolute inset-0 flex flex-col justify-end p-5">
-                  <div className="rounded-md bg-background/85 p-3 backdrop-blur">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Sample cover concept
-                    </div>
-                    <div className="mt-1 font-display text-lg font-semibold leading-tight text-foreground">
-                      {s.title}
-                    </div>
-                  </div>
+                <div className="absolute right-3 top-3 rounded-full bg-foreground/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-background opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+                  Preview →
                 </div>
               </div>
               <div className="p-4">
-                <div className="text-sm font-semibold">{s.title}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Sample cover concept
+                </div>
+                <div className="mt-1 font-display text-base font-semibold leading-tight">
+                  {s.title}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
                   {s.styleName} · {s.age}
                 </div>
               </div>
-            </article>
+            </button>
           ))}
         </div>
         <p className="mt-6 text-xs text-muted-foreground">
