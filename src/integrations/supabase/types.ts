@@ -352,6 +352,7 @@ export type Database = {
         Row: {
           book_id: string
           created_at: string
+          current_step: string
           id: string
           kind: string
           message: string | null
@@ -363,6 +364,7 @@ export type Database = {
         Insert: {
           book_id: string
           created_at?: string
+          current_step?: string
           id?: string
           kind: string
           message?: string | null
@@ -374,6 +376,7 @@ export type Database = {
         Update: {
           book_id?: string
           created_at?: string
+          current_step?: string
           id?: string
           kind?: string
           message?: string | null
