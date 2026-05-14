@@ -102,17 +102,15 @@ function Home() {
               <Sparkles className="mr-1 h-3.5 w-3.5" /> Personalized for ages 2–10
             </Badge>
             <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
-              A storybook starring<span className="text-ember"> your child</span>.
+              A bedtime story starring<span className="text-ember"> your child</span>.
             </h1>
             <p className="mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
-              Create a personalized illustrated storybook starring your child. Upload a clear
-              photo, share what they love, approve their illustrated character, and receive a
-              custom ebook made for reading together.
+              Turn their favorite things into a personalized illustrated storybook you can read together tonight — with your child as the hero, in an art style you choose.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link to="/create" className="w-full sm:w-auto">
                 <Button size="lg" variant="ember" className="w-full sm:w-auto">
-                  Create a storybook — $29.99
+                  Start free character preview
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
@@ -120,14 +118,18 @@ function Home() {
                 to="/pricing"
                 className="text-center text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
               >
-                See what's included
+                See what's included · $29.99
               </Link>
             </div>
-            <ul className="mt-8 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-              <li className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Photos stay private to you</li>
+            <p className="mt-3 flex items-center gap-2 text-xs font-medium text-sage">
+              <ShieldCheck className="h-4 w-4 shrink-0" />
+              No payment until you approve the character preview.
+            </p>
+            <ul className="mt-6 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+              <li className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Private child photos</li>
+              <li className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Not used to train models</li>
+              <li className="flex items-start gap-2"><Wand2 className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Parent-approved character before payment</li>
               <li className="flex items-start gap-2"><RefreshCcw className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Free regeneration if it looks off</li>
-              <li className="flex items-start gap-2"><Wand2 className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Parent-approved illustrated character</li>
-              <li className="flex items-start gap-2"><BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Web reader + downloadable PDF</li>
             </ul>
           </div>
 
