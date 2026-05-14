@@ -115,6 +115,29 @@ export function SampleBookModal({
                 Stories and illustrations are created with AI and reviewed through
                 parent approval and quality checks.
               </p>
+
+              <div className="rounded-lg border border-border bg-background p-4 sm:p-5">
+                <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="font-display text-base font-semibold text-foreground">
+                      Start a book in this style
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      You'll choose your illustration style in Step 4. No payment until you approve the character preview.
+                    </p>
+                  </div>
+                  <Link to="/create/profile" onClick={() => onOpenChange(false)} className="shrink-0">
+                    <Button variant="ember" className="w-full sm:w-auto">
+                      Start free character preview
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+                <p className="mt-3 flex items-center gap-2 text-[11px] font-medium text-sage">
+                  <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                  Parent-approved character before payment · Free regeneration if it looks off.
+                </p>
+              </div>
             </div>
           </>
         )}
