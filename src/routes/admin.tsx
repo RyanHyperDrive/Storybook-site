@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ShieldAlert } from "lucide-react";
+import { Loader2, ShieldAlert, ImageIcon } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: () => <AuthGate><Inner /></AuthGate>,
