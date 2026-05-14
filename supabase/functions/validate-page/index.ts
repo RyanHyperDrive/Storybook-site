@@ -93,7 +93,7 @@ function clamp01(n: unknown): number {
   return Math.max(0, Math.min(1, x));
 }
 
-function validate(obj: any): { ok: true; data: any } | { ok: false; error: string } {
+export function validate(obj: any): { ok: true; data: any } | { ok: false; error: string } {
   if (!obj || typeof obj !== "object") return { ok: false, error: "Not an object" };
   for (const k of REQUIRED_KEYS) {
     if (!(k in obj)) return { ok: false, error: `Missing key: ${k}` };
@@ -293,12 +293,36 @@ serve(async (req) => {
       report.missing_required_elements.length ? `Missing: ${report.missing_required_elements.join("; ")}` : "",
     ].filter(Boolean).join(" | ") || null;
 
+    const qualityMetadata = {
+      age_band: ageBand,
+      reading_level: lvl,
+      scores: {
+        character_likeness: report.character_likeness_score,
+        style_consistency: report.style_consistency_score,
+        scene_accuracy: report.scene_accuracy_score,
+        age_appropriateness: report.age_appropriateness_score,
+        aggregate: Number(aggregateScore.toFixed(4)),
+      },
+      flags: {
+        correct_number_of_main_characters: report.correct_number_of_main_characters,
+        twin_distinction_ok: report.twin_distinction_ok,
+        safety_ok: report.safety_ok,
+        regeneration_recommended: report.regeneration_recommended,
+      },
+      age_appropriateness_issues: report.age_appropriateness_issues,
+      artifact_issues: report.artifact_issues,
+      missing_required_elements: report.missing_required_elements,
+      regeneration_instruction: report.regeneration_instruction,
+      validated_at: new Date().toISOString(),
+    };
+
     const { error: updErr } = await admin
       .from("book_pages")
       .update({
         quality_score: Number((aggregateScore * 100).toFixed(2)),
         needs_review: report.regeneration_recommended,
         review_notes: reviewNotes,
+        quality_metadata: qualityMetadata,
       })
       .eq("book_id", bookId)
       .eq("page_number", pageNumber);
