@@ -6,7 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Check, Mail } from "lucide-react";
+import { Check, Mail, Mic, RefreshCcw, Gift } from "lucide-react";
 
 export const Route = createFileRoute("/pricing")({
   component: Pricing,
@@ -16,15 +16,15 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "$29.99 one-time per personalized illustrated storybook. Cover, dedication, and 10 illustrated pages — ready in about 10–20 minutes.",
+          "$29.99 one-time per personalized illustrated storybook. Includes a custom cover, dedication, and at least 10 illustrated story pages — ready in about 10–20 minutes.",
       },
     ],
   }),
 });
 
 const features = [
-  "Cover + dedication + 10 illustrated pages",
-  "Built for ages 4–7",
+  "Custom cover, dedication, and at least 10 illustrated story pages",
+  "Personalized for ages 2–10 — reading level adapts to your child",
   "Parent-approved illustrated character",
   "Free regeneration if it doesn't feel right",
   "Web reader + downloadable PDF",
@@ -32,10 +32,34 @@ const features = [
   "Stored privately in your library",
 ];
 
+const addons = [
+  {
+    icon: Mic,
+    title: "Read-aloud narration",
+    price: "+$5",
+    body: "A warm voice reads the book to your child, page by page.",
+    badge: "Coming soon",
+  },
+  {
+    icon: RefreshCcw,
+    title: "Extra regeneration pack",
+    price: "Included while in beta",
+    body: "Re-roll any page illustration if a detail looks off.",
+    badge: "Included",
+  },
+  {
+    icon: Gift,
+    title: "Grandparent gift copy",
+    price: "+$9",
+    body: "A second printable PDF + a personal gift note for a loved one.",
+    badge: "Coming soon",
+  },
+];
+
 const faqs = [
   {
     q: "What's included for $29.99?",
-    a: "One personalized storybook: a custom cover, a dedication page, and 10 illustrated story pages. You can read it in any browser and download it as a printable PDF.",
+    a: "One personalized storybook: a custom cover, a dedication page, and at least 10 illustrated story pages (more for older kids). You can read it in any browser and download it as a printable PDF.",
   },
   {
     q: "How long does it take?",
@@ -92,6 +116,33 @@ function Pricing() {
             </li>
           ))}
         </ul>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="font-display text-xl font-semibold tracking-tight">Optional add-ons</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Make the book go further. Add-ons are optional — your $29.99 book is complete on its own.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {addons.map(({ icon: Icon, title, price, body, badge }) => (
+            <div
+              key={title}
+              className="flex flex-col rounded-lg border border-border bg-background p-4"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="grid h-9 w-9 place-items-center rounded-md bg-ember/15 text-ember">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <span className="rounded-full bg-paper/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {badge}
+                </span>
+              </div>
+              <div className="mt-3 text-sm font-semibold">{title}</div>
+              <div className="text-xs text-muted-foreground">{price}</div>
+              <p className="mt-2 text-xs text-muted-foreground">{body}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="mt-10 rounded-md border border-border bg-paper/40 p-5 text-sm text-muted-foreground sm:p-6">

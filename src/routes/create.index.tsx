@@ -15,8 +15,8 @@ function CreateLanding() {
       </h1>
       <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
         Five quick steps, about 5 minutes of your time. You'll set up the character, approve how
-        they look, and we'll generate a cover, dedication, and 10 illustrated story pages — ready
-        in about 10–20 minutes. We'll email you when it's done.
+        they look, and we'll generate a custom cover, a dedication, and at least 10 illustrated
+        story pages — ready in about 10–20 minutes. We'll email you when it's done.
       </p>
 
       <div className="mt-8 flex justify-center">
@@ -37,7 +37,7 @@ function CreateLanding() {
       </ol>
 
       <p className="mt-10 text-xs text-muted-foreground">
-        $29.99 one-time per book · Built for ages 4–7 · Web reader + downloadable PDF
+        $29.99 one-time per book · Personalized for ages 2–10 · Web reader + downloadable PDF
       </p>
     </div>
   );

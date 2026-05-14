@@ -33,11 +33,10 @@ export function SampleBookModal({
           <>
             <DialogHeader className="border-b border-border px-5 py-4 text-left sm:px-6">
               <DialogTitle className="font-display text-xl">
-                Sample book preview
+                Sample ebook preview
               </DialogTitle>
               <DialogDescription className="text-xs">
-                {style.name} · Cover, dedication, and 2 of 10 story pages — sample
-                concept, not a real customer book.
+                Style shown: <span className="font-semibold text-foreground">{style.name}</span> · Cover, dedication, and 2 of at least 10 story pages — concept preview, not a real customer book.
               </DialogDescription>
             </DialogHeader>
 
@@ -68,7 +67,7 @@ export function SampleBookModal({
               </BookFrame>
 
               <BookFrame
-                badge="Page 1"
+                badge={`Page 1 · ${style.name}`}
                 styleKey={sample.styleKey}
                 variant="page-a"
                 pageNumber={1}
@@ -77,7 +76,7 @@ export function SampleBookModal({
               />
 
               <BookFrame
-                badge="Page 2"
+                badge={`Page 2 · ${style.name}`}
                 styleKey={sample.styleKey}
                 variant="page-b"
                 pageNumber={2}

@@ -249,7 +249,9 @@ function ChildFieldset({
             onChange={(e) => onChange("age", e.target.value)}
             placeholder="5"
           />
-          <p className="mt-1 text-xs text-muted-foreground">Best for ages 4–7.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Personalized for ages 2–10. Reading level adapts to your child.
+          </p>
         </div>
         <div>
           <Label htmlFor={`${label}-pronouns`}>Pronouns</Label>

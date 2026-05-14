@@ -32,7 +32,7 @@ function Inner() {
   const [detailsAvoid, setDetailsAvoid] = useState("");
   const [dedication, setDedication] = useState("");
   const [readingLevel, setReadingLevel] =
-    useState<(typeof READING_LEVELS)[number]["value"]>("ages_4_7");
+    useState<string>("ages_4_6");
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -51,7 +51,18 @@ function Inner() {
         setDetailsInclude(data.details_include ?? "");
         setDetailsAvoid(data.details_avoid ?? "");
         setDedication(data.dedication ?? "");
-        setReadingLevel((data.reading_level as any) ?? "ages_4_7");
+        // Map any legacy reading_level value into the new bands so the select
+        // always lands on a valid option.
+        const raw = (data.reading_level as string | null) ?? "ages_4_6";
+        const mapped =
+          raw === "ages_2_3" || raw === "ages_7_10" || raw === "ages_4_6"
+            ? raw
+            : raw === "ages_3_5"
+              ? "ages_2_3"
+              : raw === "ages_6_8"
+                ? "ages_7_10"
+                : "ages_4_6";
+        setReadingLevel(mapped);
         setConsent(!!data.guardian_consent_at);
       });
   }, [id]);
@@ -139,7 +150,7 @@ function Inner() {
           <select
             id="reading-level"
             value={readingLevel}
-            onChange={(e) => setReadingLevel(e.target.value as any)}
+            onChange={(e) => setReadingLevel(e.target.value)}
             className="mt-2 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             {READING_LEVELS.map((r) => (
@@ -148,6 +159,9 @@ function Inner() {
               </option>
             ))}
           </select>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {READING_LEVELS.find((r) => r.value === readingLevel)?.hint}
+          </p>
         </div>
 
         <div>
