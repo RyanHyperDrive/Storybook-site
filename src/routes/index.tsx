@@ -1,33 +1,97 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Sparkles, Camera, BookOpen, ShieldCheck, Wand2, RefreshCcw, Heart } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  ArrowRight,
+  Sparkles,
+  Camera,
+  BookOpen,
+  ShieldCheck,
+  Wand2,
+  RefreshCcw,
+  Heart,
+  Mail,
+  FileText,
+} from "lucide-react";
 import hero from "@/assets/hero-reading.jpg";
-import s1 from "@/assets/sample-1.jpg";
-import s2 from "@/assets/sample-2.jpg";
-import s3 from "@/assets/sample-3.jpg";
 
 export const Route = createFileRoute("/")({
   component: Home,
 });
 
 const samples = [
-  { src: s1, title: "Mira and the Whispering Woods", age: "Ages 4–7" },
-  { src: s2, title: "Leo Visits the Stars", age: "Ages 3–6" },
-  { src: s3, title: "The Tea Party with Pip", age: "Ages 2–5" },
+  {
+    title: "Mira and the Whispering Woods",
+    age: "Ages 4–7",
+    tone: "from-ember/25 via-ember/10 to-paper",
+    accent: "bg-ember/30",
+  },
+  {
+    title: "Leo Visits the Stars",
+    age: "Ages 4–7",
+    tone: "from-sage/25 via-sage/10 to-paper",
+    accent: "bg-sage/30",
+  },
+  {
+    title: "The Tea Party with Pip",
+    age: "Ages 4–7",
+    tone: "from-accent via-paper to-paper",
+    accent: "bg-ember/20",
+  },
+];
+
+const faqs = [
+  {
+    q: "Are my child's photos private?",
+    a: "Yes. Photos you upload are private to your account, encrypted at rest, and used only to create your child's illustrated character. We never sell them and never use them to train models.",
+  },
+  {
+    q: "How long does a book take?",
+    a: "About 10–20 minutes from approving the character to a finished book. We email you the moment it's ready so you don't have to wait on the screen.",
+  },
+  {
+    q: "What's actually in the book?",
+    a: "A custom cover, a personal dedication page, and 10 fully illustrated story pages — read in your browser or download as a printable PDF.",
+  },
+  {
+    q: "What if the character doesn't look right?",
+    a: "You approve the illustrated character before the story is generated. If something looks off, regeneration is free until you're happy.",
+  },
+  {
+    q: "Can I make a book for twins or siblings?",
+    a: "The MVP supports one starring child per book. For twins or siblings, create a book per child — we're working on a multi-child story mode next.",
+  },
+  {
+    q: "Is it readable for kids with low vision or dyslexia?",
+    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Image alt text describes every illustration.",
+  },
+  {
+    q: "Refunds?",
+    a: "If free regeneration doesn't get the character right, email support and we'll fix it or refund you in full.",
+  },
+  {
+    q: "Is this made with AI?",
+    a: "Yes. Stories and illustrations are created with AI and reviewed through parent approval and quality checks before delivery.",
+  },
 ];
 
 function Home() {
   return (
-    <>
+    <div className="overflow-x-hidden">
       {/* HERO */}
       <section className="bg-warm-grad">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
-          <div>
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:py-16 md:grid-cols-2 md:py-24">
+          <div className="min-w-0">
             <Badge className="bg-sage/15 text-sage hover:bg-sage/15" variant="secondary">
-              <Sparkles className="mr-1 h-3.5 w-3.5" /> Made with care for ages 2–9
+              <Sparkles className="mr-1 h-3.5 w-3.5" /> Built for ages 4–7
             </Badge>
-            <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
+            <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
               A storybook starring{" "}
               <span className="text-ember">your child</span>.
             </h1>
@@ -36,37 +100,45 @@ function Home() {
               photo, share what they love, approve their illustrated character, and receive a
               custom ebook made for reading together.
             </p>
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link to="/create">
-                <Button size="lg" variant="ember">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <Link to="/create" className="w-full sm:w-auto">
+                <Button size="lg" variant="ember" className="w-full sm:w-auto">
                   Create a storybook — $29.99
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/pricing" className="text-sm font-medium text-muted-foreground underline-offset-4 hover:underline">
+              <Link
+                to="/pricing"
+                className="text-center text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
+              >
                 See what's included
               </Link>
             </div>
             <ul className="mt-8 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-              <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-sage" /> Photos stay private to you</li>
-              <li className="flex items-center gap-2"><RefreshCcw className="h-4 w-4 text-sage" /> Free regeneration if it looks off</li>
-              <li className="flex items-center gap-2"><Wand2 className="h-4 w-4 text-sage" /> Parent-approved illustrated character</li>
-              <li className="flex items-center gap-2"><BookOpen className="h-4 w-4 text-sage" /> Delivered as a printable ebook</li>
+              <li className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Photos stay private to you</li>
+              <li className="flex items-start gap-2"><RefreshCcw className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Free regeneration if it looks off</li>
+              <li className="flex items-start gap-2"><Wand2 className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Parent-approved illustrated character</li>
+              <li className="flex items-start gap-2"><BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Web reader + downloadable PDF</li>
             </ul>
           </div>
 
           <div className="relative">
             <div className="overflow-hidden rounded-lg border border-border shadow-[0_30px_60px_-30px_oklch(0.22_0.03_260/0.35)]">
-              <img src={hero} alt="A parent and child reading a storybook together"
-                width={1536} height={1152} className="h-full w-full object-cover" />
+              <img
+                src={hero}
+                alt="A parent and child reading a storybook together"
+                width={1536}
+                height={1152}
+                className="h-full w-full object-cover"
+              />
             </div>
-            <div className="absolute -bottom-6 -left-6 hidden rounded-md border border-border bg-background p-4 shadow-lg sm:block">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-md bg-ember/15 text-ember"><Heart className="h-5 w-5" /></div>
-                <div>
-                  <div className="text-sm font-semibold">10,000+ bedtime stories</div>
-                  <div className="text-xs text-muted-foreground">read with families this month</div>
-                </div>
+            <div className="absolute -bottom-4 left-4 hidden rounded-md border border-border bg-background p-3 shadow-lg sm:flex sm:items-center sm:gap-3 md:-bottom-6 md:-left-6 md:p-4">
+              <div className="grid h-10 w-10 place-items-center rounded-md bg-ember/15 text-ember">
+                <Heart className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold">Made for reading together</div>
+                <div className="text-xs text-muted-foreground">Parent-approved before checkout</div>
               </div>
             </div>
           </div>
@@ -74,16 +146,16 @@ function Home() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <div className="flex items-end justify-between gap-4">
-          <h2 className="font-display text-3xl font-semibold md:text-4xl">Four small steps. One book they'll never forget.</h2>
-        </div>
-        <div className="mt-10 grid gap-4 md:grid-cols-4">
+      <section className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
+        <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+          Four small steps. One book they'll never forget.
+        </h2>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 md:mt-10 md:grid-cols-4">
           {[
             { icon: Camera, title: "Add a photo", body: "One clear, well-lit photo so we can sketch the character." },
             { icon: Heart, title: "Share what they love", body: "Their name, age, and the things that make them light up." },
-            { icon: Wand2, title: "Approve the character", body: "Review the illustrated version. Regenerate if it doesn't feel right." },
-            { icon: BookOpen, title: "Read together", body: "Receive a custom ebook within minutes — read on any device." },
+            { icon: Wand2, title: "Approve the character", body: "Review the illustrated version. Regenerate free until it feels right." },
+            { icon: BookOpen, title: "Read together", body: "Cover, dedication, and 10 illustrated pages — ready in 10–20 minutes." },
           ].map(({ icon: Icon, title, body }, i) => (
             <div key={i} className="rounded-lg border border-border bg-background p-5">
               <div className="grid h-9 w-9 place-items-center rounded-md bg-ember/15 text-ember">
@@ -96,61 +168,111 @@ function Home() {
         </div>
       </section>
 
-      {/* SAMPLES */}
-      <section id="examples" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
+      {/* SAMPLES — illustration-only placeholder cards, all text rendered as HTML */}
+      <section id="examples" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 sm:py-16">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="font-display text-3xl font-semibold md:text-4xl">Recently created stories</h2>
+          <div>
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+              What a finished book looks like
+            </h2>
+            <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+              Each book is a custom cover, a dedication, and 10 illustrated story pages. Real customer books appear here once parents opt in to share.
+            </p>
+          </div>
           <Link to="/create" className="text-sm font-medium text-ember underline-offset-4 hover:underline">
             Create yours →
           </Link>
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {samples.map((s) => (
-            <article key={s.title} className="rounded-lg border border-border bg-background overflow-hidden">
-              <div className="aspect-[4/5] overflow-hidden bg-muted">
-                <img src={s.src} alt={s.title} loading="lazy" width={1024} height={1280}
-                  className="h-full w-full object-cover transition-transform duration-700 hover:scale-[1.03]" />
+            <article
+              key={s.title}
+              className="overflow-hidden rounded-lg border border-border bg-background"
+            >
+              <div className={`relative aspect-[4/5] overflow-hidden bg-gradient-to-br ${s.tone}`}>
+                {/* Decorative shapes only — no baked-in text */}
+                <div className={`absolute -right-10 -top-10 h-40 w-40 rounded-full ${s.accent} blur-2xl`} />
+                <div className={`absolute -bottom-12 -left-8 h-44 w-44 rounded-full ${s.accent} blur-2xl`} />
+                <div className="absolute inset-0 flex flex-col justify-end p-5">
+                  <div className="rounded-md bg-background/85 p-3 backdrop-blur">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Sample cover concept
+                    </div>
+                    <div className="mt-1 font-display text-lg font-semibold leading-tight text-foreground">
+                      {s.title}
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="p-4">
                 <div className="text-sm font-semibold">{s.title}</div>
-                <div className="text-xs text-muted-foreground">{s.age} · 12 illustrated pages</div>
+                <div className="text-xs text-muted-foreground">
+                  {s.age} · cover + dedication + 10 illustrated pages
+                </div>
               </div>
             </article>
           ))}
         </div>
+        <p className="mt-6 text-xs text-muted-foreground">
+          Stories and illustrations are created with AI and reviewed through parent approval and quality checks.
+        </p>
       </section>
 
       {/* PRICING + PROMISE */}
       <section className="bg-paper/60">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 md:grid-cols-2">
-          <div className="rounded-lg border border-border bg-background p-8">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:py-16 md:grid-cols-2">
+          <div className="rounded-lg border border-border bg-background p-6 sm:p-8">
             <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">One book</div>
             <div className="mt-1 flex items-baseline gap-2">
-              <div className="font-display text-5xl font-semibold">$29.99</div>
+              <div className="font-display text-4xl font-semibold sm:text-5xl">$29.99</div>
               <div className="text-sm text-muted-foreground">one-time</div>
             </div>
             <ul className="mt-6 space-y-2 text-sm text-foreground">
-              <li>✓ 12 illustrated pages, custom story</li>
+              <li>✓ Cover + dedication + 10 illustrated pages</li>
+              <li>✓ Built for ages 4–7</li>
               <li>✓ Parent-approved illustrated character</li>
               <li>✓ Free regeneration if something looks off</li>
-              <li>✓ Printable PDF + readable ebook</li>
-              <li>✓ Stored in your private library</li>
+              <li>✓ Web reader + downloadable PDF</li>
+              <li>✓ Ready in about 10–20 minutes — we email you</li>
             </ul>
-            <Link to="/create" className="mt-8 inline-block">
-              <Button variant="ember" size="lg">Start your book</Button>
+            <Link to="/create" className="mt-7 inline-block w-full sm:w-auto">
+              <Button variant="ember" size="lg" className="w-full sm:w-auto">Start your book</Button>
             </Link>
           </div>
-          <div>
-            <h2 className="font-display text-3xl font-semibold md:text-4xl">Our promise to parents</h2>
+          <div className="min-w-0">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Our promise to parents</h2>
             <div className="mt-6 grid gap-4">
               <Promise title="Privacy first" body="Your photos are private to your account. We never sell them and never use them to train models." icon={ShieldCheck} />
               <Promise title="Parent-approved character" body="You always review the illustrated character before the story is generated. Free regeneration if it doesn't feel right." icon={RefreshCcw} />
-              <Promise title="Real children's-book quality" body="Warm illustrations, thoughtful pacing, and language tuned to your child's age." icon={BookOpen} />
+              <Promise title="Real children's-book quality" body="Warm illustrations, thoughtful pacing, and language tuned for ages 4–7." icon={BookOpen} />
+              <Promise title="Web + PDF" body="Read in any browser or download a print-ready PDF — yours to keep." icon={FileText} />
             </div>
           </div>
         </div>
       </section>
-    </>
+
+      {/* FAQ */}
+      <section id="faq" className="mx-auto max-w-3xl scroll-mt-20 px-4 py-14 sm:py-16">
+        <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+          Questions parents ask
+        </h2>
+        <Accordion type="single" collapsible className="mt-6">
+          {faqs.map((f, i) => (
+            <AccordionItem key={i} value={`faq-${i}`}>
+              <AccordionTrigger className="text-left text-base font-semibold">{f.q}</AccordionTrigger>
+              <AccordionContent className="text-sm text-muted-foreground">{f.a}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+        <div className="mt-8 flex flex-wrap items-center gap-2 rounded-md border border-border bg-paper/40 p-4 text-sm text-muted-foreground">
+          <Mail className="h-4 w-4 text-sage" />
+          Still have a question? Email{" "}
+          <a href="mailto:hello@storynest.app" className="font-medium text-foreground underline-offset-4 hover:underline">
+            hello@storynest.app
+          </a>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -160,7 +282,7 @@ function Promise({ title, body, icon: Icon }: { title: string; body: string; ico
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-sage/15 text-sage">
         <Icon className="h-4 w-4" />
       </div>
-      <div>
+      <div className="min-w-0">
         <div className="text-sm font-semibold">{title}</div>
         <p className="text-sm text-muted-foreground">{body}</p>
       </div>

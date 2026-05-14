@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, ShieldCheck, Wand2 } from "lucide-react";
+import { ArrowRight, BookOpen, Camera, Heart, ShieldCheck, Wand2 } from "lucide-react";
 
 export const Route = createFileRoute("/create/")({
   component: CreateLanding,
@@ -10,13 +10,15 @@ export const Route = createFileRoute("/create/")({
 function CreateLanding() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 text-center">
-      <h1 className="font-display text-4xl font-semibold tracking-tight md:text-5xl">
+      <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
         Let's make a book starring your child
       </h1>
       <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-        It takes about 5 minutes. You'll add a photo, share what they love, approve their
-        illustrated character, and we'll generate the story.
+        Five quick steps, about 5 minutes of your time. You'll set up the character, approve how
+        they look, and we'll generate a cover, dedication, and 10 illustrated story pages — ready
+        in about 10–20 minutes. We'll email you when it's done.
       </p>
+
       <div className="mt-8 flex justify-center">
         <Link to="/create/profile">
           <Button size="lg" variant="ember">
@@ -26,19 +28,36 @@ function CreateLanding() {
         </Link>
       </div>
 
-      <div className="mx-auto mt-12 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
-        <Pill icon={ShieldCheck} text="Photos stay private" />
-        <Pill icon={Wand2} text="Free regeneration" />
-        <Pill icon={BookOpen} text="Printable ebook" />
-      </div>
+      <ol className="mx-auto mt-12 grid max-w-2xl gap-3 text-left sm:grid-cols-2">
+        <Step n={1} icon={Heart} title="About your child" body="Name, age, pronouns, what they love." />
+        <Step n={2} icon={Camera} title="Photos" body="Upload one clear, well-lit photo. We ask you to sign in here." />
+        <Step n={3} icon={BookOpen} title="Story" body="Pick a theme — adventure, bedtime, friendship." />
+        <Step n={4} icon={Wand2} title="Style" body="Choose an illustration style." />
+        <Step n={5} icon={ShieldCheck} title="Approve character" body="Review the illustrated character. Free regeneration if it looks off." />
+      </ol>
+
+      <p className="mt-10 text-xs text-muted-foreground">
+        $29.99 one-time per book · Built for ages 4–7 · Web reader + downloadable PDF
+      </p>
     </div>
   );
 }
 
-function Pill({ icon: Icon, text }: { icon: any; text: string }) {
+function Step({
+  n,
+  icon: Icon,
+  title,
+  body,
+}: { n: number; icon: any; title: string; body: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm">
-      <Icon className="h-4 w-4 text-sage" /> {text}
-    </div>
+    <li className="flex items-start gap-3 rounded-md border border-border bg-background p-4">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-ember/15 text-ember">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <div className="text-sm font-semibold">Step {n}. {title}</div>
+        <p className="text-sm text-muted-foreground">{body}</p>
+      </div>
+    </li>
   );
 }
