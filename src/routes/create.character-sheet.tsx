@@ -345,7 +345,7 @@ function Inner() {
               disabled={approving || busyChild !== null}
             >
               {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {isTwins ? "Approve both & generate book" : "Approve character & generate book"}
+              {isTwins ? "Approve both & continue to checkout" : "Approve character & continue to checkout"}
             </Button>
           </div>
         </div>
