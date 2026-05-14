@@ -52,7 +52,7 @@ function Inner() {
         Every page in the book uses this style. You can preview it on the character sheet next.
       </p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {ART_STYLES.map((s) => {
           const active = picked === s.key;
           return (
@@ -62,31 +62,21 @@ function Inner() {
               onClick={() => setPicked(s.key)}
               aria-pressed={active}
               className={[
-                "group overflow-hidden rounded-lg border bg-background text-left transition-all",
+                "group flex items-stretch gap-3 overflow-hidden rounded-lg border bg-background p-2 text-left transition-all",
                 active
                   ? "border-ember ring-2 ring-ember/30"
                   : "border-border hover:border-muted-foreground",
               ].join(" ")}
             >
-              <div
-                className={`relative aspect-[5/4] overflow-hidden bg-gradient-to-br ${s.sampleTone}`}
-              >
-                <div
-                  className={`absolute -right-10 -top-10 h-40 w-40 rounded-full ${s.sampleAccent} blur-2xl`}
-                />
-                <div
-                  className={`absolute -bottom-12 -left-8 h-44 w-44 rounded-full ${s.sampleAccent} blur-2xl`}
-                />
-                <div className="absolute left-3 top-3 rounded-md bg-background/85 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
-                  Sample style
-                </div>
+              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md sm:h-28 sm:w-24">
+                <StyleArtwork styleKey={s.key} variant="cover" />
                 {active && (
-                  <div className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-ember text-ember-foreground">
-                    <Check className="h-4 w-4" />
+                  <div className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-ember text-ember-foreground">
+                    <Check className="h-3.5 w-3.5" />
                   </div>
                 )}
               </div>
-              <div className="p-4">
+              <div className="flex min-w-0 flex-1 flex-col justify-center py-1 pr-2">
                 <div className="text-sm font-semibold">{s.name}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   {s.description}
