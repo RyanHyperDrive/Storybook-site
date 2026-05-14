@@ -93,7 +93,7 @@ function clamp01(n: unknown): number {
   return Math.max(0, Math.min(1, x));
 }
 
-function validate(obj: any): { ok: true; data: any } | { ok: false; error: string } {
+export function validate(obj: any): { ok: true; data: any } | { ok: false; error: string } {
   if (!obj || typeof obj !== "object") return { ok: false, error: "Not an object" };
   for (const k of REQUIRED_KEYS) {
     if (!(k in obj)) return { ok: false, error: `Missing key: ${k}` };
