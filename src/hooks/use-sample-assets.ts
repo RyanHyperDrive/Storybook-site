@@ -49,8 +49,9 @@ export function useSampleAssets() {
 
 /** Map ArtStyleKey → sample_key (mirrors src/lib/sample-prompts.ts). */
 export const SAMPLE_KEY_BY_STYLE: Record<ArtStyleKey, string> = {
-  classic_storybook: "classic_storybook_mira",
+  comic_book: "comic_book_nova",
   soft_cartoon: "soft_cartoon_leo",
   watercolor_adventure: "watercolor_pip",
   manga_inspired: "manga_yuki",
+  pixel_art: "pixel_quinn",
 };

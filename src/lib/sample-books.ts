@@ -9,15 +9,15 @@ export type SampleBook = {
 };
 
 export const SAMPLE_BOOKS: Record<ArtStyleKey, SampleBook> = {
-  classic_storybook: {
-    styleKey: "classic_storybook",
-    title: "Mira and the Whispering Woods",
-    childName: "Mira",
+  comic_book: {
+    styleKey: "comic_book",
+    title: "Nova and the Comet Crew",
+    childName: "Nova",
     dedication:
-      "For Mira — who listens for the small kind voices the rest of the world walks right past.",
+      "For Nova — who knows that being brave isn't being un-scared, it's helping the team anyway.",
     pages: [
-      "Mira tied her red coat at the throat and stepped onto the soft path. The trees leaned in like grandmothers, whispering secrets only quiet children could hear.",
-      "At the bend, a tiny lantern blinked twice. \"This way,\" said the firefly, in a voice the size of a thimble. Mira smiled and followed it deeper into the cozy dark.",
+      "Nova snapped the red cape closed and ran for the rooftop edge. \"Ready?\" called Sparks, the friendly little comet. Nova grinned. \"Always ready for you!\"",
+      "Together they swooshed over the bright city, cheering for the bakers and the bus drivers and the tiny dogs. The whole town waved up at their two best heroes.",
     ],
   },
   soft_cartoon: {
@@ -51,6 +51,17 @@ export const SAMPLE_BOOKS: Record<ArtStyleKey, SampleBook> = {
     pages: [
       "Yuki creased the last fold and held her breath. The paper dragon trembled — once, twice — then stretched its bright red wings and lifted into the morning air.",
       "\"Climb on,\" the dragon rumbled, gentle as a kettle. Yuki gripped its neck, and together they soared above the rooftops, chasing the wind toward the far blue mountains.",
+    ],
+  },
+  pixel_art: {
+    styleKey: "pixel_art",
+    title: "Quinn's Pixel Quest",
+    childName: "Quinn",
+    dedication:
+      "For Quinn — who knows that every quest is better with a small brave friend at your side.",
+    pages: [
+      "Quinn stepped onto the bridge and the pixel river sparkled below. Tinker the fox hopped up beside her with a happy little chirp. \"Onward!\" Quinn whispered.",
+      "Deep in the friendly forest, a tiny chest blinked with golden light. Quinn opened it slowly — and out tumbled a star, just for them, brighter than any treasure.",
     ],
   },
 };
