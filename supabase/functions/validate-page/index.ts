@@ -26,7 +26,8 @@ import { requireUser } from "../_shared/auth.ts";
  * and returns the structured QC report.
  */
 
-const SYSTEM_PROMPT = `You are validating a personalized children's storybook page.
+function buildSystemPrompt(ageBand: string): string {
+  return `You are validating a personalized children's storybook page for a child in the age band ${ageBand}.
 
 Compare:
 1. The approved character sheet.
@@ -40,6 +41,8 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
   "character_likeness_score": 0,
   "style_consistency_score": 0,
   "scene_accuracy_score": 0,
+  "age_appropriateness_score": 0,
+  "age_appropriateness_issues": [],
   "correct_number_of_main_characters": true,
   "twin_distinction_ok": true,
   "safety_ok": true,
@@ -50,21 +53,27 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
 }
 
 Scoring rules:
-- All three scores are floats from 0.0 to 1.0.
-- Recommend regeneration (regeneration_recommended = true) if character_likeness_score,
-  style_consistency_score, or scene_accuracy_score is below 0.85, OR if the wrong number
-  of main characters appears, OR if twin_distinction_ok is false, OR if safety_ok is false.
+- All four scores are floats from 0.0 to 1.0.
+- "age_appropriateness_score" judges BOTH the page text (if any is implied by the scene) and the image specifically against ages ${ageBand}, NOT a generic "kid safe" standard. Score lower for: scary/peril imagery, weapons, injury/blood/gore, body-horror, romantic or suggestive framing, mature themes, unsafe activities depicted approvingly, or vocabulary/conflict outside the band.
+  - Ages 2-3: any peril, scary creatures, darkness, weapons, or injury -> max 0.5.
+  - Ages 4-6: weapons, injury, scary monsters, romantic framing, shame/punishment imagery -> max 0.6.
+  - Ages 7-10: gore, sexual/romantic content, realistic violence, weapons used to harm, substance use, self-harm -> max 0.5.
+- "age_appropriateness_issues" lists concrete reasons the score was reduced (or [] if 1.0).
+- safety_ok = false if there is anything genuinely unsafe in the image regardless of age.
+- Recommend regeneration (regeneration_recommended = true) if character_likeness_score, style_consistency_score, or scene_accuracy_score is below 0.85, OR age_appropriateness_score is below 0.85, OR if the wrong number of main characters appears, OR twin_distinction_ok is false, OR safety_ok is false.
 - "regeneration_instruction" is a short, concrete fix the illustrator should apply
-  (e.g. "Restore the red striped scarf and match hair length to the character sheet").
+  (e.g. "Restore the red striped scarf and match hair length to the character sheet"; or "Remove the sword — replace with a wooden walking stick to stay age-appropriate for ${ageBand}").
   Empty string if no regeneration is needed.
 - "artifact_issues" lists visible defects (extra fingers, warped face, text in image, etc).
-- "missing_required_elements" lists items from the must-include list that are absent.
-- safety_ok = false if the image contains anything inappropriate for ages 2-10.`;
+- "missing_required_elements" lists items from the must-include list that are absent.`;
+}
 
 const REQUIRED_KEYS = [
   "character_likeness_score",
   "style_consistency_score",
   "scene_accuracy_score",
+  "age_appropriateness_score",
+  "age_appropriateness_issues",
   "correct_number_of_main_characters",
   "twin_distinction_ok",
   "safety_ok",
@@ -93,6 +102,8 @@ function validate(obj: any): { ok: true; data: any } | { ok: false; error: strin
     character_likeness_score: clamp01(obj.character_likeness_score),
     style_consistency_score: clamp01(obj.style_consistency_score),
     scene_accuracy_score: clamp01(obj.scene_accuracy_score),
+    age_appropriateness_score: clamp01(obj.age_appropriateness_score),
+    age_appropriateness_issues: arr(obj.age_appropriateness_issues),
     correct_number_of_main_characters: Boolean(obj.correct_number_of_main_characters),
     twin_distinction_ok: Boolean(obj.twin_distinction_ok),
     safety_ok: Boolean(obj.safety_ok),
@@ -103,11 +114,12 @@ function validate(obj: any): { ok: true; data: any } | { ok: false; error: strin
   };
 
   // Enforce the regeneration policy server-side too, so bad/conflicting model output
-  // can't slip a low-quality page through.
+  // can't slip a low-quality page through. Age-appropriateness is a hard gate.
   const lowScore =
     cleaned.character_likeness_score < 0.85 ||
     cleaned.style_consistency_score < 0.85 ||
-    cleaned.scene_accuracy_score < 0.85;
+    cleaned.scene_accuracy_score < 0.85 ||
+    cleaned.age_appropriateness_score < 0.85;
   const failedFlags = !cleaned.correct_number_of_main_characters || !cleaned.twin_distinction_ok || !cleaned.safety_ok;
   if (lowScore || failedFlags) cleaned.regeneration_recommended = true;
 
@@ -137,6 +149,7 @@ serve(async (req) => {
       isTwins,
       characterSheetUrl,
       pageImageUrl,
+      readingLevel,
     } = body ?? {};
 
     if (!bookId) return errorResponse("bookId is required");
@@ -145,14 +158,21 @@ serve(async (req) => {
       return errorResponse("sceneDescription is required");
     }
 
-    // Verify book ownership.
+    // Verify book ownership and pull reading_level so we can score against the
+    // child's actual age band rather than a generic "kid safe" standard.
     const { data: book, error: bookErr } = await admin
       .from("books")
-      .select("id, user_id, is_twins, child_name, child_age, child_pronouns, child_loves, details_include, details_avoid")
+      .select("id, user_id, is_twins, child_name, child_age, child_pronouns, child_loves, details_include, details_avoid, reading_level")
       .eq("id", bookId)
       .maybeSingle();
     if (bookErr) return errorResponse(bookErr.message, 500);
     if (!book || book.user_id !== user.id) return errorResponse("Book not found or forbidden", 403);
+
+    const lvl = String(readingLevel ?? book.reading_level ?? "ages_4_6");
+    const ageBand =
+      lvl === "ages_2_3" || lvl === "ages_3_5" ? "2-3" :
+      lvl === "ages_7_10" || lvl === "ages_6_8" ? "7-10" :
+      "4-6";
 
     // Resolve page image URL.
     let pageUrl = pageImageUrl as string | undefined;
@@ -200,13 +220,14 @@ serve(async (req) => {
 
     const userText = [
       `Required scene: ${sceneDescription}`,
+      `Target age band: ${ageBand} (score age_appropriateness against this band specifically, NOT a generic "kid safe" standard)`,
       `Characters that should be present: ${arr(charactersPresent).join(", ") || "(main character only)"}`,
       `Must include: ${arr(visualMustHaves).join(", ") || "(none)"}`,
       `Must NOT include: ${arr(visualMustNotInclude).join(", ") || "(none)"}`,
       `Twins book: ${(isTwins ?? book.is_twins) ? "yes" : "no"}`,
       `Parent-provided child details:\n${childSummary || "(none)"}`,
       "",
-      "Image 1 = approved character sheet. Image 2 = generated page image. Score the page against the sheet, the scene, and the parent details. Return strict JSON only.",
+      "Image 1 = approved character sheet. Image 2 = generated page image. Score the page against the sheet, the scene, the parent details, and the age band. Return strict JSON only.",
     ].join("\n");
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -219,7 +240,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: buildSystemPrompt(ageBand) },
           {
             role: "user",
             content: [
@@ -257,11 +278,17 @@ serve(async (req) => {
     if (!check.ok) return errorResponse(`Validator schema check failed: ${check.error}`, 502);
     const report = check.data;
 
-    // Persist QC outcome onto the page row.
+    // Persist QC outcome onto the page row. Aggregate now includes age fitness.
     const aggregateScore =
-      (report.character_likeness_score + report.style_consistency_score + report.scene_accuracy_score) / 3;
+      (report.character_likeness_score +
+        report.style_consistency_score +
+        report.scene_accuracy_score +
+        report.age_appropriateness_score) / 4;
     const reviewNotes = [
       report.regeneration_instruction,
+      report.age_appropriateness_score < 0.85
+        ? `Age-fit (band ${ageBand}) ${report.age_appropriateness_score.toFixed(2)}: ${report.age_appropriateness_issues.join("; ") || "below threshold"}`
+        : "",
       report.artifact_issues.length ? `Artifacts: ${report.artifact_issues.join("; ")}` : "",
       report.missing_required_elements.length ? `Missing: ${report.missing_required_elements.join("; ")}` : "",
     ].filter(Boolean).join(" | ") || null;
@@ -277,7 +304,7 @@ serve(async (req) => {
       .eq("page_number", pageNumber);
     if (updErr) console.warn("validate-page persist warning:", updErr.message);
 
-    return jsonResponse({ ok: true, bookId, pageNumber, report });
+    return jsonResponse({ ok: true, bookId, pageNumber, ageBand, report });
   } catch (e: any) {
     if (e instanceof Response) return e;
     console.error("validate-page error", e);

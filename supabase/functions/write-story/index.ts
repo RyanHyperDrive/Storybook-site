@@ -32,7 +32,27 @@ type ReadingLevelTarget = {
   targetPages: number;
   sentencesPerPage: string;
   toneNotes: string;
+  safetyClause: string;
 };
+
+// Hard age-band safety rules. These are enforced in BOTH the story prompt and
+// the illustration prompt, and the validator scores age_appropriateness against
+// the same band. Marketing copy alone is not enough — this is the gate.
+const SAFETY_AGES_2_3 =
+  "AGE SAFETY (ages 2-3): Very gentle and cozy. NO peril, NO scary villains, NO chase scenes, " +
+  "NO separation anxiety, NO loss/grief, NO conflict beyond a tiny puzzle, NO loud/scary sounds, " +
+  "NO mature themes, NO romance, NO weapons, NO injury. Always reassuring and warm. " +
+  "Vocabulary must stay tiny and concrete (food, animals, colors, family, comfort objects).";
+const SAFETY_AGES_4_6 =
+  "AGE SAFETY (ages 4-6): Picture-book stakes only — small problem, kind helpers, reassuring resolution. " +
+  "NO graphic danger, NO real fear/horror, NO shame or punishment framing, NO bullying as humor, " +
+  "NO romance beyond family love, NO weapons, NO injury/blood, NO body-horror or scary imagery, " +
+  "NO mature/adult themes, NO commercial brands. Conflict must resolve gently and on-page.";
+const SAFETY_AGES_7_10 =
+  "AGE SAFETY (ages 7-10): Slightly richer adventure is okay, but still child-safe. " +
+  "NO gore, NO sexual or romantic content, NO self-harm, NO realistic violence, NO weapons used to harm, " +
+  "NO bullying portrayed approvingly, NO substance use, NO adult themes, NO unsafe instructions " +
+  "(fire, climbing alone, talking to strangers, ingesting things, etc.). Tension must resolve kindly.";
 
 const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
   ages_2_3: {
@@ -42,6 +62,7 @@ const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
     sentencesPerPage: "exactly 1 very short sentence (under 10 words)",
     toneNotes:
       "Board-book voice. Repetition is welcome. Tiny vocabulary. Soft, simple ideas.",
+    safetyClause: SAFETY_AGES_2_3,
   },
   ages_4_6: {
     ageBand: "4-6",
@@ -50,6 +71,7 @@ const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
     sentencesPerPage: "1 to 3 short read-aloud sentences",
     toneNotes:
       "Classic picture-book voice. Warm, calm, age-appropriate, positive resolution.",
+    safetyClause: SAFETY_AGES_4_6,
   },
   ages_7_10: {
     ageBand: "7-10",
@@ -58,8 +80,18 @@ const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
     sentencesPerPage: "2 to 5 sentences",
     toneNotes:
       "Early-reader voice. Slightly richer vocabulary, gentle wit, light suspense, always a kind resolution.",
+    safetyClause: SAFETY_AGES_7_10,
   },
 };
+
+export function getAgeSafetyClause(readingLevel: string | null | undefined): string {
+  const key = String(readingLevel ?? "ages_4_6");
+  return (READING_LEVEL_TARGETS[key] ?? READING_LEVEL_TARGETS.ages_4_6).safetyClause;
+}
+export function getAgeBand(readingLevel: string | null | undefined): string {
+  const key = String(readingLevel ?? "ages_4_6");
+  return (READING_LEVEL_TARGETS[key] ?? READING_LEVEL_TARGETS.ages_4_6).ageBand;
+}
 
 // Legacy aliases kept so older books keep working.
 READING_LEVEL_TARGETS.ages_3_5 = READING_LEVEL_TARGETS.ages_2_3;
@@ -74,7 +106,14 @@ did not provide (no health conditions, religion, family structure, location,
 school, race/ethnicity, or personality traits beyond what is given).
 
 Tone: ${t.toneNotes}
-Avoid scary, violent, romantic, commercial, or competitive content.
+
+${t.safetyClause}
+
+This age safety rule is a HARD GATE. If the requested theme or parent details
+would push the story past it, soften, reframe, or redirect to a safer version
+of the same idea (still warm, still personalized) — never refuse, never produce
+unsafe content. Vocabulary, sentence complexity, emotional intensity, conflict
+level, humor, and themes must all stay inside the band for ages ${t.ageBand}.
 
 Output STRICT JSON only — no markdown, no commentary. The JSON must match the
 schema exactly:
@@ -99,10 +138,10 @@ schema exactly:
 
 Rules:
 - Exactly ${t.targetPages} entries in "pages", numbered 1 through ${t.targetPages}.
-- Each "page_text" is ${t.sentencesPerPage}.
-- "scene_description" describes the illustration in concrete, visual terms (no embedded text — all titles and page text are rendered by the app over the image).
+- Each "page_text" is ${t.sentencesPerPage}, age-appropriate for ages ${t.ageBand}.
+- "scene_description" describes the illustration in concrete, visual terms (no embedded text — all titles and page text are rendered by the app over the image), and must itself be age-safe for ages ${t.ageBand}.
 - "visual_must_haves" lists key items/clothing/colors that must appear for continuity.
-- "visual_must_not_include" lists anything to keep out (e.g. brands, scary creatures, weapons, any letters/words/logos in the image).
+- "visual_must_not_include" MUST always include items that would violate the age band (e.g. for 2-3: "no scary creatures, no weapons, no darkness/peril"; for 4-6: "no weapons, no injury, no scary monsters, no romantic framing"; for 7-10: "no weapons used to harm, no blood/gore, no mature themes") in addition to anything else to keep out (brands, text in image, logos).
 - "continuity_notes" tracks anything the next page must respect (time of day, outfit, companions).
 - "style_notes" is a short note on the overall illustrative tone.
 - Do NOT include a cover image description in pages — pages are story pages only.`;
