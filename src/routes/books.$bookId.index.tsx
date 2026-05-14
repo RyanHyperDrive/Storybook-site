@@ -32,7 +32,7 @@ function Inner() {
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Storybook</div>
           <h1 className="mt-1 font-display text-3xl font-semibold">{book.title ?? `${book.child_name ?? "Your child"}'s storybook`}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Starring {book.child_name ?? "your child"} · {book.page_count ?? 12} pages · {book.art_style ?? "Warm watercolor"}
+            Starring {book.child_name ?? "your child"} · {book.page_count ?? 12} pages · {getArtStyle(book.art_style).name}
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Button variant="ember"><Download className="h-4 w-4" /> Download ebook</Button>
