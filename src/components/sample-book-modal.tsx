@@ -45,10 +45,10 @@ export function SampleBookModal({
   const sampleKey = styleKey ? SAMPLE_KEY_BY_STYLE[styleKey] : null;
   const generated = sampleKey ? assets[sampleKey] ?? {} : {};
 
-  const fallbackCover = styleKey ? FALLBACK_COVER[styleKey] : undefined;
-  const coverUrl = generated.cover ?? fallbackCover;
-  const page1Url = generated.page_1 ?? fallbackCover;
-  const page2Url = generated.page_2 ?? fallbackCover;
+  const fallback = styleKey ? FALLBACK_ASSETS[styleKey] : undefined;
+  const coverUrl = generated.cover ?? fallback?.cover;
+  const page1Url = generated.page_1 ?? fallback?.page_1;
+  const page2Url = generated.page_2 ?? fallback?.page_2;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
