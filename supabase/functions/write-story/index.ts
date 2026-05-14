@@ -251,7 +251,7 @@ serve(async (req) => {
         }
       }
 
-      const check = validateStory(parsed);
+      const check = validateStory(parsed, target.targetPages, maxSentences);
       if (!check.ok) {
         lastError = check.error;
         continue;
