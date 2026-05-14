@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Download, Settings2 } from "lucide-react";
 import s1 from "@/assets/sample-1.jpg";
+import { getArtStyle } from "@/lib/art-styles";
 
 export const Route = createFileRoute("/books/$bookId/")({
   component: () => <AuthGate><Inner /></AuthGate>,
