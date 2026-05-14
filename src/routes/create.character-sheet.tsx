@@ -244,21 +244,13 @@ function Inner() {
         });
       }
 
-      await supabase.from("books").update({ status: "paid" }).eq("id", id);
-      const { data: job } = await supabase
-        .from("jobs")
-        .insert({
-          book_id: id,
-          user_id: user.id,
-          kind: "book",
-          status: "queued",
-          progress: 5,
-        })
-        .select()
-        .single();
+      await supabase
+        .from("books")
+        .update({ status: "awaiting_payment" })
+        .eq("id", id);
 
-      toast.success("Character approved — generating your book");
-      if (job) navigate({ to: "/jobs/$jobId", params: { jobId: job.id } });
+      toast.success("Character approved — let's finish your book");
+      navigate({ to: "/checkout/$bookId", params: { bookId: id } });
     } catch (e: any) {
       toast.error(e.message ?? "Approval failed");
     } finally {
@@ -353,7 +345,7 @@ function Inner() {
               disabled={approving || busyChild !== null}
             >
               {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {isTwins ? "Approve both & generate book" : "Approve character & generate book"}
+              {isTwins ? "Approve both & continue to checkout" : "Approve character & continue to checkout"}
             </Button>
           </div>
         </div>
