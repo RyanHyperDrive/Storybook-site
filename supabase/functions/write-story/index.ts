@@ -14,7 +14,7 @@ import { requireUser } from "../_shared/auth.ts";
  *   bookId?: string               // optional: persist onto books.story_json
  * }
  *
- * Generates a warm, parent-approved children's storybook (ages 4-7).
+ * Generates a warm, parent-approved children's storybook (ages 2-10).
  * Returns strict JSON: title, subtitle, dedication, style_notes, 10 pages.
  *
  * The model is told NOT to invent sensitive facts (health, family, religion,

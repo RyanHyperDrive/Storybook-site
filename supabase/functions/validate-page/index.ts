@@ -59,7 +59,7 @@ Scoring rules:
   Empty string if no regeneration is needed.
 - "artifact_issues" lists visible defects (extra fingers, warped face, text in image, etc).
 - "missing_required_elements" lists items from the must-include list that are absent.
-- safety_ok = false if the image contains anything inappropriate for ages 4-7.`;
+- safety_ok = false if the image contains anything inappropriate for ages 2-10.`;
 
 const REQUIRED_KEYS = [
   "character_likeness_score",
