@@ -274,8 +274,12 @@ function Home() {
               <li>✓ Ready in about 10–20 minutes — we email you</li>
             </ul>
             <Link to="/create" className="mt-7 inline-block w-full sm:w-auto">
-              <Button variant="ember" size="lg" className="w-full sm:w-auto">Start your book</Button>
+              <Button variant="ember" size="lg" className="w-full sm:w-auto">Start free character preview</Button>
             </Link>
+            <p className="mt-3 flex items-center gap-2 text-xs font-medium text-sage">
+              <ShieldCheck className="h-4 w-4 shrink-0" />
+              No payment until you approve the character preview.
+            </p>
           </div>
           <div className="min-w-0">
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Our promise to parents</h2>
