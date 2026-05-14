@@ -220,13 +220,14 @@ serve(async (req) => {
 
     const userText = [
       `Required scene: ${sceneDescription}`,
+      `Target age band: ${ageBand} (score age_appropriateness against this band specifically, NOT a generic "kid safe" standard)`,
       `Characters that should be present: ${arr(charactersPresent).join(", ") || "(main character only)"}`,
       `Must include: ${arr(visualMustHaves).join(", ") || "(none)"}`,
       `Must NOT include: ${arr(visualMustNotInclude).join(", ") || "(none)"}`,
       `Twins book: ${(isTwins ?? book.is_twins) ? "yes" : "no"}`,
       `Parent-provided child details:\n${childSummary || "(none)"}`,
       "",
-      "Image 1 = approved character sheet. Image 2 = generated page image. Score the page against the sheet, the scene, and the parent details. Return strict JSON only.",
+      "Image 1 = approved character sheet. Image 2 = generated page image. Score the page against the sheet, the scene, the parent details, and the age band. Return strict JSON only.",
     ].join("\n");
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -239,7 +240,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: buildSystemPrompt(ageBand) },
           {
             role: "user",
             content: [
