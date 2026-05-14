@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check, Loader2, RefreshCcw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { getArtStyle } from "@/lib/art-styles";
 
 export const Route = createFileRoute("/create/character-sheet")({
   component: () => <AuthGate><Inner /></AuthGate>,
