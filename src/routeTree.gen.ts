@@ -13,6 +13,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CreateIndexRouteImport } from './routes/create.index'
@@ -49,6 +50,11 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -65,9 +71,9 @@ const CreateIndexRoute = CreateIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const JobsJobIdRoute = JobsJobIdRouteImport.update({
   id: '/jobs/$jobId',
@@ -128,6 +134,7 @@ const BooksBookIdManageRoute = BooksBookIdManageRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRouteWithChildren
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -171,6 +178,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRouteWithChildren
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -194,6 +202,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/account'
+    | '/admin'
     | '/library'
     | '/pricing'
     | '/privacy'
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/account'
+    | '/admin'
     | '/library'
     | '/pricing'
     | '/privacy'
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRouteWithChildren
   LibraryRoute: typeof LibraryRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -270,7 +281,6 @@ export interface RootRouteChildren {
   CreateStoryRoute: typeof CreateStoryRoute
   CreateStyleRoute: typeof CreateStyleRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
-  AdminIndexRoute: typeof AdminIndexRoute
   CreateIndexRoute: typeof CreateIndexRoute
   BooksBookIdManageRoute: typeof BooksBookIdManageRoute
   BooksBookIdIndexRoute: typeof BooksBookIdIndexRoute
@@ -306,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account': {
       id: '/account'
       path: '/account'
@@ -329,10 +346,10 @@ declare module '@tanstack/react-router' {
     }
     '/admin/': {
       id: '/admin/'
-      path: '/admin'
+      path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/jobs/$jobId': {
       id: '/jobs/$jobId'
@@ -414,9 +431,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminSamplesRoute: typeof AdminSamplesRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminSamplesRoute: AdminSamplesRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
+  AdminRoute: AdminRouteWithChildren,
   LibraryRoute: LibraryRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
@@ -429,7 +459,6 @@ const rootRouteChildren: RootRouteChildren = {
   CreateStoryRoute: CreateStoryRoute,
   CreateStyleRoute: CreateStyleRoute,
   JobsJobIdRoute: JobsJobIdRoute,
-  AdminIndexRoute: AdminIndexRoute,
   CreateIndexRoute: CreateIndexRoute,
   BooksBookIdManageRoute: BooksBookIdManageRoute,
   BooksBookIdIndexRoute: BooksBookIdIndexRoute,
