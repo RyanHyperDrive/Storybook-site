@@ -13,10 +13,10 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LibraryRouteImport } from './routes/library'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CreateIndexRouteImport } from './routes/create.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
 import { Route as CreateStyleRouteImport } from './routes/create.style'
 import { Route as CreateStoryRouteImport } from './routes/create.story'
@@ -49,11 +49,6 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -67,6 +62,11 @@ const IndexRoute = IndexRouteImport.update({
 const CreateIndexRoute = CreateIndexRouteImport.update({
   id: '/create/',
   path: '/create/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JobsJobIdRoute = JobsJobIdRouteImport.update({
@@ -128,7 +128,6 @@ const BooksBookIdManageRoute = BooksBookIdManageRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRouteWithChildren
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -142,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/create/story': typeof CreateStoryRoute
   '/create/style': typeof CreateStyleRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/create/': typeof CreateIndexRoute
   '/books/$bookId/manage': typeof BooksBookIdManageRoute
   '/books/$bookId/': typeof BooksBookIdIndexRoute
@@ -149,7 +149,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRouteWithChildren
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -163,6 +162,7 @@ export interface FileRoutesByTo {
   '/create/story': typeof CreateStoryRoute
   '/create/style': typeof CreateStyleRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/admin': typeof AdminIndexRoute
   '/create': typeof CreateIndexRoute
   '/books/$bookId/manage': typeof BooksBookIdManageRoute
   '/books/$bookId': typeof BooksBookIdIndexRoute
@@ -171,7 +171,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
-  '/admin': typeof AdminRouteWithChildren
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -185,6 +184,7 @@ export interface FileRoutesById {
   '/create/story': typeof CreateStoryRoute
   '/create/style': typeof CreateStyleRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/create/': typeof CreateIndexRoute
   '/books/$bookId/manage': typeof BooksBookIdManageRoute
   '/books/$bookId/': typeof BooksBookIdIndexRoute
@@ -194,7 +194,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/account'
-    | '/admin'
     | '/library'
     | '/pricing'
     | '/privacy'
@@ -208,6 +207,7 @@ export interface FileRouteTypes {
     | '/create/story'
     | '/create/style'
     | '/jobs/$jobId'
+    | '/admin/'
     | '/create/'
     | '/books/$bookId/manage'
     | '/books/$bookId/'
@@ -215,7 +215,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
-    | '/admin'
     | '/library'
     | '/pricing'
     | '/privacy'
@@ -229,6 +228,7 @@ export interface FileRouteTypes {
     | '/create/story'
     | '/create/style'
     | '/jobs/$jobId'
+    | '/admin'
     | '/create'
     | '/books/$bookId/manage'
     | '/books/$bookId'
@@ -236,7 +236,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/account'
-    | '/admin'
     | '/library'
     | '/pricing'
     | '/privacy'
@@ -250,6 +249,7 @@ export interface FileRouteTypes {
     | '/create/story'
     | '/create/style'
     | '/jobs/$jobId'
+    | '/admin/'
     | '/create/'
     | '/books/$bookId/manage'
     | '/books/$bookId/'
@@ -258,7 +258,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
-  AdminRoute: typeof AdminRouteWithChildren
   LibraryRoute: typeof LibraryRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -271,6 +270,7 @@ export interface RootRouteChildren {
   CreateStoryRoute: typeof CreateStoryRoute
   CreateStyleRoute: typeof CreateStyleRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   CreateIndexRoute: typeof CreateIndexRoute
   BooksBookIdManageRoute: typeof BooksBookIdManageRoute
   BooksBookIdIndexRoute: typeof BooksBookIdIndexRoute
@@ -306,13 +306,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/account': {
       id: '/account'
       path: '/account'
@@ -332,6 +325,13 @@ declare module '@tanstack/react-router' {
       path: '/create'
       fullPath: '/create/'
       preLoaderRoute: typeof CreateIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/jobs/$jobId': {
@@ -414,20 +414,9 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminRouteChildren {
-  AdminSamplesRoute: typeof AdminSamplesRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminSamplesRoute: AdminSamplesRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
-  AdminRoute: AdminRouteWithChildren,
   LibraryRoute: LibraryRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
@@ -440,6 +429,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreateStoryRoute: CreateStoryRoute,
   CreateStyleRoute: CreateStyleRoute,
   JobsJobIdRoute: JobsJobIdRoute,
+  AdminIndexRoute: AdminIndexRoute,
   CreateIndexRoute: CreateIndexRoute,
   BooksBookIdManageRoute: BooksBookIdManageRoute,
   BooksBookIdIndexRoute: BooksBookIdIndexRoute,
@@ -447,3 +437,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

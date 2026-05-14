@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ShieldAlert, ImageIcon } from "lucide-react";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin/")({
   component: () => <AuthGate><Inner /></AuthGate>,
   head: () => ({ meta: [{ title: "Admin — StoryNest" }] }),
 });
