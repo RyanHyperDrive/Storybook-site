@@ -25,12 +25,27 @@ import { requireUser } from "../_shared/auth.ts";
  * runner should call it per-page from the background pipeline.
  */
 
+// Age-band visual safety clauses. Mirrors write-story's text safety so the
+// illustration cannot drift past what's safe for the selected band.
+const VISUAL_SAFETY: Record<string, string> = {
+  "2-3":
+    "Visual safety (ages 2-3): cozy and gentle. No scary creatures, no peril, no darkness, no weapons, no injury, no tears of distress, no chase. Child-safe clothing fully covering the body. Only soft, friendly faces.",
+  "4-6":
+    "Visual safety (ages 4-6): warm picture-book mood. No weapons, no blood/injury, no monsters or body-horror, no frightening faces, no romantic/suggestive poses, no shame or punishment imagery. Child-safe clothing only.",
+  "7-10":
+    "Visual safety (ages 7-10): light adventure okay, but still child-safe. No gore, no realistic violence, no weapons used to harm, no sexual or romantic framing, no suggestive poses, no self-harm imagery, no substance use, no unsafe activities depicted approvingly. Child-safe clothing only.",
+};
+function visualSafetyFor(ageBand: string | undefined): string {
+  return VISUAL_SAFETY[String(ageBand ?? "4-6")] ?? VISUAL_SAFETY["4-6"];
+}
+
 const PROMPT_TEMPLATE = (input: {
   styleKey: string;
   sceneDescription: string;
   charactersPresent: string[];
   visualMustHaves: string[];
   visualMustNotInclude: string[];
+  ageBand: string;
 }) => `Create a children's storybook illustration in the approved style: ${input.styleKey}.
 
 Use the attached approved character sheet as the source of truth for the main character's appearance. Preserve the character's face shape, hair, outfit anchors, accessories, and overall childlike illustrated identity.
@@ -47,11 +62,15 @@ ${input.visualMustHaves.length ? input.visualMustHaves.map((v) => `- ${v}`).join
 Must avoid:
 ${input.visualMustNotInclude.length ? input.visualMustNotInclude.map((v) => `- ${v}`).join("\n") : "- (none specified)"}
 
+AGE-APPROPRIATENESS (HARD GATE — image is for ages ${input.ageBand}):
+${visualSafetyFor(input.ageBand)}
+If the scene description would push the image past this safety rule, soften it visually (reframe, off-screen, friendly substitute) — never produce unsafe imagery.
+
 Composition:
 - Full storybook page illustration.
 - No page text embedded in the image.
 - Keep the character clearly visible.
-- Warm, safe, age-appropriate mood.
+- Warm, safe, age-appropriate mood for ages ${input.ageBand}.
 - Consistent color palette and line quality with the character sheet.`;
 
 function arr(v: unknown): string[] {
