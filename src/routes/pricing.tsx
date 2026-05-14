@@ -16,7 +16,7 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "$29.99 one-time per personalized illustrated storybook. Includes a custom cover, dedication, and at least 10 illustrated story pages — ready in about 10–20 minutes.",
+          "$29.99 one-time per personalized illustrated storybook. Includes a custom cover, dedication, and at least 10 illustrated story pages, with pacing and length adapted to your child's age — ready in about 10–20 minutes.",
       },
     ],
   }),
