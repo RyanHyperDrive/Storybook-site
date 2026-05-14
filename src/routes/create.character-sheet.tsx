@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check, Loader2, RefreshCcw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { getArtStyle } from "@/lib/art-styles";
 
 export const Route = createFileRoute("/create/character-sheet")({
   component: () => <AuthGate><Inner /></AuthGate>,
@@ -19,13 +20,19 @@ function Inner() {
   const { user } = useAuth();
   const id = getDraftId();
   const [sheet, setSheet] = useState<any>(null);
+  const [book, setBook] = useState<any>(null);
   const [generating, setGenerating] = useState(false);
   const [approving, setApproving] = useState(false);
+  const style = getArtStyle(book?.art_style);
 
   async function load() {
     if (!id) return;
-    const { data } = await supabase.from("character_sheets").select("*").eq("book_id", id).maybeSingle();
-    setSheet(data);
+    const [{ data: cs }, { data: b }] = await Promise.all([
+      supabase.from("character_sheets").select("*").eq("book_id", id).maybeSingle(),
+      supabase.from("books").select("*").eq("id", id).maybeSingle(),
+    ]);
+    setSheet(cs);
+    setBook(b);
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
 
@@ -74,6 +81,11 @@ function Inner() {
       <p className="mt-2 text-sm text-muted-foreground">
         Review the parent-approved character below. Free regeneration if something looks off.
       </p>
+      <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-paper/60 px-3 py-1 text-xs text-muted-foreground">
+        <Sparkles className="h-3.5 w-3.5 text-ember" />
+        Style: <span className="font-semibold text-foreground">{style.name}</span>
+        <Link to="/create/style" className="underline-offset-4 hover:underline">Change</Link>
+      </div>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
         <div className="overflow-hidden rounded-lg border border-border bg-paper/40">

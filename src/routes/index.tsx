@@ -20,31 +20,20 @@ import {
   FileText,
 } from "lucide-react";
 import hero from "@/assets/hero-reading.jpg";
+import { ART_STYLES } from "@/lib/art-styles";
 
 export const Route = createFileRoute("/")({
   component: Home,
 });
 
-const samples = [
-  {
-    title: "Mira and the Whispering Woods",
-    age: "Ages 4–7",
-    tone: "from-ember/25 via-ember/10 to-paper",
-    accent: "bg-ember/30",
-  },
-  {
-    title: "Leo Visits the Stars",
-    age: "Ages 4–7",
-    tone: "from-sage/25 via-sage/10 to-paper",
-    accent: "bg-sage/30",
-  },
-  {
-    title: "The Tea Party with Pip",
-    age: "Ages 4–7",
-    tone: "from-accent via-paper to-paper",
-    accent: "bg-ember/20",
-  },
-];
+// Sample books: one per MVP art style so parents see the full range.
+const samples = ART_STYLES.map((s) => ({
+  title: s.sampleTitle,
+  age: "Ages 4–7",
+  styleName: s.name,
+  tone: s.sampleTone,
+  accent: s.sampleAccent,
+}));
 
 const faqs = [
   {
@@ -183,7 +172,7 @@ function Home() {
             Create yours →
           </Link>
         </div>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {samples.map((s) => (
             <article
               key={s.title}
@@ -193,6 +182,9 @@ function Home() {
                 {/* Decorative shapes only — no baked-in text */}
                 <div className={`absolute -right-10 -top-10 h-40 w-40 rounded-full ${s.accent} blur-2xl`} />
                 <div className={`absolute -bottom-12 -left-8 h-44 w-44 rounded-full ${s.accent} blur-2xl`} />
+                <div className="absolute left-3 top-3 rounded-full bg-background/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                  {s.styleName}
+                </div>
                 <div className="absolute inset-0 flex flex-col justify-end p-5">
                   <div className="rounded-md bg-background/85 p-3 backdrop-blur">
                     <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -207,7 +199,7 @@ function Home() {
               <div className="p-4">
                 <div className="text-sm font-semibold">{s.title}</div>
                 <div className="text-xs text-muted-foreground">
-                  {s.age} · cover + dedication + 10 illustrated pages
+                  {s.styleName} · {s.age}
                 </div>
               </div>
             </article>
