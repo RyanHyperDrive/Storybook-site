@@ -118,13 +118,19 @@ const PAGE_KEYS = [
   "continuity_notes",
 ];
 
-function validateStory(obj: any): { ok: true; data: any } | { ok: false; error: string } {
+function validateStory(
+  obj: any,
+  expectedPages: number,
+  maxSentences: number,
+): { ok: true; data: any } | { ok: false; error: string } {
   if (!obj || typeof obj !== "object") return { ok: false, error: "Not an object" };
   for (const k of ["title", "subtitle", "dedication", "style_notes"]) {
     if (typeof obj[k] !== "string") return { ok: false, error: `Field ${k} must be a string` };
   }
   if (!Array.isArray(obj.pages)) return { ok: false, error: "pages must be an array" };
-  if (obj.pages.length !== 10) return { ok: false, error: `pages must have exactly 10 entries (got ${obj.pages.length})` };
+  if (obj.pages.length !== expectedPages) {
+    return { ok: false, error: `pages must have exactly ${expectedPages} entries (got ${obj.pages.length})` };
+  }
 
   for (let i = 0; i < obj.pages.length; i++) {
     const p = obj.pages[i];
@@ -137,8 +143,8 @@ function validateStory(obj: any): { ok: true; data: any } | { ok: false; error: 
       return { ok: false, error: `Page ${i + 1} page_text must be a non-empty string` };
     }
     const sentenceCount = (p.page_text.match(/[.!?]+/g) ?? []).length;
-    if (sentenceCount < 1 || sentenceCount > 4) {
-      return { ok: false, error: `Page ${i + 1} should have 1-3 sentences (found ~${sentenceCount})` };
+    if (sentenceCount < 1 || sentenceCount > maxSentences + 1) {
+      return { ok: false, error: `Page ${i + 1} sentence count out of range (found ~${sentenceCount}, max ${maxSentences})` };
     }
     for (const arrKey of ["characters_present", "visual_must_haves", "visual_must_not_include"]) {
       if (!Array.isArray(p[arrKey])) return { ok: false, error: `Page ${i + 1} ${arrKey} must be an array` };
@@ -170,12 +176,21 @@ serve(async (req) => {
   try {
     const { user, admin } = await requireUser(req);
     const body = await req.json();
-    const { theme, child_details, favorites, avoid, bookId } = body ?? {};
+    const { theme, child_details, favorites, avoid, bookId, reading_level } = body ?? {};
 
     if (typeof theme !== "string" || !theme.trim()) return errorResponse("theme is required");
     if (typeof child_details !== "string" || !child_details.trim()) {
       return errorResponse("child_details is required");
     }
+
+    const target =
+      READING_LEVEL_TARGETS[String(reading_level ?? "ages_4_6")] ??
+      READING_LEVEL_TARGETS.ages_4_6;
+    const maxSentences = target.sentencesPerPage.includes("1")
+      ? target.sentencesPerPage.includes("5")
+        ? 5
+        : 3
+      : 5;
 
     // If bookId is supplied, verify ownership before we spend tokens.
     if (bookId) {
@@ -192,6 +207,7 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
     const userPrompt = buildUserPrompt({ theme, child_details, favorites, avoid });
+    const SYSTEM_PROMPT = buildSystemPrompt(target);
 
     // Try up to 2 times if the model returns invalid JSON / wrong page count.
     let lastError = "";
