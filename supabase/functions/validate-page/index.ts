@@ -102,6 +102,8 @@ function validate(obj: any): { ok: true; data: any } | { ok: false; error: strin
     character_likeness_score: clamp01(obj.character_likeness_score),
     style_consistency_score: clamp01(obj.style_consistency_score),
     scene_accuracy_score: clamp01(obj.scene_accuracy_score),
+    age_appropriateness_score: clamp01(obj.age_appropriateness_score),
+    age_appropriateness_issues: arr(obj.age_appropriateness_issues),
     correct_number_of_main_characters: Boolean(obj.correct_number_of_main_characters),
     twin_distinction_ok: Boolean(obj.twin_distinction_ok),
     safety_ok: Boolean(obj.safety_ok),
@@ -112,11 +114,12 @@ function validate(obj: any): { ok: true; data: any } | { ok: false; error: strin
   };
 
   // Enforce the regeneration policy server-side too, so bad/conflicting model output
-  // can't slip a low-quality page through.
+  // can't slip a low-quality page through. Age-appropriateness is a hard gate.
   const lowScore =
     cleaned.character_likeness_score < 0.85 ||
     cleaned.style_consistency_score < 0.85 ||
-    cleaned.scene_accuracy_score < 0.85;
+    cleaned.scene_accuracy_score < 0.85 ||
+    cleaned.age_appropriateness_score < 0.85;
   const failedFlags = !cleaned.correct_number_of_main_characters || !cleaned.twin_distinction_ok || !cleaned.safety_ok;
   if (lowScore || failedFlags) cleaned.regeneration_recommended = true;
 
