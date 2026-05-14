@@ -1,6 +1,7 @@
 // Inline-SVG illustrated previews for each MVP art style.
 // IMPORTANT: no readable text inside any SVG. All titles/captions are
 // rendered as HTML by the consumer.
+import type { ReactElement } from "react";
 import type { ArtStyleKey } from "@/lib/art-styles";
 
 type Variant = "cover" | "page-a" | "page-b";
