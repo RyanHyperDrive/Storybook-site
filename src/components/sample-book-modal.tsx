@@ -11,15 +11,23 @@ import { SAMPLE_BOOKS } from "@/lib/sample-books";
 import type { ArtStyleKey } from "@/lib/art-styles";
 import { useSampleAssets, SAMPLE_KEY_BY_STYLE } from "@/hooks/use-sample-assets";
 import sampleClassic from "@/assets/sample-classic-mira.jpg";
+import sampleClassicP1 from "@/assets/sample-classic-mira-page1.jpg";
+import sampleClassicP2 from "@/assets/sample-classic-mira-page2.jpg";
 import sampleCartoon from "@/assets/sample-cartoon-leo.jpg";
+import sampleCartoonP1 from "@/assets/sample-cartoon-leo-page1.jpg";
+import sampleCartoonP2 from "@/assets/sample-cartoon-leo-page2.jpg";
 import sampleWatercolor from "@/assets/sample-watercolor-pip.jpg";
+import sampleWatercolorP1 from "@/assets/sample-watercolor-pip-page1.jpg";
+import sampleWatercolorP2 from "@/assets/sample-watercolor-pip-page2.jpg";
 import sampleManga from "@/assets/sample-manga-yuki.jpg";
+import sampleMangaP1 from "@/assets/sample-manga-yuki-page1.jpg";
+import sampleMangaP2 from "@/assets/sample-manga-yuki-page2.jpg";
 
-const FALLBACK_COVER: Record<ArtStyleKey, string> = {
-  classic_storybook: sampleClassic,
-  soft_cartoon: sampleCartoon,
-  watercolor_adventure: sampleWatercolor,
-  manga_inspired: sampleManga,
+const FALLBACK_ASSETS: Record<ArtStyleKey, { cover: string; page_1: string; page_2: string }> = {
+  classic_storybook: { cover: sampleClassic, page_1: sampleClassicP1, page_2: sampleClassicP2 },
+  soft_cartoon: { cover: sampleCartoon, page_1: sampleCartoonP1, page_2: sampleCartoonP2 },
+  watercolor_adventure: { cover: sampleWatercolor, page_1: sampleWatercolorP1, page_2: sampleWatercolorP2 },
+  manga_inspired: { cover: sampleManga, page_1: sampleMangaP1, page_2: sampleMangaP2 },
 };
 
 export function SampleBookModal({
