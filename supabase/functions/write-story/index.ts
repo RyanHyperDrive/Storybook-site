@@ -106,7 +106,14 @@ did not provide (no health conditions, religion, family structure, location,
 school, race/ethnicity, or personality traits beyond what is given).
 
 Tone: ${t.toneNotes}
-Avoid scary, violent, romantic, commercial, or competitive content.
+
+${t.safetyClause}
+
+This age safety rule is a HARD GATE. If the requested theme or parent details
+would push the story past it, soften, reframe, or redirect to a safer version
+of the same idea (still warm, still personalized) — never refuse, never produce
+unsafe content. Vocabulary, sentence complexity, emotional intensity, conflict
+level, humor, and themes must all stay inside the band for ages ${t.ageBand}.
 
 Output STRICT JSON only — no markdown, no commentary. The JSON must match the
 schema exactly:
@@ -131,10 +138,10 @@ schema exactly:
 
 Rules:
 - Exactly ${t.targetPages} entries in "pages", numbered 1 through ${t.targetPages}.
-- Each "page_text" is ${t.sentencesPerPage}.
-- "scene_description" describes the illustration in concrete, visual terms (no embedded text — all titles and page text are rendered by the app over the image).
+- Each "page_text" is ${t.sentencesPerPage}, age-appropriate for ages ${t.ageBand}.
+- "scene_description" describes the illustration in concrete, visual terms (no embedded text — all titles and page text are rendered by the app over the image), and must itself be age-safe for ages ${t.ageBand}.
 - "visual_must_haves" lists key items/clothing/colors that must appear for continuity.
-- "visual_must_not_include" lists anything to keep out (e.g. brands, scary creatures, weapons, any letters/words/logos in the image).
+- "visual_must_not_include" MUST always include items that would violate the age band (e.g. for 2-3: "no scary creatures, no weapons, no darkness/peril"; for 4-6: "no weapons, no injury, no scary monsters, no romantic framing"; for 7-10: "no weapons used to harm, no blood/gore, no mature themes") in addition to anything else to keep out (brands, text in image, logos).
 - "continuity_notes" tracks anything the next page must respect (time of day, outfit, companions).
 - "style_notes" is a short note on the overall illustrative tone.
 - Do NOT include a cover image description in pages — pages are story pages only.`;
