@@ -22,6 +22,9 @@ export function SampleBookModal({
 }) {
   const sample = styleKey ? SAMPLE_BOOKS[styleKey] : null;
   const style = styleKey ? getArtStyle(styleKey) : null;
+  const { assets } = useSampleAssets();
+  const sampleKey = styleKey ? SAMPLE_KEY_BY_STYLE[styleKey] : null;
+  const generated = sampleKey ? assets[sampleKey] ?? {} : {};
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -43,6 +46,7 @@ export function SampleBookModal({
                 badge="Cover"
                 styleKey={sample.styleKey}
                 variant="cover"
+                imageUrl={generated.cover}
               >
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   A StoryNest book
@@ -69,6 +73,7 @@ export function SampleBookModal({
                 variant="page-a"
                 pageNumber={1}
                 bodyText={sample.pages[0]}
+                imageUrl={generated.page_1}
               />
 
               <BookFrame
@@ -77,6 +82,7 @@ export function SampleBookModal({
                 variant="page-b"
                 pageNumber={2}
                 bodyText={sample.pages[1]}
+                imageUrl={generated.page_2}
               />
 
               <p className="text-center text-[11px] text-muted-foreground">
