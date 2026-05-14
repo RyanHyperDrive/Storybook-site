@@ -75,6 +75,7 @@ const faqs = [
 
 function Home() {
   const [openKey, setOpenKey] = useState<ArtStyleKey | null>(null);
+  const { assets } = useSampleAssets();
   return (
     <div className="overflow-x-hidden">
       <SampleBookModal
