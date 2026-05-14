@@ -20,31 +20,20 @@ import {
   FileText,
 } from "lucide-react";
 import hero from "@/assets/hero-reading.jpg";
+import { ART_STYLES } from "@/lib/art-styles";
 
 export const Route = createFileRoute("/")({
   component: Home,
 });
 
-const samples = [
-  {
-    title: "Mira and the Whispering Woods",
-    age: "Ages 4–7",
-    tone: "from-ember/25 via-ember/10 to-paper",
-    accent: "bg-ember/30",
-  },
-  {
-    title: "Leo Visits the Stars",
-    age: "Ages 4–7",
-    tone: "from-sage/25 via-sage/10 to-paper",
-    accent: "bg-sage/30",
-  },
-  {
-    title: "The Tea Party with Pip",
-    age: "Ages 4–7",
-    tone: "from-accent via-paper to-paper",
-    accent: "bg-ember/20",
-  },
-];
+// Sample books: one per MVP art style so parents see the full range.
+const samples = ART_STYLES.map((s) => ({
+  title: s.sampleTitle,
+  age: "Ages 4–7",
+  styleName: s.name,
+  tone: s.sampleTone,
+  accent: s.sampleAccent,
+}));
 
 const faqs = [
   {
