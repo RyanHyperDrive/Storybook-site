@@ -281,7 +281,7 @@ function Home() {
             <div className="mt-6 grid gap-4">
               <Promise title="Privacy first" body="Your photos are private to your account. We never sell them and never use them to train models." icon={ShieldCheck} />
               <Promise title="Parent-approved character" body="You always review the illustrated character before the story is generated. Free regeneration if it doesn't feel right." icon={RefreshCcw} />
-              <Promise title="Real children's-book quality" body="Warm illustrations, thoughtful pacing, and language tuned for ages 4–7." icon={BookOpen} />
+              <Promise title="Real children's-book quality" body="Warm illustrations, thoughtful pacing, and reading level that adapts for ages 2–10." icon={BookOpen} />
               <Promise title="Web + PDF" body="Read in any browser or download a print-ready PDF — yours to keep." icon={FileText} />
             </div>
           </div>

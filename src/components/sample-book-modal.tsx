@@ -10,6 +10,17 @@ import { getArtStyle } from "@/lib/art-styles";
 import { SAMPLE_BOOKS } from "@/lib/sample-books";
 import type { ArtStyleKey } from "@/lib/art-styles";
 import { useSampleAssets, SAMPLE_KEY_BY_STYLE } from "@/hooks/use-sample-assets";
+import sampleClassic from "@/assets/sample-classic-mira.jpg";
+import sampleCartoon from "@/assets/sample-cartoon-leo.jpg";
+import sampleWatercolor from "@/assets/sample-watercolor-pip.jpg";
+import sampleManga from "@/assets/sample-manga-yuki.jpg";
+
+const FALLBACK_COVER: Record<ArtStyleKey, string> = {
+  classic_storybook: sampleClassic,
+  soft_cartoon: sampleCartoon,
+  watercolor_adventure: sampleWatercolor,
+  manga_inspired: sampleManga,
+};
 
 export function SampleBookModal({
   styleKey,
@@ -25,6 +36,11 @@ export function SampleBookModal({
   const { assets } = useSampleAssets();
   const sampleKey = styleKey ? SAMPLE_KEY_BY_STYLE[styleKey] : null;
   const generated = sampleKey ? assets[sampleKey] ?? {} : {};
+
+  const fallbackCover = styleKey ? FALLBACK_COVER[styleKey] : undefined;
+  const coverUrl = generated.cover ?? fallbackCover;
+  const page1Url = generated.page_1 ?? fallbackCover;
+  const page2Url = generated.page_2 ?? fallbackCover;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -45,7 +61,7 @@ export function SampleBookModal({
                 badge="Cover"
                 styleKey={sample.styleKey}
                 variant="cover"
-                imageUrl={generated.cover}
+                imageUrl={coverUrl}
               >
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   A StoryNest book
@@ -72,7 +88,7 @@ export function SampleBookModal({
                 variant="page-a"
                 pageNumber={1}
                 bodyText={sample.pages[0]}
-                imageUrl={generated.page_1}
+                imageUrl={page1Url}
               />
 
               <BookFrame
@@ -81,7 +97,7 @@ export function SampleBookModal({
                 variant="page-b"
                 pageNumber={2}
                 bodyText={sample.pages[1]}
-                imageUrl={generated.page_2}
+                imageUrl={page2Url}
               />
 
               <p className="text-center text-[11px] text-muted-foreground">
