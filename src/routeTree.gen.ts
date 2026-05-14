@@ -28,6 +28,7 @@ import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as CheckoutBookIdRouteImport } from './routes/checkout.$bookId'
 import { Route as AdminSamplesRouteImport } from './routes/admin.samples'
+import { Route as AdminQualityRouteImport } from './routes/admin.quality'
 import { Route as BooksBookIdIndexRouteImport } from './routes/books.$bookId.index'
 import { Route as BooksBookIdManageRouteImport } from './routes/books.$bookId.manage'
 
@@ -126,6 +127,11 @@ const AdminSamplesRoute = AdminSamplesRouteImport.update({
   path: '/samples',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminQualityRoute = AdminQualityRouteImport.update({
+  id: '/quality',
+  path: '/quality',
+  getParentRoute: () => AdminRoute,
+} as any)
 const BooksBookIdIndexRoute = BooksBookIdIndexRouteImport.update({
   id: '/books/$bookId/',
   path: '/books/$bookId/',
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/quality': typeof AdminQualityRoute
   '/admin/samples': typeof AdminSamplesRoute
   '/checkout/$bookId': typeof CheckoutBookIdRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/quality': typeof AdminQualityRoute
   '/admin/samples': typeof AdminSamplesRoute
   '/checkout/$bookId': typeof CheckoutBookIdRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/quality': typeof AdminQualityRoute
   '/admin/samples': typeof AdminSamplesRoute
   '/checkout/$bookId': typeof CheckoutBookIdRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/admin/quality'
     | '/admin/samples'
     | '/checkout/$bookId'
     | '/checkout/cancel'
@@ -238,6 +248,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/admin/quality'
     | '/admin/samples'
     | '/checkout/$bookId'
     | '/checkout/cancel'
@@ -261,6 +272,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/admin/quality'
     | '/admin/samples'
     | '/checkout/$bookId'
     | '/checkout/cancel'
@@ -434,6 +446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSamplesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/quality': {
+      id: '/admin/quality'
+      path: '/quality'
+      fullPath: '/admin/quality'
+      preLoaderRoute: typeof AdminQualityRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/books/$bookId/': {
       id: '/books/$bookId/'
       path: '/books/$bookId'
@@ -452,11 +471,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminQualityRoute: typeof AdminQualityRoute
   AdminSamplesRoute: typeof AdminSamplesRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminQualityRoute: AdminQualityRoute,
   AdminSamplesRoute: AdminSamplesRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ShieldAlert, ImageIcon } from "lucide-react";
+import { Loader2, ShieldAlert, ImageIcon, Gauge } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
   component: Inner,
@@ -45,12 +45,20 @@ function Inner() {
     <div className="mx-auto max-w-6xl px-4 py-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold">Admin</h1>
-        <Link
-          to="/admin/samples"
-          className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-paper"
-        >
-          <ImageIcon className="h-4 w-4" /> Sample art
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/admin/quality"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-paper"
+          >
+            <Gauge className="h-4 w-4" /> Quality dashboard
+          </Link>
+          <Link
+            to="/admin/samples"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-paper"
+          >
+            <ImageIcon className="h-4 w-4" /> Sample art
+          </Link>
+        </div>
       </div>
 
       <section className="mt-8">

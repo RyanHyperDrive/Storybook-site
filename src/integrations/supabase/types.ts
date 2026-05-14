@@ -20,8 +20,11 @@ export type Database = {
           created_at: string
           id: string
           image_storage_path: string | null
+          needs_review: boolean
           page_number: number
+          quality_score: number | null
           regenerations: number
+          review_notes: string | null
           status: string
           text_content: string | null
           updated_at: string
@@ -32,8 +35,11 @@ export type Database = {
           created_at?: string
           id?: string
           image_storage_path?: string | null
+          needs_review?: boolean
           page_number: number
+          quality_score?: number | null
           regenerations?: number
+          review_notes?: string | null
           status?: string
           text_content?: string | null
           updated_at?: string
@@ -44,8 +50,11 @@ export type Database = {
           created_at?: string
           id?: string
           image_storage_path?: string | null
+          needs_review?: boolean
           page_number?: number
+          quality_score?: number | null
           regenerations?: number
+          review_notes?: string | null
           status?: string
           text_content?: string | null
           updated_at?: string
