@@ -182,6 +182,9 @@ function Home() {
                 {/* Decorative shapes only — no baked-in text */}
                 <div className={`absolute -right-10 -top-10 h-40 w-40 rounded-full ${s.accent} blur-2xl`} />
                 <div className={`absolute -bottom-12 -left-8 h-44 w-44 rounded-full ${s.accent} blur-2xl`} />
+                <div className="absolute left-3 top-3 rounded-full bg-background/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                  {s.styleName}
+                </div>
                 <div className="absolute inset-0 flex flex-col justify-end p-5">
                   <div className="rounded-md bg-background/85 p-3 backdrop-blur">
                     <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -196,7 +199,7 @@ function Home() {
               <div className="p-4">
                 <div className="text-sm font-semibold">{s.title}</div>
                 <div className="text-xs text-muted-foreground">
-                  {s.age} · cover + dedication + 10 illustrated pages
+                  {s.styleName} · {s.age}
                 </div>
               </div>
             </article>
