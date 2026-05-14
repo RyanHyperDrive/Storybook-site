@@ -44,7 +44,15 @@ function Inner() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
-      <h1 className="font-display text-3xl font-semibold">Admin</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-3xl font-semibold">Admin</h1>
+        <Link
+          to="/admin/samples"
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-paper"
+        >
+          <ImageIcon className="h-4 w-4" /> Sample art
+        </Link>
+      </div>
 
       <section className="mt-8">
         <h2 className="font-display text-xl font-semibold">Recent books ({books.length})</h2>
