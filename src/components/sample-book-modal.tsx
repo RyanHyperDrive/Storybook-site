@@ -150,7 +150,7 @@ function BookFrame({
     <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         <span>{badge}</span>
-        {pageNumber != null && <span>Page {pageNumber} of 10</span>}
+        {pageNumber != null && <span>Sample page {pageNumber}</span>}
       </div>
 
       {variant === "cover" && styleKey ? (
