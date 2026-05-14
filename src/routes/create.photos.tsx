@@ -267,18 +267,19 @@ function Inner() {
 
 function PhotoGuidance() {
   const dos = [
-    "Clear, well-lit photo",
-    "One child per photo",
-    "Face visible and mostly front-facing",
-    "Simple background",
+    "Clear, well-lit photo of the face",
+    "Simple, uncluttered background",
+    "One child per photo (unless creating twins)",
+    "Mostly front-facing, eyes visible",
   ];
   const donts = [
-    "Sunglasses or masks",
-    "Heavy filters or stickers",
-    "Blurry or low-resolution",
-    "Group photos",
+    "Sunglasses, masks, or heavy filters",
+    "Blurry or low-resolution photos",
+    "Group photos with other people",
+    "School uniforms with visible school names or logos",
   ];
   return (
+    <>
     <div className="mt-6 grid gap-3 rounded-lg border border-border bg-paper/40 p-4 sm:grid-cols-2">
       <div>
         <div className="flex items-center gap-2 text-sm font-semibold">
