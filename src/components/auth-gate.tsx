@@ -19,7 +19,6 @@ export function SignInPanel({ message }: { message?: string }) {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
-  const navigate = useNavigate();
   const { pathname } = useLocation();
 
   async function sendLink(e: React.FormEvent) {
