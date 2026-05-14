@@ -410,7 +410,7 @@ function SlotCard({
 }
 
 function StatusBadge({ status }: { status: Status }) {
-  const map: Record<Status, { label: string; className: string; icon: JSX.Element }> = {
+  const map: Record<Status, { label: string; className: string; icon: React.ReactNode }> = {
     pending_quality_check: {
       label: "Pending quality check",
       className: "border-border bg-muted text-foreground",
