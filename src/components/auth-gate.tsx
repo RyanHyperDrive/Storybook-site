@@ -69,10 +69,20 @@ export function SignInPanel({ message, title, bullets }: { message?: string; tit
 
   return (
     <div className="mx-auto max-w-md px-4 py-12">
-      <h1 className="font-display text-3xl font-semibold">Sign in to continue</h1>
+      <h1 className="font-display text-3xl font-semibold">{title ?? "Sign in to continue"}</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         {message ?? "Continue with Google, Apple, or email — no password needed."}
       </p>
+      {bullets && bullets.length > 0 && (
+        <ul className="mt-4 space-y-1.5 rounded-md border border-border bg-paper/40 p-3 text-xs text-muted-foreground">
+          {bullets.map((b) => (
+            <li key={b} className="flex items-start gap-2">
+              <span aria-hidden className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-sage" />
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {sent ? (
         <div className="mt-6 rounded-md border border-border bg-paper/40 p-4 text-sm">
