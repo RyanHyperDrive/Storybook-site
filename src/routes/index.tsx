@@ -73,8 +73,14 @@ const faqs = [
 ];
 
 function Home() {
+  const [openKey, setOpenKey] = useState<ArtStyleKey | null>(null);
   return (
     <div className="overflow-x-hidden">
+      <SampleBookModal
+        styleKey={openKey}
+        open={openKey !== null}
+        onOpenChange={(v) => !v && setOpenKey(null)}
+      />
       {/* HERO */}
       <section className="bg-warm-grad">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:py-16 md:grid-cols-2 md:py-24">
