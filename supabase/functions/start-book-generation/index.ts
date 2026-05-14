@@ -87,7 +87,7 @@ serve(async (req) => {
         Authorization: `Bearer ${TRIGGER_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ payload: { bookId, jobId, userId } }),
+      body: JSON.stringify({ payload: { bookId, jobId, userId, reading_level } }),
     });
 
     return jsonResponse({ ok: true, jobId, stub: false });
