@@ -60,7 +60,7 @@ const faqs = [
   },
   {
     q: "What's actually in the book?",
-    a: "A custom cover, a personal dedication page, and 10 fully illustrated story pages — read in your browser or download as a printable PDF.",
+    a: "A custom cover, a personal dedication page, and at least 10 fully illustrated story pages (more for older kids) — read in your browser or download as a printable PDF.",
   },
   {
     q: "What if the character doesn't look right?",
@@ -72,7 +72,7 @@ const faqs = [
   },
   {
     q: "Is it readable for kids with low vision or dyslexia?",
-    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Image alt text describes every illustration.",
+    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Image alt text describes every illustration. Reading level adapts from board-book to early-reader so the page feels right for ages 2–10.",
   },
   {
     q: "Refunds?",
@@ -99,7 +99,7 @@ function Home() {
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:py-16 md:grid-cols-2 md:py-24">
           <div className="min-w-0">
             <Badge className="bg-sage/15 text-sage hover:bg-sage/15" variant="secondary">
-              <Sparkles className="mr-1 h-3.5 w-3.5" /> Built for ages 4–7
+              <Sparkles className="mr-1 h-3.5 w-3.5" /> Personalized for ages 2–10
             </Badge>
             <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
               A storybook starring{" "}
@@ -163,9 +163,9 @@ function Home() {
         <div className="mt-8 grid gap-4 sm:grid-cols-2 md:mt-10 md:grid-cols-4">
           {[
             { icon: Camera, title: "Add a photo", body: "One clear, well-lit photo so we can sketch the character." },
-            { icon: Heart, title: "Share what they love", body: "Their name, age, and the things that make them light up." },
+            { icon: Heart, title: "Share what they love", body: "Their name, age (2–10), and the things that make them light up." },
             { icon: Wand2, title: "Approve the character", body: "Review the illustrated version. Regenerate free until it feels right." },
-            { icon: BookOpen, title: "Read together", body: "Cover, dedication, and 10 illustrated pages — ready in 10–20 minutes." },
+            { icon: BookOpen, title: "Read together", body: "Cover, dedication, and at least 10 illustrated pages — ready in 10–20 minutes." },
           ].map(({ icon: Icon, title, body }, i) => (
             <div key={i} className="rounded-lg border border-border bg-background p-5">
               <div className="grid h-9 w-9 place-items-center rounded-md bg-ember/15 text-ember">
@@ -183,10 +183,10 @@ function Home() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-              What a finished book looks like
+              Sample style previews
             </h2>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Each book is a custom cover, a dedication, and 10 illustrated story pages. Real customer books appear here once parents opt in to share.
+              Four sample books — one per supported art style — to show what a finished StoryNest ebook looks like. These are concept previews, not real customer books.
             </p>
           </div>
           <Link to="/create" className="text-sm font-medium text-ember underline-offset-4 hover:underline">
@@ -199,9 +199,11 @@ function Home() {
               type="button"
               key={s.key}
               onClick={() => setOpenKey(s.key)}
-              className="group overflow-hidden rounded-lg border border-border bg-background text-left transition-all hover:-translate-y-0.5 hover:border-ember/50 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ember"
+              className="group relative overflow-hidden rounded-md border border-border bg-background text-left shadow-[0_10px_30px_-15px_oklch(0.22_0.03_260/0.45)] transition-all hover:-translate-y-0.5 hover:border-ember/50 hover:shadow-[0_18px_40px_-15px_oklch(0.22_0.03_260/0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ember"
               aria-label={`Preview sample book in ${s.styleName} style`}
             >
+              {/* book spine */}
+              <span aria-hidden className="absolute inset-y-0 left-0 w-[6px] bg-gradient-to-b from-foreground/15 via-foreground/5 to-foreground/15" />
               <div className="relative aspect-[4/5] overflow-hidden bg-paper">
                 {(() => {
                   const dbCover = assets[SAMPLE_KEY_BY_STYLE[s.key]]?.cover;
@@ -219,22 +221,30 @@ function Home() {
                     <StyleArtwork styleKey={s.key} variant="cover" />
                   );
                 })()}
-                <div className="absolute left-3 top-3 rounded-full bg-background/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
-                  {s.styleName}
+                {/* gentle vignette to make HTML title block legible */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
+                <div className="absolute left-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                  Style shown · {s.styleName}
                 </div>
                 <div className="absolute right-3 top-3 rounded-full bg-foreground/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-background opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
                   Preview →
                 </div>
+                {/* HTML title block layered on the cover, so the image stays text-free */}
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-background/80 drop-shadow">
+                    A StoryNest book
+                  </div>
+                  <div className="mt-1 font-display text-base font-semibold leading-tight text-background drop-shadow sm:text-lg">
+                    {s.title}
+                  </div>
+                </div>
               </div>
-              <div className="p-4">
+              <div className="border-t border-border p-3">
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Sample cover concept
+                  Sample cover concept · {s.age}
                 </div>
-                <div className="mt-1 font-display text-base font-semibold leading-tight">
-                  {s.title}
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {s.styleName} · {s.age}
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  Tap to preview cover, dedication & sample pages
                 </div>
               </div>
             </button>
@@ -255,8 +265,8 @@ function Home() {
               <div className="text-sm text-muted-foreground">one-time</div>
             </div>
             <ul className="mt-6 space-y-2 text-sm text-foreground">
-              <li>✓ Cover + dedication + 10 illustrated pages</li>
-              <li>✓ Built for ages 4–7</li>
+              <li>✓ Custom cover, dedication, and at least 10 illustrated story pages</li>
+              <li>✓ Personalized for ages 2–10 — reading level adapts to your child</li>
               <li>✓ Parent-approved illustrated character</li>
               <li>✓ Free regeneration if something looks off</li>
               <li>✓ Web reader + downloadable PDF</li>
