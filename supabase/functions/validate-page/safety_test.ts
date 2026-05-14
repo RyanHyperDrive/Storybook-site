@@ -99,7 +99,7 @@ Deno.test("sample modal: distinct cover / page_1 / page_2 assets per style", asy
     new URL("../../../src/components/sample-book-modal.tsx", import.meta.url),
   );
   // For each of the 4 styles we expect 3 distinct asset imports (cover + 2 pages).
-  for (const stem of ["classic-mira", "cartoon-leo", "watercolor-pip", "manga-yuki"]) {
+  for (const stem of ["comic-nova", "cartoon-leo", "watercolor-pip", "manga-yuki", "pixel-quinn"]) {
     const refs = new Set<string>();
     const re = new RegExp(`sample-${stem}(?:-page1|-page2)?\\.jpg`, "g");
     for (const m of src.matchAll(re)) refs.add(m[0]);
