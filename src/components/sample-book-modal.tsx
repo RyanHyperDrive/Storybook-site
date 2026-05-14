@@ -9,6 +9,7 @@ import { StyleArtwork } from "@/components/style-artwork";
 import { getArtStyle } from "@/lib/art-styles";
 import { SAMPLE_BOOKS } from "@/lib/sample-books";
 import type { ArtStyleKey } from "@/lib/art-styles";
+import { useSampleAssets, SAMPLE_KEY_BY_STYLE } from "@/hooks/use-sample-assets";
 
 export function SampleBookModal({
   styleKey,
