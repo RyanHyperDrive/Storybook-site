@@ -41,9 +41,9 @@ export const ART_STYLES: ArtStyle[] = [
     key: "comic_book",
     name: "Comic Book",
     description:
-      "Bold ink lines, halftone dots, and dynamic action panels — like a Saturday-morning comic.",
+      "Bold ink lines, halftone dots, and friendly action panels — a cozy Saturday-morning comic.",
     aiAnchor:
-      "Children's comic book illustration, bold ink outlines, halftone dot shading, vivid primary colors, dynamic action composition, expressive faces, decorative empty speech-bubble shapes allowed but no readable text, consistent character design, premium kid-friendly comic art, no readable text in image.",
+      "Children's adventure comic book illustration, bold ink outlines, halftone dot shading, vivid but cozy colors, friendly dynamic composition, expressive faces, decorative empty speech-bubble shapes allowed but no readable text, no weapons, no fire, no scary peril, consistent character design, premium kid-friendly comic art, no readable text in image.",
     sampleTone: "from-ember/30 via-ember/10 to-paper",
     sampleAccent: "bg-ember/30",
     sampleTitle: "Nova and the Comet Crew",

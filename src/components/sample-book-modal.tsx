@@ -77,17 +77,20 @@ export function SampleBookModal({
                 styleKey={sample.styleKey}
                 variant="cover"
                 imageUrl={coverUrl}
-              >
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  A StoryNest book
-                </div>
-                <div className="mt-1 font-display text-xl font-semibold leading-tight text-foreground sm:text-2xl">
-                  {sample.title}
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  Starring {sample.childName}
-                </div>
-              </BookFrame>
+                jacket={
+                  <>
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      A StoryNest book
+                    </div>
+                    <div className="mt-1 font-display text-xl font-semibold leading-tight text-foreground sm:text-2xl">
+                      {sample.title}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Starring {sample.childName}
+                    </div>
+                  </>
+                }
+              />
 
               <BookFrame badge="Dedication" plain>
                 <div className="flex h-full items-center justify-center px-6 py-8 text-center">
@@ -158,6 +161,7 @@ function BookFrame({
   bodyText,
   plain,
   imageUrl,
+  jacket,
   children,
 }: {
   badge: string;
@@ -167,6 +171,7 @@ function BookFrame({
   bodyText?: string;
   plain?: boolean;
   imageUrl?: string;
+  jacket?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   const Art = ({ v }: { v: "cover" | "page-a" | "page-b" }) =>
@@ -184,12 +189,13 @@ function BookFrame({
       </div>
 
       {variant === "cover" && styleKey ? (
-        <div className="relative">
+        <div className="flex flex-col">
           <div className="aspect-[4/5] w-full overflow-hidden bg-paper">
             <Art v="cover" />
           </div>
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/95 via-background/70 to-transparent p-4 sm:p-6">
-            {children}
+          {/* Clean lower jacket band — no gradient over artwork */}
+          <div className="border-t border-border bg-background p-4 sm:p-6">
+            {jacket}
           </div>
         </div>
       ) : variant && styleKey ? (
