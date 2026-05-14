@@ -261,6 +261,8 @@ export type Database = {
           error_message: string | null
           id: string
           locked: boolean
+          photo_analysis: Json | null
+          photo_analyzed_at: string | null
           reference_storage_path: string | null
           regenerations: number
           status: string
@@ -277,6 +279,8 @@ export type Database = {
           error_message?: string | null
           id?: string
           locked?: boolean
+          photo_analysis?: Json | null
+          photo_analyzed_at?: string | null
           reference_storage_path?: string | null
           regenerations?: number
           status?: string
@@ -293,6 +297,8 @@ export type Database = {
           error_message?: string | null
           id?: string
           locked?: boolean
+          photo_analysis?: Json | null
+          photo_analyzed_at?: string | null
           reference_storage_path?: string | null
           regenerations?: number
           status?: string
