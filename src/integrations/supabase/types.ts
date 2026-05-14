@@ -212,6 +212,54 @@ export type Database = {
         }
         Relationships: []
       }
+      sample_art_assets: {
+        Row: {
+          asset_type: string
+          created_at: string
+          error_message: string | null
+          id: string
+          kie_task_id: string | null
+          prompt: string
+          public_url: string | null
+          sample_key: string
+          source_url: string | null
+          status: string
+          storage_path: string | null
+          style_key: string
+          updated_at: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          kie_task_id?: string | null
+          prompt: string
+          public_url?: string | null
+          sample_key: string
+          source_url?: string | null
+          status?: string
+          storage_path?: string | null
+          style_key: string
+          updated_at?: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          kie_task_id?: string | null
+          prompt?: string
+          public_url?: string | null
+          sample_key?: string
+          source_url?: string | null
+          status?: string
+          storage_path?: string | null
+          style_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
