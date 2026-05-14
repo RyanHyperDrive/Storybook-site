@@ -244,8 +244,8 @@ function Home() {
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Sample cover concept · {s.age}
                 </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
-                  Tap to preview cover, dedication & sample pages
+                <div className="mt-0.5 text-xs font-medium text-ember">
+                  Preview this style →
                 </div>
               </div>
             </button>
