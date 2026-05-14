@@ -22,13 +22,58 @@ import { requireUser } from "../_shared/auth.ts";
  * schema-validated before returning.
  */
 
-const SYSTEM_PROMPT = `You are a warm, gentle children's book author writing for ages 4-7.
+// Story length and tone are derived per-call from the requested reading_level
+// (see READING_LEVEL_TARGETS below) so the same prompt template adapts from
+// board-book voice (ages 2-3) up through early reader (ages 7-10).
+
+type ReadingLevelTarget = {
+  ageBand: string;
+  minPages: number;
+  targetPages: number;
+  sentencesPerPage: string;
+  toneNotes: string;
+};
+
+const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
+  ages_2_3: {
+    ageBand: "2-3",
+    minPages: 8,
+    targetPages: 8,
+    sentencesPerPage: "exactly 1 very short sentence (under 10 words)",
+    toneNotes:
+      "Board-book voice. Repetition is welcome. Tiny vocabulary. Soft, simple ideas.",
+  },
+  ages_4_6: {
+    ageBand: "4-6",
+    minPages: 10,
+    targetPages: 10,
+    sentencesPerPage: "1 to 3 short read-aloud sentences",
+    toneNotes:
+      "Classic picture-book voice. Warm, calm, age-appropriate, positive resolution.",
+  },
+  ages_7_10: {
+    ageBand: "7-10",
+    minPages: 12,
+    targetPages: 12,
+    sentencesPerPage: "2 to 5 sentences",
+    toneNotes:
+      "Early-reader voice. Slightly richer vocabulary, gentle wit, light suspense, always a kind resolution.",
+  },
+};
+
+// Legacy aliases kept so older books keep working.
+READING_LEVEL_TARGETS.ages_3_5 = READING_LEVEL_TARGETS.ages_2_3;
+READING_LEVEL_TARGETS.ages_4_7 = READING_LEVEL_TARGETS.ages_4_6;
+READING_LEVEL_TARGETS.ages_6_8 = READING_LEVEL_TARGETS.ages_7_10;
+
+function buildSystemPrompt(t: ReadingLevelTarget): string {
+  return `You are a warm, gentle children's book author writing for ages ${t.ageBand}.
 
 Use only the parent's provided details. Never invent sensitive facts the parent
 did not provide (no health conditions, religion, family structure, location,
 school, race/ethnicity, or personality traits beyond what is given).
 
-Tone: kind, calm, age-appropriate, positive resolution. Read-aloud friendly.
+Tone: ${t.toneNotes}
 Avoid scary, violent, romantic, commercial, or competitive content.
 
 Output STRICT JSON only — no markdown, no commentary. The JSON must match the
@@ -53,14 +98,15 @@ schema exactly:
 }
 
 Rules:
-- Exactly 10 entries in "pages", numbered 1 through 10.
-- Each "page_text" is 1 to 3 short read-aloud sentences.
-- "scene_description" describes the illustration in concrete, visual terms.
+- Exactly ${t.targetPages} entries in "pages", numbered 1 through ${t.targetPages}.
+- Each "page_text" is ${t.sentencesPerPage}.
+- "scene_description" describes the illustration in concrete, visual terms (no embedded text — all titles and page text are rendered by the app over the image).
 - "visual_must_haves" lists key items/clothing/colors that must appear for continuity.
-- "visual_must_not_include" lists anything to keep out (e.g. brands, scary creatures, weapons).
+- "visual_must_not_include" lists anything to keep out (e.g. brands, scary creatures, weapons, any letters/words/logos in the image).
 - "continuity_notes" tracks anything the next page must respect (time of day, outfit, companions).
 - "style_notes" is a short note on the overall illustrative tone.
-- Do NOT include a cover image description in pages — pages 1-10 are story pages only.`;
+- Do NOT include a cover image description in pages — pages are story pages only.`;
+}
 
 const PAGE_KEYS = [
   "page_number",
