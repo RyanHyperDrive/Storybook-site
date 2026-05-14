@@ -245,37 +245,49 @@ export type Database = {
       child_subjects: {
         Row: {
           approved: boolean
+          character_image_url: string | null
           child_profile_id: string | null
           created_at: string
           description: string | null
+          error_message: string | null
           id: string
           locked: boolean
           reference_storage_path: string | null
           regenerations: number
+          status: string
+          twins_distinguishable_confirmed: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
           approved?: boolean
+          character_image_url?: string | null
           child_profile_id?: string | null
           created_at?: string
           description?: string | null
+          error_message?: string | null
           id?: string
           locked?: boolean
           reference_storage_path?: string | null
           regenerations?: number
+          status?: string
+          twins_distinguishable_confirmed?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
           approved?: boolean
+          character_image_url?: string | null
           child_profile_id?: string | null
           created_at?: string
           description?: string | null
+          error_message?: string | null
           id?: string
           locked?: boolean
           reference_storage_path?: string | null
           regenerations?: number
+          status?: string
+          twins_distinguishable_confirmed?: boolean
           updated_at?: string
           user_id?: string
         }
