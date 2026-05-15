@@ -1,0 +1,63 @@
+name: Visual regression
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: |
+          bun run preview --port 8080 --host 127.0.0.1 > preview.log 2>&1 &
+          echo $! > preview.pid
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8080 > /dev/null && exit 0
+            sleep 1
+          done
+          echo "Preview server failed to start" >&2
+          cat preview.log >&2
+          exit 1
+
+      - name: Run "How it works" visual regression
+        env:
+          PREVIEW_URL: http://127.0.0.1:8080
+        run: node scripts/visual-regression-howitworks.mjs
+
+      - name: Run sample reader modal visual regression
+        env:
+          PREVIEW_URL: http://127.0.0.1:8080
+        run: node scripts/visual-regression-sample-modal.mjs
+
+      - name: Stop preview server
+        if: always()
+        run: |
+          if [ -f preview.pid ]; then kill "$(cat preview.pid)" 2>/dev/null || true; fi
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-screenshots
+          path: |
+            visual-regression/**/*.png
+            preview.log
+          if-no-files-found: ignore
+          retention-days: 14
