@@ -56,6 +56,12 @@ jobs:
           PREVIEW_URL: http://127.0.0.1:8080
         run: node scripts/visual-regression-create-journey.mjs
 
+      - name: Diff /create journey screenshots vs baseline
+        env:
+          DIFF_PIXEL_THRESHOLD: "0.1"
+          DIFF_RATIO_THRESHOLD: "0.005"
+        run: node scripts/visual-regression-create-journey-diff.mjs
+
       - name: Stop preview server
         if: always()
         run: |
