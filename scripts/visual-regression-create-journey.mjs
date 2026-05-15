@@ -2,22 +2,25 @@
 /**
  * Visual regression for the full /create wizard journey:
  *
- *   /create/profile         (auth-optional — renders the form for guests)
- *   /create/photos          (auth-gated — renders SignInPanel for guests)
- *   /create/story           (auth-gated)
- *   /create/style           (auth-gated)
- *   /create/character-sheet (auth-gated)
+ *   /create/profile         → hydrates from seeded localStorage profile draft
+ *   /create/photos          → renders accepted fixture photo
+ *   /create/story           → renders fixture book row
+ *   /create/style           → renders fixture art_style selection
+ *   /create/character-sheet → renders fixture child_subject + character image
  *
- * For each route, at desktop (1280) and mobile (390):
- *   - navigate, wait for either the wizard layout or the auth gate to render,
- *   - assert the page rendered SOMETHING meaningful (no blank screen / runtime
- *     error / missing nav),
- *   - capture a full-page screenshot for visual diffing.
+ * Determinism strategy
+ * --------------------
+ * Each browser context is seeded BEFORE navigation with:
+ *   - a frozen clock (Date.now / new Date() pinned to FIXED_NOW_MS),
+ *   - prefers-reduced-motion forced on (no entry animations),
+ *   - a fixture Supabase auth session in localStorage so `useAuth()` resolves
+ *     to a fake authenticated user with no network call,
+ *   - a fixture profile draft + draft book id in localStorage,
+ *   - mocked Supabase REST/Storage routes that always return the same
+ *     fixture rows and a stable placeholder image.
  *
- * Auth-gated routes are expected to render the SignInPanel
- * (`[data-testid="auth-gate"]`) when this runs unauthenticated. That is still
- * valuable regression coverage: it catches the gate, page chrome, and route
- * loader from breaking.
+ * That means screenshots do not depend on the real backend, the real time,
+ * randomly-generated UUIDs, or animation phase.
  *
  * Usage:
  *   PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-create-journey.mjs
@@ -28,6 +31,16 @@
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import {
+  SUPABASE_URL,
+  SUPABASE_AUTH_KEY,
+  FIXED_NOW_MS,
+  FIXTURE_DRAFT_BOOK_ID,
+  FIXTURE_PROFILE_DRAFT,
+  FIXTURE_TABLES,
+  PLACEHOLDER_IMAGE_DATA_URL,
+  fixtureAuthSession,
+} from "./fixtures/create-journey.js";
 
 const URL = (process.env.PREVIEW_URL || "http://localhost:8080").replace(/\/$/, "");
 const OUT = resolve("visual-regression", "create-journey");
@@ -38,21 +51,135 @@ const VIEWPORTS = [
   { name: "mobile-390", width: 390, height: 844 },
 ];
 
-/**
- * Each step lists the route + which container it should render unauthenticated.
- *   - "wizard": should always show WizardLayout (profile is auth-optional)
- *   - "either": should show wizard layout OR the auth gate
- */
 const STEPS = [
-  { slug: "profile",         path: "/create/profile",         expect: "wizard" },
-  { slug: "photos",          path: "/create/photos",          expect: "either" },
-  { slug: "story",           path: "/create/story",           expect: "either" },
-  { slug: "style",           path: "/create/style",           expect: "either" },
-  { slug: "character-sheet", path: "/create/character-sheet", expect: "either" },
+  { slug: "profile",         path: "/create/profile" },
+  { slug: "photos",          path: "/create/photos" },
+  { slug: "story",           path: "/create/story" },
+  { slug: "style",           path: "/create/style" },
+  { slug: "character-sheet", path: "/create/character-sheet" },
 ];
+
+/**
+ * Init script (runs in the page before any app code):
+ *   - freeze Date / Date.now to FIXED_NOW_MS
+ *   - seed Supabase auth session, draft id, profile draft in localStorage
+ *   - force prefers-reduced-motion: reduce so transitions don't flicker
+ */
+function buildInitScript() {
+  const payload = {
+    nowMs: FIXED_NOW_MS,
+    authKey: SUPABASE_AUTH_KEY,
+    authSession: fixtureAuthSession(),
+    draftBookId: FIXTURE_DRAFT_BOOK_ID,
+    profileDraft: FIXTURE_PROFILE_DRAFT,
+  };
+  return `
+    (() => {
+      const P = ${JSON.stringify(payload)};
+      try { localStorage.setItem(P.authKey, JSON.stringify(P.authSession)); } catch (e) {}
+      try { localStorage.setItem("storynest:draft_book_id", P.draftBookId); } catch (e) {}
+      try { localStorage.setItem("storynest:profile_draft_v2", JSON.stringify(P.profileDraft)); } catch (e) {}
+
+      // Freeze time. new Date() with no args, Date.now(), and performance.now()
+      // all collapse to the fixture moment so timestamp-derived UI is stable.
+      const Real = Date;
+      const fixed = P.nowMs;
+      class FixedDate extends Real {
+        constructor(...args) {
+          if (args.length === 0) { super(fixed); } else { super(...args); }
+        }
+        static now() { return fixed; }
+      }
+      // preserve UTC/parse so libraries keep working
+      FixedDate.UTC = Real.UTC;
+      FixedDate.parse = Real.parse;
+      window.Date = FixedDate;
+    })();
+  `;
+}
+
+function tableFromUrl(u) {
+  // Supabase REST: /rest/v1/<table>?...
+  const m = u.pathname.match(/\/rest\/v1\/([^/?]+)/);
+  return m ? m[1] : null;
+}
+
+async function installMocks(ctx) {
+  // CSS reduced motion
+  await ctx.emulateMedia({ reducedMotion: "reduce" });
+
+  // Supabase REST
+  await ctx.route(`${SUPABASE_URL}/rest/v1/**`, async (route) => {
+    const req = route.request();
+    const u = new URL(req.url());
+    const table = tableFromUrl(u);
+    const method = req.method();
+
+    // Writes: pretend success without changing state.
+    if (method === "POST" || method === "PATCH" || method === "PUT" || method === "DELETE") {
+      const rows = (FIXTURE_TABLES[table] ?? []).slice(0, 1);
+      return route.fulfill({
+        status: method === "DELETE" ? 204 : 200,
+        contentType: "application/json",
+        body: JSON.stringify(rows),
+      });
+    }
+
+    // Reads: return fixture rows for the requested table.
+    const rows = FIXTURE_TABLES[table] ?? [];
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(rows),
+    });
+  });
+
+  // Supabase Storage signed URL endpoint → return a stable signed URL that
+  // points at our placeholder data: URL.
+  await ctx.route(`${SUPABASE_URL}/storage/v1/object/sign/**`, async (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ signedURL: PLACEHOLDER_IMAGE_DATA_URL, signedUrl: PLACEHOLDER_IMAGE_DATA_URL }),
+    });
+  });
+
+  // Any direct storage object fetch → placeholder bytes.
+  await ctx.route(`${SUPABASE_URL}/storage/v1/object/**`, async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=",
+      "base64",
+    );
+    return route.fulfill({ status: 200, contentType: "image/png", body: png });
+  });
+
+  // Auth endpoints — fully deterministic.
+  await ctx.route(`${SUPABASE_URL}/auth/v1/**`, async (route) => {
+    const u = new URL(route.request().url());
+    if (u.pathname.endsWith("/user")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(fixtureAuthSession().user),
+      });
+    }
+    if (u.pathname.endsWith("/token")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(fixtureAuthSession()),
+      });
+    }
+    return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+  });
+}
 
 async function runOne(browser, vp, step) {
   const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
+  await ctx.addInitScript(buildInitScript());
+  await installMocks(ctx);
+
   const page = await ctx.newPage();
   const failures = [];
   const errors = [];
@@ -63,42 +190,22 @@ async function runOne(browser, vp, step) {
 
   try {
     await page.goto(`${URL}${step.path}`, { waitUntil: "networkidle" });
+    await page
+      .locator('[data-testid="wizard-layout"]')
+      .waitFor({ state: "visible", timeout: 10_000 });
 
-    const wizard = page.locator('[data-testid="wizard-layout"]');
-    const gate = page.locator('[data-testid="auth-gate"]');
-
-    // Wait for at least one to render.
-    await Promise.race([
-      wizard.waitFor({ state: "visible", timeout: 10_000 }).catch(() => null),
-      gate.waitFor({ state: "visible", timeout: 10_000 }).catch(() => null),
-    ]);
-
-    const wizardVisible = await wizard.isVisible().catch(() => false);
-    const gateVisible = await gate.isVisible().catch(() => false);
-
-    if (step.expect === "wizard" && !wizardVisible) {
-      failures.push(`${step.slug} @ ${vp.name}: expected wizard layout, none rendered`);
-    }
-    if (step.expect === "either" && !wizardVisible && !gateVisible) {
-      failures.push(`${step.slug} @ ${vp.name}: neither wizard nor auth gate rendered`);
+    if ((await page.getByRole("heading", { level: 1 }).count()) === 0) {
+      failures.push(`${step.slug} @ ${vp.name}: no <h1>`);
     }
 
-    // Sanity: H1 present (both wizard pages and the sign-in panel render one)
-    const h1Count = await page.getByRole("heading", { level: 1 }).count();
-    if (h1Count === 0) {
-      failures.push(`${step.slug} @ ${vp.name}: no <h1> on page`);
+    const stepperItems = await page.locator('[data-testid="wizard-stepper"] li').count();
+    if (stepperItems !== 5) {
+      failures.push(`${step.slug} @ ${vp.name}: stepper has ${stepperItems} items (need 5)`);
     }
 
-    // Wizard-specific: stepper should expose all 5 steps
-    if (wizardVisible) {
-      const stepperItems = await page
-        .locator('[data-testid="wizard-stepper"] li')
-        .count();
-      if (stepperItems !== 5) {
-        failures.push(
-          `${step.slug} @ ${vp.name}: stepper has ${stepperItems} items (need 5)`,
-        );
-      }
+    // The auth gate must NOT render — fixtures are supposed to bypass it.
+    if (await page.locator('[data-testid="auth-gate"]').count()) {
+      failures.push(`${step.slug} @ ${vp.name}: auth gate rendered despite fixture session`);
     }
 
     if (errors.length) {
