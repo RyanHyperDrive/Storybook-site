@@ -156,6 +156,7 @@ function CheckoutPage() {
         )}
 
         <Button
+          data-testid="checkout-cta"
           variant="ember"
           className="w-full"
           size="lg"
