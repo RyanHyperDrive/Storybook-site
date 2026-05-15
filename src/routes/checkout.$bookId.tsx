@@ -29,6 +29,10 @@ function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [couponCode, setCouponCode] = useState("");
+  // The internal HYPERDRIVETEST coupon field is intentionally hidden from
+  // regular parents. It appears only when (a) the signed-in user has the
+  // 'admin' role or (b) the URL carries ?testcoupon=1 (QA affordance).
+  const [showCouponField, setShowCouponField] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,8 +42,21 @@ function CheckoutPage() {
         .select("title, child_name")
         .eq("id", bookId)
         .maybeSingle();
+      const { data: userData } = await supabase.auth.getUser();
+      let isAdmin = false;
+      if (userData.user) {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userData.user.id);
+        isAdmin = (roles ?? []).some((r) => r.role === "admin");
+      }
+      const urlFlag =
+        typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).get("testcoupon") === "1";
       if (!cancelled) {
         setBook(data ?? null);
+        setShowCouponField(isAdmin || urlFlag);
         setLoading(false);
       }
     })();
