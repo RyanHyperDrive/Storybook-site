@@ -93,3 +93,34 @@ Screenshots: `visual-regression/create/create-{desktop-1280,mobile-390}.png`.
 - `[data-testid="create-landing"]` — root of `/create`
 - `[data-testid="trust-grid"]` — 4-item trust list near the CTA
 - `[data-testid="journey-preview"]` — photo→character→book panel
+
+## /create wizard journey
+
+`scripts/visual-regression-create-journey.mjs` walks every step of the
+multi-step book creation flow at desktop (1280) and mobile (390):
+
+- `/create/profile` — must render the wizard layout (auth-optional)
+- `/create/photos`, `/create/story`, `/create/style`, `/create/character-sheet`
+  — must render either the wizard layout or the sign-in gate (these routes
+  are auth-gated, so unauthenticated runs are expected to land on the gate)
+
+For each route + viewport it asserts:
+
+- `[data-testid="wizard-layout"]` OR `[data-testid="auth-gate"]` is visible
+- exactly one `<h1>` is rendered
+- when the wizard renders, the stepper exposes all 5 steps
+- no `pageerror` or `console.error` was emitted while loading
+
+```bash
+bunx playwright install chromium   # one-time
+PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-create-journey.mjs
+```
+
+Screenshots: `visual-regression/create-journey/{slug}-{desktop-1280,mobile-390}.png`.
+
+### Required test hooks
+
+- `[data-testid="wizard-layout"]` — root of `WizardLayout`
+- `[data-testid="wizard-stepper"]` — the 5-step `<ol>` inside the layout
+- `[data-testid="auth-gate"]` — root of the `SignInPanel` rendered by `AuthGate`
+

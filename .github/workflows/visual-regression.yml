@@ -51,6 +51,11 @@ jobs:
           PREVIEW_URL: http://127.0.0.1:8080
         run: node scripts/visual-regression-create.mjs
 
+      - name: Run /create journey visual regression
+        env:
+          PREVIEW_URL: http://127.0.0.1:8080
+        run: node scripts/visual-regression-create-journey.mjs
+
       - name: Stop preview server
         if: always()
         run: |
