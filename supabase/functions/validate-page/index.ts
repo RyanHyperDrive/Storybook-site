@@ -259,6 +259,14 @@ serve(async (req) => {
     }
     if (!sheetUrl) return errorResponse("No approved character sheet found for this book", 412);
 
+    // Resolve optional cover image (secondary canonical look).
+    let coverUrl: string | undefined;
+    if (book.cover_image_path) {
+      coverUrl = (await signed(admin, "generated-pages", book.cover_image_path)) ?? undefined;
+    } else if (book.cover_url) {
+      coverUrl = book.cover_url;
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
@@ -271,17 +279,33 @@ serve(async (req) => {
       book.details_avoid && `Avoid: ${book.details_avoid}`,
     ].filter(Boolean).join("\n");
 
+    const contractJson = book.visual_consistency_contract
+      ? JSON.stringify(book.visual_consistency_contract)
+      : "(none)";
+
     const userText = [
       `Required scene: ${sceneDescription}`,
+      `Art style key: ${styleKey}`,
       `Target age band: ${ageBand} (score age_appropriateness against this band specifically, NOT a generic "kid safe" standard)`,
       `Characters that should be present: ${arr(charactersPresent).join(", ") || "(main character only)"}`,
       `Must include: ${arr(visualMustHaves).join(", ") || "(none)"}`,
       `Must NOT include: ${arr(visualMustNotInclude).join(", ") || "(none)"}`,
-      `Twins book: ${(isTwins ?? book.is_twins) ? "yes" : "no"}`,
+      `Twins book: ${(isTwins ?? book.is_twins) ? "yes — twins must remain visually distinguishable" : "no"}`,
       `Parent-provided child details:\n${childSummary || "(none)"}`,
+      `Visual consistency contract (JSON): ${contractJson}`,
       "",
-      "Image 1 = approved character sheet. Image 2 = generated page image. Score the page against the sheet, the scene, the parent details, and the age band. Return strict JSON only.",
+      coverUrl
+        ? "Image 1 = approved character sheet. Image 2 = approved cover. Image 3 = generated page image."
+        : "Image 1 = approved character sheet. Image 2 = generated page image.",
+      "Score the page against the sheet, the cover, the contract, the scene, the parent details, the style, and the age band. Return strict JSON only.",
     ].join("\n");
+
+    const validatorContent: any[] = [
+      { type: "text", text: userText },
+      { type: "image_url", image_url: { url: sheetUrl } },
+    ];
+    if (coverUrl) validatorContent.push({ type: "image_url", image_url: { url: coverUrl } });
+    validatorContent.push({ type: "image_url", image_url: { url: pageUrl } });
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -293,15 +317,8 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: buildSystemPrompt(ageBand) },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: userText },
-              { type: "image_url", image_url: { url: sheetUrl } },
-              { type: "image_url", image_url: { url: pageUrl } },
-            ],
-          },
+          { role: "system", content: buildSystemPrompt(ageBand, styleKey, !!coverUrl) },
+          { role: "user", content: validatorContent },
         ],
       }),
     });
@@ -327,7 +344,7 @@ serve(async (req) => {
       }
     }
 
-    const check = validate(parsed);
+    const check = validate(parsed, { styleKey });
     if (!check.ok) return errorResponse(`Validator schema check failed: ${check.error}`, 502);
     const report = check.data;
 
