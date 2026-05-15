@@ -216,7 +216,7 @@ function Home() {
               key={step.n}
               className="group flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-[0_10px_30px_-18px_oklch(0.22_0.03_260/0.45)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-18px_oklch(0.22_0.03_260/0.55)]"
             >
-              <div className="relative aspect-[4/3] overflow-hidden bg-paper">
+              <div className="relative aspect-square overflow-hidden bg-paper">
                 <img
                   src={step.img}
                   alt={step.alt}
