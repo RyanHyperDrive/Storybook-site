@@ -270,6 +270,49 @@ export function SampleBookModal({
   );
 }
 
+function ResilientArtwork({
+  src,
+  fallbackSrc,
+  alt,
+  styleKey,
+  variant,
+  imgClassName,
+}: {
+  src?: string;
+  fallbackSrc?: string;
+  alt: string;
+  styleKey: ArtStyleKey;
+  variant: "cover" | "page-a" | "page-b";
+  imgClassName?: string;
+}) {
+  const sources = useMemo(
+    () => Array.from(new Set([usableImageUrl(src), usableImageUrl(fallbackSrc)].filter(Boolean) as string[])),
+    [src, fallbackSrc],
+  );
+  const [sourceIndex, setSourceIndex] = useState(0);
+
+  useEffect(() => {
+    setSourceIndex(0);
+  }, [sources.join("|")]);
+
+  const activeSrc = sourceIndex < sources.length ? sources[sourceIndex] : undefined;
+
+  if (!activeSrc) {
+    return <StyleArtwork styleKey={styleKey} variant={variant} />;
+  }
+
+  return (
+    <img
+      key={activeSrc}
+      src={activeSrc}
+      alt={alt}
+      className={imgClassName}
+      loading="eager"
+      onError={() => setSourceIndex((current) => current + 1)}
+    />
+  );
+}
+
 function Spread({
   current,
   styleKey,
