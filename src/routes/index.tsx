@@ -106,153 +106,264 @@ function Home() {
         open={openKey !== null}
         onOpenChange={(v) => !v && setOpenKey(null)}
       />
-      {/* HERO */}
-      <section className="bg-warm-grad">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:py-16 md:grid-cols-2 md:py-24">
+      {/* HERO — premium product preview composition */}
+      <section className="relative overflow-hidden bg-warm-grad">
+        {/* soft decorative blobs to break up the cream */}
+        <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-ember/10 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-32 right-[-6rem] h-80 w-80 rounded-full bg-sage/15 blur-3xl" />
+
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pt-10 pb-14 sm:pt-14 md:grid-cols-[1.05fr_1fr] md:gap-12 md:pt-16 md:pb-20">
+          {/* LEFT — copy + conversion card */}
           <div className="min-w-0">
-            <Badge className="bg-sage/15 text-sage hover:bg-sage/15" variant="secondary">
-              <Sparkles className="mr-1 h-3.5 w-3.5" /> Personalized for ages 2–10
-            </Badge>
-            <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
-              A bedtime story starring<span className="text-ember"> your child</span>.
-            </h1>
-            <p className="mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
-              Turn their favorite things into a personalized illustrated storybook you can read together tonight — with your child as the hero, in an art style you choose.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <Link to="/create" className="w-full sm:w-auto">
-                <Button size="lg" variant="ember" className="w-full sm:w-auto">
-                  Start free character preview
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link
-                to="/pricing"
-                className="text-center text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
-              >
-                See what's included · $29.99
-              </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="bg-sage/15 text-sage hover:bg-sage/15" variant="secondary">
+                <Sparkles className="mr-1 h-3.5 w-3.5" /> Personalized for ages 2–10
+              </Badge>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/70 px-2.5 py-0.5 text-[11px] font-medium text-foreground/80 backdrop-blur">
+                <Clock className="h-3 w-3 text-ember" /> Ready in 10–20 min
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/70 px-2.5 py-0.5 text-[11px] font-medium text-foreground/80 backdrop-blur">
+                <BookOpen className="h-3 w-3 text-ember" /> 10+ illustrated pages
+              </span>
             </div>
-            <p className="mt-3 flex items-center gap-2 text-xs font-medium text-sage">
-              <ShieldCheck className="h-4 w-4 shrink-0" />
-              No payment until you approve the character preview.
+
+            <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-[3.4rem]">
+              A bedtime story
+              <br className="hidden sm:block" />
+              starring<span className="text-ember"> your child</span>.
+            </h1>
+            <p className="mt-4 max-w-xl text-base text-muted-foreground md:text-[1.05rem]">
+              Upload one photo. We design an illustrated character of your child, you approve it, then we build a custom 10+ page storybook in the art style you choose — read it together tonight.
             </p>
-            <ul className="mt-6 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-              <li className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Private child photos</li>
-              <li className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Not used to train models</li>
-              <li className="flex items-start gap-2"><Wand2 className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Parent-approved character before payment</li>
-              <li className="flex items-start gap-2"><RefreshCcw className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Free regeneration if it looks off</li>
-            </ul>
+
+            {/* Conversion card: price + CTA + approval line + trust bullets, grouped */}
+            <div className="mt-6 rounded-xl border border-border bg-background/85 p-4 shadow-[0_18px_40px_-24px_oklch(0.22_0.03_260/0.45)] backdrop-blur sm:p-5">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <div className="font-display text-3xl font-semibold leading-none">$29.99</div>
+                <div className="text-sm text-muted-foreground">one-time · web reader + printable PDF</div>
+              </div>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Link to="/create" className="w-full sm:w-auto">
+                  <Button size="lg" variant="ember" className="w-full sm:w-auto">
+                    Start free character preview
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link
+                  to="/pricing"
+                  className="text-center text-sm font-medium text-muted-foreground underline-offset-4 hover:underline sm:text-left"
+                >
+                  See what's included
+                </Link>
+              </div>
+              <p className="mt-3 flex items-center gap-2 text-xs font-semibold text-sage">
+                <ShieldCheck className="h-4 w-4 shrink-0" />
+                No payment until you approve the character preview.
+              </p>
+              <ul className="mt-4 grid gap-2 border-t border-border pt-4 text-sm text-foreground/85 sm:grid-cols-2">
+                <li className="flex items-start gap-2"><Lock className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Private child photos</li>
+                <li className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Not used to train models</li>
+                <li className="flex items-start gap-2"><Wand2 className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Parent-approved character</li>
+                <li className="flex items-start gap-2"><RefreshCcw className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Free regeneration</li>
+              </ul>
+            </div>
+
+            {/* Sample style strip — proof + visual variety, doubles as a CTA to /#examples */}
+            <a href="#examples" className="group mt-5 flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground">
+              <div className="flex -space-x-2">
+                {[sampleWatercolor, sampleCartoon, sampleComic, sampleManga, samplePixel].map((src, i) => (
+                  <span
+                    key={i}
+                    className="grid h-9 w-9 place-items-center overflow-hidden rounded-md border-2 border-background bg-paper shadow-sm"
+                  >
+                    <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  </span>
+                ))}
+              </div>
+              <span>
+                <span className="font-medium text-foreground">5 art styles</span> —
+                tap a sample to flip through it
+                <span className="ml-1 inline-block transition-transform group-hover:translate-x-0.5">→</span>
+              </span>
+            </a>
           </div>
 
-          <div className="relative">
-            <div className="overflow-hidden rounded-lg border border-border shadow-[0_30px_60px_-30px_oklch(0.22_0.03_260/0.35)]">
-              <img
-                src={hero}
-                alt="A parent and child reading a storybook together"
-                width={1536}
-                height={1152}
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div className="absolute -bottom-4 left-4 hidden rounded-md border border-border bg-background p-3 shadow-lg sm:flex sm:items-center sm:gap-3 md:-bottom-6 md:-left-6 md:p-4">
-              <div className="grid h-10 w-10 place-items-center rounded-md bg-ember/15 text-ember">
-                <Heart className="h-5 w-5" />
+          {/* RIGHT — layered product preview */}
+          <div className="relative mx-auto w-full max-w-md md:max-w-none">
+            <div className="relative aspect-[4/5] w-full">
+              {/* Open spread (back-most), tilted slightly left */}
+              <div className="absolute left-0 top-6 w-[68%] -rotate-6 overflow-hidden rounded-md border border-border bg-background shadow-[0_28px_55px_-28px_oklch(0.22_0.03_260/0.55)]">
+                <img
+                  src={sampleWatercolorPage1}
+                  alt="Sample illustrated storybook spread"
+                  width={900}
+                  height={900}
+                  loading="eager"
+                  className="block h-full w-full object-cover"
+                />
               </div>
-              <div>
-                <div className="text-sm font-semibold">Made for reading together</div>
-                <div className="text-xs text-muted-foreground">Parent-approved before checkout</div>
+
+              {/* Cover (front, hero), slight right tilt with page-edge depth */}
+              <div className="absolute right-0 top-0 w-[62%] rotate-3">
+                <span aria-hidden className="absolute inset-y-2 right-[-3px] w-[3px] rounded-r-sm bg-foreground/15" />
+                <span aria-hidden className="absolute inset-y-4 right-[-6px] w-[2px] rounded-r-sm bg-foreground/10" />
+                <div className="relative overflow-hidden rounded-md border border-border bg-background shadow-[0_30px_60px_-22px_oklch(0.22_0.03_260/0.55)]">
+                  <span aria-hidden className="absolute inset-y-0 left-0 z-10 w-[6px] bg-gradient-to-b from-foreground/30 via-foreground/10 to-foreground/30" />
+                  <img
+                    src={sampleWatercolor}
+                    alt="Sample StoryNest book cover starring the child as the hero"
+                    width={900}
+                    height={1200}
+                    className="block aspect-[3/4] w-full object-cover"
+                  />
+                  <div className="absolute left-2 top-2 rounded-full bg-foreground/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background backdrop-blur">
+                    Watercolor
+                  </div>
+                </div>
+              </div>
+
+              {/* Character chip — bottom-left */}
+              <div className="absolute -bottom-2 left-2 w-[58%] rounded-lg border border-border bg-background p-2.5 shadow-[0_18px_40px_-18px_oklch(0.22_0.03_260/0.45)] sm:left-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border">
+                    <img src={sampleWatercolorPage2} alt="Illustrated character preview of the child" className="h-full w-full object-cover" loading="lazy" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Character preview</div>
+                    <div className="truncate text-sm font-semibold text-foreground">Looks like your child</div>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center gap-1.5 rounded-md bg-sage/10 px-2 py-1 text-[11px] font-semibold text-sage">
+                  <Check className="h-3.5 w-3.5" /> Approved by parent before payment
+                </div>
+              </div>
+
+              {/* Floating trust badge — top right */}
+              <div className="absolute -right-1 top-2 hidden rounded-md border border-border bg-background px-3 py-2 text-xs shadow-lg sm:block">
+                <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                  <Star className="h-3.5 w-3.5 fill-ember text-ember" /> Real children's-book quality
+                </div>
+                <div className="mt-0.5 text-[11px] text-muted-foreground">Warm illustrations · adaptive reading level</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS — image-led visual proof flow */}
+      {/* HOW IT WORKS — connected visual journey, not generic cards */}
       <section data-testid="how-it-works" className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
-        <div className="max-w-2xl">
-          <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-            Four small steps. One book they'll never forget.
-          </h2>
-          <p className="mt-3 text-sm text-muted-foreground md:text-base">
-            See exactly how a real photo becomes a personalized illustrated character — and then a finished book you read together.
-          </p>
+        <div className="flex flex-col items-start gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl">
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ember">How it works</div>
+            <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">
+              Four small steps. One book they'll never forget.
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground md:text-base">
+              See exactly how a real photo becomes a personalized illustrated character — and then a finished book you read together.
+            </p>
+          </div>
+          <Link to="/create" className="text-sm font-medium text-ember underline-offset-4 hover:underline">
+            Start free preview →
+          </Link>
         </div>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Connected timeline */}
+        <ol className="relative mt-10 grid gap-6 md:grid-cols-4 md:gap-4">
+          {/* desktop connector line */}
+          <span
+            aria-hidden
+            className="absolute left-0 right-0 top-[42px] hidden h-px bg-gradient-to-r from-transparent via-ember/30 to-transparent md:block"
+          />
           {[
             {
               n: 1,
+              icon: Camera,
               title: "Add a photo",
               body: "One clear, well-lit photo so we can sketch the character.",
-              note: "Private to your account.",
+              note: "Private to your account",
               img: howPhotos,
               alt: "Two example uploaded photos: a young boy in a yellow shirt and a young girl in a pink dress",
-              tag: "Upload",
             },
             {
               n: 2,
+              icon: Heart,
               title: "Share what they love",
-              body: "Their name, age (2–10), and the things that make them light up.",
-              note: "Rockets, dinosaurs, ponies, princesses, planets — you choose.",
+              body: "Their name, age (2–10), and the things that light them up.",
+              note: "Rockets, dinosaurs, princesses — you choose",
               img: howLoves,
               alt: "Playful storybook illustrations of a rocket, dinosaur, crown, pony, and ringed planet",
-              tag: "Their world",
             },
             {
               n: 3,
+              icon: Wand2,
               title: "Approve the character",
               body: "Review the illustrated version of your child. Regenerate free until it feels right.",
-              note: "Same hair, skin, and outfit as the photo.",
+              note: "No payment until you say yes",
               img: howCharacters,
               alt: "Illustrated storybook versions of the same boy and girl, matching hair, skin tone, and outfits",
-              tag: "Parent-approved",
             },
             {
               n: 4,
+              icon: BookOpen,
               title: "Read together",
-              body: "Cover, dedication, and at least 10 illustrated pages — ready in 10–20 minutes.",
-              note: "Web reader + downloadable PDF.",
+              body: "Cover, dedication, and 10+ illustrated pages — ready in 10–20 minutes.",
+              note: "Web reader + downloadable PDF",
               img: howReading,
               alt: "A father reading a personalized illustrated ebook to his young daughter on a cozy couch",
-              tag: "Tonight",
             },
           ].map((step) => (
-            <article
-              key={step.n}
-              className="group flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-[0_10px_30px_-18px_oklch(0.22_0.03_260/0.45)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-18px_oklch(0.22_0.03_260/0.55)]"
-            >
-              <div className="relative aspect-square overflow-hidden bg-paper">
-                <img
-                  src={step.img}
-                  alt={step.alt}
-                  loading="lazy"
-                  width={1024}
-                  height={1024}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                />
-                <div className="absolute left-3 top-3 flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-ember text-[12px] font-semibold text-ember-foreground shadow">
-                    {step.n}
-                  </span>
-                  <span className="rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground shadow-sm backdrop-blur">
-                    {step.tag}
-                  </span>
+            <li key={step.n} className="relative">
+              {/* Numbered node sits ON the connector line */}
+              <div className="relative z-10 flex items-center gap-3 md:flex-col md:items-start">
+                <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full border-2 border-ember bg-background font-display text-base font-semibold text-ember shadow-[0_6px_18px_-8px_oklch(0.65_0.18_30/0.5)]">
+                  {step.n}
+                </span>
+                <div className="md:hidden">
+                  <div className="font-display text-lg font-semibold leading-tight">{step.title}</div>
                 </div>
               </div>
-              <div className="flex flex-1 flex-col gap-2 p-5">
-                <div className="font-display text-lg font-semibold leading-tight">{step.title}</div>
-                <p className="text-sm text-muted-foreground">{step.body}</p>
-                <p className="mt-auto flex items-start gap-1.5 pt-2 text-xs font-medium text-sage">
-                  <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                  {step.note}
-                </p>
-              </div>
-            </article>
+
+              <article className="mt-3 overflow-hidden rounded-lg border border-border bg-background shadow-[0_10px_30px_-18px_oklch(0.22_0.03_260/0.45)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-18px_oklch(0.22_0.03_260/0.55)]">
+                <div className="relative aspect-[5/4] overflow-hidden bg-paper">
+                  <img
+                    src={step.img}
+                    alt={step.alt}
+                    loading="lazy"
+                    width={1024}
+                    height={820}
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-background/90 text-foreground shadow-sm backdrop-blur">
+                    <step.icon className="h-3.5 w-3.5 text-ember" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 p-4">
+                  <div className="hidden font-display text-base font-semibold leading-tight md:block">
+                    {step.title}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{step.body}</p>
+                  <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold text-sage">
+                    <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    {step.note}
+                  </p>
+                </div>
+              </article>
+            </li>
           ))}
+        </ol>
+
+        <div className="mt-8 flex flex-col items-start gap-3 rounded-lg border border-border bg-paper/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-foreground/85">
+            <span className="font-semibold">No surprises:</span> you only pay $29.99 after you approve the illustrated character.
+          </p>
+          <Link to="/create" className="w-full sm:w-auto">
+            <Button variant="ember" className="w-full sm:w-auto">
+              Start free character preview <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </Link>
         </div>
 
-        <p className="mt-6 text-xs text-muted-foreground">
+        <p className="mt-4 text-xs text-muted-foreground">
           Example children shown are fictional, generated previews — not real customer photos. Your child's photo is private to your account and never used to train models.
         </p>
       </section>
