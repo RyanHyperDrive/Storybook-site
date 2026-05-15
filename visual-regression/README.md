@@ -230,3 +230,22 @@ Tune via env vars:
 - `A11Y_DISABLE_RULES` — comma list of axe rule ids to skip
   (e.g. `region,landmark-one-main`) when a finding is owned by shared layout
   code outside this page.
+
+## /checkout accessibility (axe-core)
+
+`scripts/a11y-checkout.mjs` runs axe-core against `/checkout/<bookId>` at
+desktop (1280) and mobile (390). The page requires an authenticated user
+and a real book row, so the script reuses the deterministic fixtures from
+`scripts/fixtures/create-journey.js` to mock Supabase auth, REST, and
+storage — no real backend calls. Build fails on any `serious` or
+`critical` violation. JSON reports are written to
+`visual-regression/checkout-a11y/`.
+
+Run locally:
+
+```sh
+PREVIEW_URL=http://localhost:8080 node scripts/a11y-checkout.mjs
+```
+
+`A11Y_FAIL_IMPACTS` and `A11Y_DISABLE_RULES` work the same as for the
+/pricing axe script.
