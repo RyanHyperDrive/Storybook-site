@@ -28,6 +28,7 @@ function CheckoutPage() {
   const [book, setBook] = useState<{ title: string | null; child_name: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -50,10 +51,10 @@ function CheckoutPage() {
   async function startCheckout() {
     setPaying(true);
     try {
-      const { url } = await checkout({
-        data: { bookId, origin: window.location.origin },
+      const { url, internalTestOrder } = await checkout({
+        data: { bookId, origin: window.location.origin, couponCode: couponCode || undefined },
       });
-      // In the real Stripe flow this is an external redirect.
+      if (internalTestOrder) toast.success("Internal test coupon applied — book queued without payment.");
       window.location.href = url;
     } catch (e: any) {
       toast.error(e?.message ?? "Could not start checkout");
