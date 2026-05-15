@@ -121,6 +121,21 @@ function CheckoutPage() {
           </ul>
         </div>
 
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+          <label htmlFor="coupon" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Coupon code (optional)
+          </label>
+          <input
+            id="coupon"
+            type="text"
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+            placeholder="Enter code"
+            className="mt-2 w-full rounded-md border bg-background px-3 py-2 text-sm"
+            autoComplete="off"
+          />
+        </div>
+
         <Button
           variant="ember"
           className="w-full"
