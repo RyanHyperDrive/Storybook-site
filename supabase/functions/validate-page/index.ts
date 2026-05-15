@@ -214,11 +214,12 @@ serve(async (req) => {
     // child's actual age band rather than a generic "kid safe" standard.
     const { data: book, error: bookErr } = await admin
       .from("books")
-      .select("id, user_id, is_twins, child_name, child_age, child_pronouns, child_loves, details_include, details_avoid, reading_level")
+      .select("id, user_id, is_twins, child_name, child_age, child_pronouns, child_loves, details_include, details_avoid, reading_level, art_style, visual_consistency_contract, cover_image_path, cover_url")
       .eq("id", bookId)
       .maybeSingle();
     if (bookErr) return errorResponse(bookErr.message, 500);
     if (!book || book.user_id !== user.id) return errorResponse("Book not found or forbidden", 403);
+    const styleKey = String(book.art_style ?? "");
 
     const lvl = String(readingLevel ?? book.reading_level ?? "ages_4_6");
     const ageBand =
