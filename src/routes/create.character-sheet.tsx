@@ -249,6 +249,35 @@ function Inner() {
         .update({ status: "awaiting_payment" })
         .eq("id", id);
 
+      // Build & persist the visual consistency contract from approved data.
+      // This is the canonical reference used by every page + cover prompt and
+      // every validator call. If it fails (network/transient), the start-book-
+      // generation pipeline has a fallback that rebuilds it server-side, but
+      // we surface the error here so the parent isn't kept in the dark.
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/build-contract`;
+        const r = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ bookId: id }),
+        });
+        if (!r.ok) {
+          const j = await r.json().catch(() => ({}));
+          console.warn("build-contract failed", j);
+          toast.warning(
+            "Approved, but we'll need a quick admin review before generation. You can still continue to checkout.",
+          );
+        }
+      } catch (err) {
+        console.warn("build-contract network error", err);
+      }
+
       toast.success("Character approved — let's finish your book");
       navigate({ to: "/checkout/$bookId", params: { bookId: id } });
     } catch (e: any) {

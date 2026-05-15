@@ -73,12 +73,14 @@ Deno.test("missing required age-fit field rejects payload", () => {
   assertEquals(r.ok, false);
 });
 
-Deno.test("borderline 0.85 scores do NOT force regeneration", () => {
+Deno.test("borderline at-threshold scores do NOT force regeneration", () => {
   const r = validate(baseReport({
-    character_likeness_score: 0.85,
+    character_likeness_score: 0.88,
+    character_consistency_score: 0.88,
+    cover_match_score: 0.85,
     style_consistency_score: 0.85,
     scene_accuracy_score: 0.85,
-    age_appropriateness_score: 0.85,
+    age_appropriateness_score: 0.95,
   }));
   if (!r.ok) throw new Error(r.error);
   assertEquals(r.data.regeneration_recommended, false);

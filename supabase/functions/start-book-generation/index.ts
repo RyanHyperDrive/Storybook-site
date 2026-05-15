@@ -48,11 +48,57 @@ serve(async (req) => {
     // Ownership check.
     const { data: book } = await admin
       .from("books")
-      .select("id, user_id, status, reading_level, theme, favorites, avoid")
+      .select("id, user_id, status, reading_level, theme, favorites, avoid, visual_consistency_contract, cover_validation, art_style, is_twins")
       .eq("id", bookId)
       .maybeSingle();
     if (!book || book.user_id !== userId) return errorResponse("Not found or forbidden", 403);
     const reading_level = (book as any).reading_level ?? "ages_4_6";
+
+    // ---- Contract gate -----------------------------------------------------
+    // Page generation MUST run against an approved visual_consistency_contract.
+    // If the book was created before contracts existed (or the approval flow
+    // failed to persist one), build it inline from approved data. If we can't
+    // (e.g. no approved character sheet / subjects), block the pipeline with
+    // a friendly error and flag the book for admin review.
+    if (!book.visual_consistency_contract) {
+      const [{ data: profiles }, { data: subjects }, { data: sheet }] = await Promise.all([
+        admin.from("child_profiles").select("*").eq("book_id", bookId).order("slot"),
+        admin.from("child_subjects").select("*").eq("user_id", userId).eq("approved", true),
+        admin
+          .from("character_sheets")
+          .select("image_url, approved")
+          .eq("book_id", bookId)
+          .eq("approved", true)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+      const profileIds = new Set((profiles ?? []).map((p: any) => p.id));
+      const bookSubjects = (subjects ?? []).filter((s: any) => profileIds.has(s.child_profile_id));
+      if (!bookSubjects.length || !sheet?.image_url) {
+        return errorResponse(
+          "Cannot start: approve the character sheet first (visual consistency contract missing).",
+          412,
+        );
+      }
+      const { buildContract } = await import("../_shared/visual-contract.ts");
+      const ageBand =
+        reading_level === "ages_2_3" || reading_level === "ages_3_5" ? "2-3" :
+        reading_level === "ages_7_10" || reading_level === "ages_6_8" ? "7-10" :
+        "4-6";
+      const contract = buildContract({
+        book,
+        childProfiles: profiles ?? [],
+        childSubjects: bookSubjects,
+        characterSheet: sheet,
+        ageBand,
+      });
+      await admin
+        .from("books")
+        .update({ visual_consistency_contract: contract })
+        .eq("id", bookId);
+      console.log("start-book-generation: built fallback contract", { bookId });
+    }
 
     // Reuse an in-flight job if one already exists.
     const { data: existing } = await admin
