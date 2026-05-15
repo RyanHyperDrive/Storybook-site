@@ -96,6 +96,7 @@ jobs:
           name: visual-regression-screenshots
           path: |
             visual-regression/**/*.png
+            visual-regression/pricing-a11y/*.json
             preview.log
           if-no-files-found: ignore
           retention-days: 14
