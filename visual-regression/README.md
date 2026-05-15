@@ -64,3 +64,32 @@ updating the script:
 - The modal's pager "Next page" button (`aria-label="Next page"`)
 - Footer copy beginning with "Fictional sample preview"
 - Footer link labelled "Start free character preview"
+
+## /create guided landing
+
+`scripts/visual-regression-create.mjs` captures `/create` at desktop (1280) and
+mobile (390) and asserts the conversion-critical building blocks remain intact:
+
+- H1 + primary "Start free character preview" CTA visible
+- `$29.99` pricing line near the CTA
+- 4-item trust grid (`[data-testid="trust-grid"]`): private photos, no model
+  training, parent-approved, free regeneration
+- "What happens after you start" pipeline strip — every step from
+  About child → Photo upload → Story + style → Approve character → Pay (only now) → Ready in 10–20 min
+- Journey preview panel (`[data-testid="journey-preview"]`) with ≥3 images
+- 5 step cards
+- On mobile: headline, CTA, and trust grid render within the first ~1400px
+  (no awkward empty space pushing trust below the fold)
+
+```bash
+bunx playwright install chromium   # one-time
+PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-create.mjs
+```
+
+Screenshots: `visual-regression/create/create-{desktop-1280,mobile-390}.png`.
+
+### Required test hooks
+
+- `[data-testid="create-landing"]` — root of `/create`
+- `[data-testid="trust-grid"]` — 4-item trust list near the CTA
+- `[data-testid="journey-preview"]` — photo→character→book panel
