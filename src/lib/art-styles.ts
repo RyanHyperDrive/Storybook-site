@@ -27,6 +27,8 @@ export type ArtStyle = {
   name: string;
   /** Parent-facing one-liner shown on cards. */
   description: string;
+  /** Short "best for..." chip shown on sample cards. */
+  parentTag: string;
   /** Prompt anchor appended to every image generation for consistency. */
   aiAnchor: string;
   /** Tailwind classes for the sample placeholder gradient. */
@@ -42,6 +44,7 @@ export const ART_STYLES: ArtStyle[] = [
     name: "Comic Book",
     description:
       "Bold ink lines, halftone dots, and friendly action panels — a cozy Saturday-morning comic.",
+    parentTag: "Best for comic fans",
     aiAnchor:
       "Children's adventure comic book illustration, bold ink outlines, halftone dot shading, motion lines, starbursts, panel-border framing, expressive poses, vivid but cozy kid-friendly colors, consistent character design, premium kid-friendly comic art. No speech bubbles, no thought bubbles, no word balloons, no blank bubbles, no empty bubbles, no caption boxes, no readable text, no letters, no typography, no signs, no sound effect words (no POW, BAM, WOW, ZAP), no weapons, no fire, no scary peril.",
     sampleTone: "from-ember/30 via-ember/10 to-paper",
@@ -53,6 +56,7 @@ export const ART_STYLES: ArtStyle[] = [
     name: "Soft Cartoon",
     description:
       "Rounded, playful, modern preschool animation — bright, friendly, easy to love.",
+    parentTag: "Best for ages 2–5",
     aiAnchor:
       "Soft modern cartoon illustration for a children's storybook, clean rounded shapes, large expressive eyes, friendly proportions, bright balanced colors, smooth gradients, premium preschool animation feel, consistent character design, no readable text in image.",
     sampleTone: "from-sage/25 via-sage/10 to-paper",
@@ -64,6 +68,7 @@ export const ART_STYLES: ArtStyle[] = [
     name: "Watercolor Adventure",
     description:
       "Delicate paper texture and soft pastel washes — a dreamy bedtime-book feel.",
+    parentTag: "Best for bedtime",
     aiAnchor:
       "Children's book watercolor illustration, soft pastel washes, visible warm paper texture, gentle ink accents, expressive but subtle character design, premium bedtime story feel, no readable text in image.",
     sampleTone: "from-accent via-paper to-paper",
@@ -75,6 +80,7 @@ export const ART_STYLES: ArtStyle[] = [
     name: "Manga-Inspired",
     description:
       "Expressive eyes, clean linework, and cinematic composition — softened for young readers.",
+    parentTag: "Best for manga fans",
     aiAnchor:
       "Manga-inspired children's storybook illustration, expressive large eyes, clean precise linework, dynamic cinematic composition, soft screentone shading, age-appropriate gentle mood, consistent character design, no readable text in image.",
     sampleTone: "from-sage/20 via-ember/10 to-paper",
@@ -86,6 +92,7 @@ export const ART_STYLES: ArtStyle[] = [
     name: "8-bit Pixel Art",
     description:
       "Crisp pixel blocks and a charming retro palette — like a cozy storybook RPG.",
+    parentTag: "Best for game fans",
     aiAnchor:
       "Children's 8-bit pixel art illustration, crisp chunky pixel blocks, limited cheerful retro palette, charming nostalgic RPG feel, clear silhouettes, no anti-aliased blur, no pseudo-text glyphs, consistent character design, no readable text in image.",
     sampleTone: "from-sage/15 via-ember/15 to-paper",

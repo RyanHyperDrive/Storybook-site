@@ -53,6 +53,7 @@ const samples = ART_STYLES.map((s) => ({
   title: s.sampleTitle,
   age: "Personalized for ages 2–10",
   styleName: s.name,
+  parentTag: s.parentTag,
 }));
 
 const faqs = [
@@ -251,7 +252,7 @@ function Home() {
         </p>
       </section>
 
-      {/* SAMPLES — book-cover cards with HTML title in a clean lower jacket band */}
+      {/* SAMPLES — premium storefront feel: book covers with spine + page edges */}
       <section id="examples" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 sm:py-16">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
@@ -259,66 +260,96 @@ function Home() {
               Five art styles. One starring child.
             </h2>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Tap a cover to flip through a sample. Choose a style, approve the character, then we build the full book — at least 10 illustrated story pages, personalized for ages 2–10.
+              Tap any cover to flip through a sample. Pick the style your child will love — you approve their illustrated character before we build the full book.
             </p>
           </div>
           <Link to="/create" className="text-sm font-medium text-ember underline-offset-4 hover:underline">
             Start free preview →
           </Link>
         </div>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+
+        {/* What's in every book — set expectations next to the samples */}
+        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border bg-paper/50 px-4 py-3 text-xs text-foreground/80 sm:text-sm">
+          <span className="inline-flex items-center gap-1.5"><BookOpen className="h-4 w-4 text-ember" /> Custom cover + dedication + 10+ illustrated pages</span>
+          <span className="hidden h-4 w-px bg-border sm:inline-block" />
+          <span className="inline-flex items-center gap-1.5"><Heart className="h-4 w-4 text-ember" /> Ages 2–10, reading level adapts</span>
+          <span className="hidden h-4 w-px bg-border sm:inline-block" />
+          <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-sage" /> You approve the character before checkout</span>
+        </div>
+
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           {samples.map((s) => (
             <button
               type="button"
               key={s.key}
               onClick={() => setOpenKey(s.key)}
-              className="group relative flex flex-col overflow-hidden rounded-md border border-border bg-background text-left shadow-[0_10px_30px_-15px_oklch(0.22_0.03_260/0.45)] transition-all hover:-translate-y-0.5 hover:border-ember/60 hover:shadow-[0_18px_40px_-15px_oklch(0.22_0.03_260/0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ember"
+              className="group relative flex flex-col text-left focus:outline-none"
               aria-label={`Preview sample book in ${s.styleName} style`}
             >
-              <span aria-hidden className="absolute inset-y-0 left-0 z-10 w-[5px] bg-gradient-to-b from-foreground/20 via-foreground/5 to-foreground/20" />
-              <div className="relative aspect-[4/5] overflow-hidden bg-paper">
-                {(() => {
-                  const dbCover = assets[SAMPLE_KEY_BY_STYLE[s.key]]?.cover;
-                  const cover = dbCover ?? SAMPLE_COVER_FALLBACK[s.key];
-                  return cover ? (
-                    <img
-                      src={cover}
-                      alt={`${s.title} sample cover in ${s.styleName} style`}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      loading="lazy"
-                      width={1024}
-                      height={1280}
-                    />
-                  ) : (
-                    <StyleArtwork styleKey={s.key} variant="cover" />
-                  );
-                })()}
-                <div className="absolute left-2 top-2 rounded-full bg-foreground/75 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background backdrop-blur">
-                  {s.styleName}
-                </div>
-                <div className="absolute right-2 top-2 rounded-full bg-ember px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-ember-foreground opacity-0 shadow transition-opacity group-hover:opacity-100">
-                  Preview →
+              {/* Book wrapper — page-edge layers create depth, spine sits flush left */}
+              <div className="relative">
+                {/* page edges peeking from right — gives "real book" depth */}
+                <span aria-hidden className="absolute inset-y-1.5 right-[-3px] w-[3px] rounded-r-sm bg-foreground/10" />
+                <span aria-hidden className="absolute inset-y-3 right-[-6px] w-[2px] rounded-r-sm bg-foreground/5" />
+
+                <div className="relative overflow-hidden rounded-md border border-border bg-background shadow-[0_14px_30px_-18px_oklch(0.22_0.03_260/0.55)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_22px_45px_-18px_oklch(0.22_0.03_260/0.6)] group-focus-visible:ring-2 group-focus-visible:ring-ember">
+                  {/* spine */}
+                  <span aria-hidden className="absolute inset-y-0 left-0 z-10 w-[6px] bg-gradient-to-b from-foreground/25 via-foreground/10 to-foreground/25" />
+                  {/* spine highlight */}
+                  <span aria-hidden className="absolute inset-y-0 left-[6px] z-10 w-px bg-background/60" />
+
+                  <div className="relative aspect-[3/4] overflow-hidden bg-paper">
+                    {(() => {
+                      const dbCover = assets[SAMPLE_KEY_BY_STYLE[s.key]]?.cover;
+                      const cover = dbCover ?? SAMPLE_COVER_FALLBACK[s.key];
+                      return cover ? (
+                        <img
+                          src={cover}
+                          alt={`${s.title} sample cover in ${s.styleName} style`}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                          loading="lazy"
+                          width={1024}
+                          height={1280}
+                        />
+                      ) : (
+                        <StyleArtwork styleKey={s.key} variant="cover" />
+                      );
+                    })()}
+
+                    {/* style chip top-left */}
+                    <div className="absolute left-2 top-2 rounded-full bg-foreground/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background backdrop-blur">
+                      {s.styleName}
+                    </div>
+
+                    {/* persistent Preview affordance — visible without hover */}
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-foreground/65 via-foreground/15 to-transparent p-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-[11px] font-semibold text-foreground shadow-md transition-transform group-hover:scale-105">
+                        <BookOpen className="h-3.5 w-3.5 text-ember" />
+                        Preview sample
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              {/* Lower jacket band — clean, no gradient over artwork */}
-              <div className="flex flex-1 flex-col justify-between border-t border-border bg-background p-3">
-                <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    A StoryNest book
-                  </div>
-                  <div className="mt-0.5 font-display text-[15px] font-semibold leading-snug text-foreground">
-                    {s.title}
-                  </div>
+
+              {/* Caption block — outside the cover so it stays clean and readable on mobile */}
+              <div className="mt-3 px-0.5">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  A StoryNest book
                 </div>
-                <div className="mt-2 text-[11px] font-medium text-ember">
-                  Preview this style →
+                <div className="mt-0.5 line-clamp-2 font-display text-[15px] font-semibold leading-snug text-foreground">
+                  {s.title}
+                </div>
+                <div className="mt-1.5 inline-flex items-center rounded-full bg-sage/15 px-2 py-0.5 text-[10px] font-medium text-sage">
+                  {s.parentTag}
                 </div>
               </div>
             </button>
           ))}
         </div>
-        <p className="mt-6 text-xs text-muted-foreground">
-          Concept previews — not real customer books. Stories and illustrations are created with AI and reviewed through parent approval and quality checks.
+
+        <p className="mt-6 max-w-3xl text-xs text-muted-foreground">
+          These sample covers are fictional generated previews — not real customer children. Your own book stars your child as an illustrated character that you approve before we generate any story pages.
         </p>
       </section>
 
