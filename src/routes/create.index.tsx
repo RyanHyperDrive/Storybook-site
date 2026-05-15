@@ -35,7 +35,7 @@ export const Route = createFileRoute("/create/")({
 
 function CreateLanding() {
   return (
-    <div className="bg-warm-grad">
+    <div className="bg-warm-grad" data-testid="create-landing">
       {/* TOP: workspace-style hero */}
       <section className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:pt-12 lg:pb-14 lg:pt-16">
         <div className="grid gap-8 lg:grid-cols-12 lg:items-start lg:gap-10">
@@ -70,7 +70,7 @@ function CreateLanding() {
             </div>
 
             {/* Trust grid — visible without scroll on desktop */}
-            <ul className="mt-5 grid gap-2 text-sm sm:grid-cols-2">
+            <ul data-testid="trust-grid" className="mt-5 grid gap-2 text-sm sm:grid-cols-2">
               <TrustItem icon={Lock}>Private child photos</TrustItem>
               <TrustItem icon={ShieldCheck}>Not used to train models</TrustItem>
               <TrustItem icon={Wand2}>
@@ -275,7 +275,7 @@ function StepCard({
 
 function JourneyPreview() {
   return (
-    <div className="relative">
+    <div className="relative" data-testid="journey-preview">
       {/* soft decorative blur */}
       <div
         aria-hidden
