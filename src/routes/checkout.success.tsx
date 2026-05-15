@@ -110,7 +110,7 @@ function SuccessPage() {
         )}
 
         {state === "done" && (
-          <>
+          <div data-testid="checkout-success-done">
             <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
             <h1 className="font-display text-3xl font-semibold">Payment received</h1>
             <p className="text-muted-foreground">
@@ -129,7 +129,7 @@ function SuccessPage() {
                 <Button variant="ghost">Go to my library</Button>
               </Link>
             </div>
-          </>
+          </div>
         )}
 
         {state === "error" && (
