@@ -89,7 +89,7 @@ function CheckoutPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border bg-card p-6 shadow-sm">
+        <div data-testid="checkout-price-card" className="rounded-2xl border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <ShoppingBag className="h-6 w-6" />
@@ -156,6 +156,7 @@ function CheckoutPage() {
         )}
 
         <Button
+          data-testid="checkout-cta"
           variant="ember"
           className="w-full"
           size="lg"

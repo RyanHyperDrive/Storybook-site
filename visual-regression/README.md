@@ -249,3 +249,30 @@ PREVIEW_URL=http://localhost:8080 node scripts/a11y-checkout.mjs
 
 `A11Y_FAIL_IMPACTS` and `A11Y_DISABLE_RULES` work the same as for the
 /pricing axe script.
+
+## /checkout pixel-diff
+
+`scripts/visual-regression-checkout.mjs` captures the full /checkout page,
+the price card (`[data-testid="checkout-price-card"]`), and the primary CTA
+(`[data-testid="checkout-cta"]`) at desktop (1280) and mobile (390). It
+reuses the create-journey fixtures (mocked Supabase auth/REST/storage,
+frozen clock) so the page renders the same book + $29.99 every run.
+Screenshots go to `visual-regression/checkout/`.
+
+`scripts/visual-regression-checkout-diff.mjs` then diffs each PNG against
+the committed baseline in `visual-regression/checkout/baseline/` using
+pixelmatch and fails when more than `DIFF_RATIO_THRESHOLD` (default 0.5%)
+of pixels differ.
+
+Two-step run:
+
+```sh
+PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-checkout.mjs
+node scripts/visual-regression-checkout-diff.mjs
+```
+
+To refresh baselines after an intentional design change:
+
+```sh
+UPDATE_BASELINES=1 node scripts/visual-regression-checkout-diff.mjs
+```
