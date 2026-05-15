@@ -84,6 +84,12 @@ jobs:
           A11Y_FAIL_IMPACTS: "serious,critical"
         run: node scripts/a11y-pricing.mjs
 
+      - name: Run /checkout accessibility check (axe-core)
+        env:
+          PREVIEW_URL: http://127.0.0.1:8080
+          A11Y_FAIL_IMPACTS: "serious,critical"
+        run: node scripts/a11y-checkout.mjs
+
       - name: Stop preview server
         if: always()
         run: |
