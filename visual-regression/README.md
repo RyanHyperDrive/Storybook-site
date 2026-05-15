@@ -183,3 +183,27 @@ Run locally:
 ```sh
 PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-home.mjs
 ```
+
+## /pricing pixel-diff
+
+`scripts/visual-regression-pricing.mjs` captures the full /pricing page plus
+the hero, pricing card, add-ons row, and FAQ at desktop (1280) and mobile
+(390), with `data-testid` hooks (`pricing-hero`, `pricing-card`,
+`pricing-addons`, `pricing-faq`). Output goes to `visual-regression/pricing/`.
+
+`scripts/visual-regression-pricing-diff.mjs` then diffs each PNG against the
+committed baseline in `visual-regression/pricing/baseline/` using pixelmatch
+and fails if more than `DIFF_RATIO_THRESHOLD` (default 0.5%) of pixels differ.
+
+Two-step run:
+
+```sh
+PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-pricing.mjs
+node scripts/visual-regression-pricing-diff.mjs
+```
+
+To refresh baselines after an intentional design change:
+
+```sh
+UPDATE_BASELINES=1 node scripts/visual-regression-pricing-diff.mjs
+```
