@@ -25,7 +25,7 @@ function CancelPage() {
 
   return (
     <WizardLayout>
-      <div className="mx-auto max-w-xl space-y-6 text-center">
+      <div data-testid="checkout-cancel" className="mx-auto max-w-xl space-y-6 text-center">
         <XCircle className="mx-auto h-12 w-12 text-muted-foreground" />
         <h1 className="font-display text-3xl font-semibold">Checkout cancelled</h1>
         <p className="text-muted-foreground">

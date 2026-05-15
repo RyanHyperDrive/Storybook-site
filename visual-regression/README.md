@@ -276,3 +276,29 @@ To refresh baselines after an intentional design change:
 ```sh
 UPDATE_BASELINES=1 node scripts/visual-regression-checkout-diff.mjs
 ```
+
+## /checkout/success + /checkout/cancel pixel-diff
+
+`scripts/visual-regression-checkout-post.mjs` captures the full
+`/checkout/success` (done state) and `/checkout/cancel` pages at desktop
+(1280) and mobile (390). It reuses the create-journey fixtures (mocked
+Supabase auth/REST) so the success page renders in the "Payment received"
+state without touching the backend. Screenshots go to
+`visual-regression/checkout-post/`.
+
+`scripts/visual-regression-checkout-post-diff.mjs` diffs each PNG against
+committed baselines in `visual-regression/checkout-post/baseline/` using
+pixelmatch, failing CI above `DIFF_RATIO_THRESHOLD` (default 0.5%).
+
+Two-step run:
+
+```sh
+PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-checkout-post.mjs
+node scripts/visual-regression-checkout-post-diff.mjs
+```
+
+To refresh baselines after an intentional design change:
+
+```sh
+UPDATE_BASELINES=1 node scripts/visual-regression-checkout-post-diff.mjs
+```
