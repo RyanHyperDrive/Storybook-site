@@ -38,10 +38,14 @@ const FALLBACK_ASSETS: Record<ArtStyleKey, { cover: string; page_1: string; page
   pixel_art: { cover: samplePixel, page_1: samplePixelP1, page_2: samplePixelP2 },
 };
 
+function usableImageUrl(url: string | null | undefined) {
+  return typeof url === "string" && url.trim().length > 0 ? url : undefined;
+}
+
 type Spread =
-  | { kind: "cover"; label: string; imageUrl?: string; variant: "cover" }
+  | { kind: "cover"; label: string; imageUrl?: string; fallbackImageUrl?: string; variant: "cover"; imageAlt: string }
   | { kind: "dedication"; label: string; text: string }
-  | { kind: "page"; label: string; pageNumber: number; imageUrl?: string; variant: "page-a" | "page-b"; bodyText: string };
+  | { kind: "page"; label: string; pageNumber: number; imageUrl?: string; fallbackImageUrl?: string; variant: "page-a" | "page-b"; bodyText: string; imageAlt: string };
 
 export function SampleBookModal({
   styleKey,
@@ -61,29 +65,41 @@ export function SampleBookModal({
 
   const spreads = useMemo<Spread[]>(() => {
     if (!sample || !style) return [];
+    const localCover = fallback?.cover;
+    const coverImage = usableImageUrl(generated.cover) ?? localCover;
+    // Interior pages must never depend on remote/generated assets that may be blank.
+    // Prefer bundled finished sample spreads, with the style cover as the final crop fallback.
+    const pageOneImage = fallback?.page_1 ?? usableImageUrl(generated.page_1) ?? localCover;
+    const pageTwoImage = fallback?.page_2 ?? usableImageUrl(generated.page_2) ?? localCover;
     return [
       {
         kind: "cover",
         label: "Cover",
-        imageUrl: generated.cover ?? fallback?.cover,
+        imageUrl: coverImage,
+        fallbackImageUrl: localCover,
         variant: "cover",
+        imageAlt: `${sample.title} sample book cover in ${style.name} style`,
       },
       { kind: "dedication", label: "Dedication", text: sample.dedication },
       {
         kind: "page",
         label: `Page 1 · ${style.name}`,
         pageNumber: 1,
-        imageUrl: generated.page_1 ?? fallback?.page_1,
+        imageUrl: pageOneImage,
+        fallbackImageUrl: localCover,
         variant: "page-a",
         bodyText: sample.pages[0],
+        imageAlt: `${sample.title} page 1 finished illustration in ${style.name} style`,
       },
       {
         kind: "page",
         label: `Page 2 · ${style.name}`,
         pageNumber: 2,
-        imageUrl: generated.page_2 ?? fallback?.page_2,
+        imageUrl: pageTwoImage,
+        fallbackImageUrl: localCover,
         variant: "page-b",
         bodyText: sample.pages[1],
+        imageAlt: `${sample.title} page 2 finished illustration in ${style.name} style`,
       },
     ];
   }, [sample, style, generated.cover, generated.page_1, generated.page_2, fallback]);
@@ -254,6 +270,49 @@ export function SampleBookModal({
   );
 }
 
+function ResilientArtwork({
+  src,
+  fallbackSrc,
+  alt,
+  styleKey,
+  variant,
+  imgClassName,
+}: {
+  src?: string;
+  fallbackSrc?: string;
+  alt: string;
+  styleKey: ArtStyleKey;
+  variant: "cover" | "page-a" | "page-b";
+  imgClassName?: string;
+}) {
+  const sources = useMemo(
+    () => Array.from(new Set([usableImageUrl(src), usableImageUrl(fallbackSrc)].filter(Boolean) as string[])),
+    [src, fallbackSrc],
+  );
+  const [sourceIndex, setSourceIndex] = useState(0);
+
+  useEffect(() => {
+    setSourceIndex(0);
+  }, [sources.join("|")]);
+
+  const activeSrc = sourceIndex < sources.length ? sources[sourceIndex] : undefined;
+
+  if (!activeSrc) {
+    return <StyleArtwork styleKey={styleKey} variant={variant} />;
+  }
+
+  return (
+    <img
+      key={activeSrc}
+      src={activeSrc}
+      alt={alt}
+      className={imgClassName}
+      loading="eager"
+      onError={() => setSourceIndex((current) => current + 1)}
+    />
+  );
+}
+
 function Spread({
   current,
   styleKey,
@@ -269,11 +328,14 @@ function Spread({
     return (
       <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
         <div className="aspect-[4/5] w-full overflow-hidden bg-paper">
-          {current.imageUrl ? (
-            <img src={current.imageUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <StyleArtwork styleKey={styleKey} variant="cover" />
-          )}
+          <ResilientArtwork
+            src={current.imageUrl}
+            fallbackSrc={current.fallbackImageUrl}
+            alt={current.imageAlt}
+            styleKey={styleKey}
+            variant="cover"
+            imgClassName="h-full w-full object-cover"
+          />
         </div>
         <div className="border-t border-border bg-background p-4 sm:p-6">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -313,15 +375,14 @@ function Spread({
         {/* Illustration panel — large on both mobile & desktop */}
         <div className="relative sm:col-span-7">
           <div className="aspect-[4/3] w-full overflow-hidden bg-paper sm:aspect-auto sm:h-full sm:min-h-[26rem]">
-            {current.imageUrl ? (
-              <img
-                src={current.imageUrl}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <StyleArtwork styleKey={styleKey} variant={current.variant} />
-            )}
+            <ResilientArtwork
+              src={current.imageUrl}
+              fallbackSrc={current.fallbackImageUrl}
+              alt={current.imageAlt}
+              styleKey={styleKey}
+              variant={current.variant}
+              imgClassName="h-full w-full object-cover"
+            />
           </div>
           {/* Subtle inner page-edge shadow toward the spine on desktop */}
           <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-6 bg-gradient-to-l from-foreground/10 to-transparent sm:block" />
