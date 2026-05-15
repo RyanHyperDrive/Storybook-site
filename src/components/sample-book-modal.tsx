@@ -38,10 +38,14 @@ const FALLBACK_ASSETS: Record<ArtStyleKey, { cover: string; page_1: string; page
   pixel_art: { cover: samplePixel, page_1: samplePixelP1, page_2: samplePixelP2 },
 };
 
+function usableImageUrl(url: string | null | undefined) {
+  return typeof url === "string" && url.trim().length > 0 ? url : undefined;
+}
+
 type Spread =
-  | { kind: "cover"; label: string; imageUrl?: string; variant: "cover" }
+  | { kind: "cover"; label: string; imageUrl?: string; fallbackImageUrl?: string; variant: "cover"; imageAlt: string }
   | { kind: "dedication"; label: string; text: string }
-  | { kind: "page"; label: string; pageNumber: number; imageUrl?: string; variant: "page-a" | "page-b"; bodyText: string };
+  | { kind: "page"; label: string; pageNumber: number; imageUrl?: string; fallbackImageUrl?: string; variant: "page-a" | "page-b"; bodyText: string; imageAlt: string };
 
 export function SampleBookModal({
   styleKey,
@@ -61,29 +65,41 @@ export function SampleBookModal({
 
   const spreads = useMemo<Spread[]>(() => {
     if (!sample || !style) return [];
+    const localCover = fallback?.cover;
+    const coverImage = usableImageUrl(generated.cover) ?? localCover;
+    // Interior pages must never depend on remote/generated assets that may be blank.
+    // Prefer bundled finished sample spreads, with the style cover as the final crop fallback.
+    const pageOneImage = fallback?.page_1 ?? usableImageUrl(generated.page_1) ?? localCover;
+    const pageTwoImage = fallback?.page_2 ?? usableImageUrl(generated.page_2) ?? localCover;
     return [
       {
         kind: "cover",
         label: "Cover",
-        imageUrl: generated.cover ?? fallback?.cover,
+        imageUrl: coverImage,
+        fallbackImageUrl: localCover,
         variant: "cover",
+        imageAlt: `${sample.title} sample book cover in ${style.name} style`,
       },
       { kind: "dedication", label: "Dedication", text: sample.dedication },
       {
         kind: "page",
         label: `Page 1 · ${style.name}`,
         pageNumber: 1,
-        imageUrl: generated.page_1 ?? fallback?.page_1,
+        imageUrl: pageOneImage,
+        fallbackImageUrl: localCover,
         variant: "page-a",
         bodyText: sample.pages[0],
+        imageAlt: `${sample.title} page 1 finished illustration in ${style.name} style`,
       },
       {
         kind: "page",
         label: `Page 2 · ${style.name}`,
         pageNumber: 2,
-        imageUrl: generated.page_2 ?? fallback?.page_2,
+        imageUrl: pageTwoImage,
+        fallbackImageUrl: localCover,
         variant: "page-b",
         bodyText: sample.pages[1],
+        imageAlt: `${sample.title} page 2 finished illustration in ${style.name} style`,
       },
     ];
   }, [sample, style, generated.cover, generated.page_1, generated.page_2, fallback]);
