@@ -101,6 +101,17 @@ jobs:
           DIFF_RATIO_THRESHOLD: "0.005"
         run: node scripts/visual-regression-checkout-diff.mjs
 
+      - name: Run /checkout/success + /checkout/cancel visual regression
+        env:
+          PREVIEW_URL: http://127.0.0.1:8080
+        run: node scripts/visual-regression-checkout-post.mjs
+
+      - name: Diff /checkout/success + /checkout/cancel screenshots vs baseline
+        env:
+          DIFF_PIXEL_THRESHOLD: "0.1"
+          DIFF_RATIO_THRESHOLD: "0.005"
+        run: node scripts/visual-regression-checkout-post-diff.mjs
+
       - name: Stop preview server
         if: always()
         run: |
