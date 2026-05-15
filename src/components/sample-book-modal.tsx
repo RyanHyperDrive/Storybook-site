@@ -313,6 +313,74 @@ function ResilientArtwork({
   );
 }
 
+function VisibleIllustrationBlock({
+  src,
+  fallbackSrc,
+  alt,
+  styleKey,
+  variant,
+}: {
+  src?: string;
+  fallbackSrc?: string;
+  alt: string;
+  styleKey: ArtStyleKey;
+  variant: "page-a" | "page-b";
+}) {
+  const primarySrc = usableImageUrl(src);
+  const coverFallbackSrc = usableImageUrl(fallbackSrc) ?? primarySrc;
+  const [primaryLoaded, setPrimaryLoaded] = useState(false);
+  const [primaryFailed, setPrimaryFailed] = useState(false);
+
+  useEffect(() => {
+    setPrimaryLoaded(false);
+    setPrimaryFailed(false);
+  }, [primarySrc]);
+
+  const shouldLoadPrimary = Boolean(primarySrc && primarySrc !== coverFallbackSrc && !primaryFailed);
+  const fallbackIsVisible = !shouldLoadPrimary || !primaryLoaded;
+
+  return (
+    <div className="relative h-[18.5rem] w-full overflow-hidden bg-background sm:h-full sm:min-h-[26rem]">
+      {coverFallbackSrc ? (
+        <img
+          src={coverFallbackSrc}
+          alt={fallbackIsVisible ? alt : ""}
+          aria-hidden={fallbackIsVisible ? undefined : true}
+          className="absolute inset-0 block h-full w-full object-cover object-center opacity-100"
+          loading="eager"
+          decoding="sync"
+        />
+      ) : (
+        <StyleArtwork styleKey={styleKey} variant={variant} />
+      )}
+
+      {shouldLoadPrimary && (
+        <img
+          key={primarySrc}
+          src={primarySrc}
+          alt={primaryLoaded ? alt : ""}
+          aria-hidden={primaryLoaded ? undefined : true}
+          className={cn(
+            "absolute inset-0 block h-full w-full object-cover object-center opacity-100",
+            primaryLoaded ? "visible" : "invisible",
+          )}
+          loading="eager"
+          decoding="sync"
+          onLoad={(event) => {
+            const image = event.currentTarget;
+            if (image.naturalWidth > 1 && image.naturalHeight > 1) {
+              setPrimaryLoaded(true);
+            } else {
+              setPrimaryFailed(true);
+            }
+          }}
+          onError={() => setPrimaryFailed(true)}
+        />
+      )}
+    </div>
+  );
+}
+
 function Spread({
   current,
   styleKey,
@@ -373,19 +441,14 @@ function Spread({
     <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
       <div className="flex flex-col sm:grid sm:min-h-[26rem] sm:grid-cols-12">
         {/* Illustration panel — large on both mobile & desktop */}
-        <div className="relative sm:col-span-7">
-          <div className="aspect-[4/3] w-full overflow-hidden bg-paper sm:aspect-auto sm:h-full sm:min-h-[26rem]">
-            <ResilientArtwork
-              src={current.imageUrl}
-              fallbackSrc={current.fallbackImageUrl}
-              alt={current.imageAlt}
-              styleKey={styleKey}
-              variant={current.variant}
-              imgClassName="h-full w-full object-cover"
-            />
-          </div>
-          {/* Subtle inner page-edge shadow toward the spine on desktop */}
-          <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-6 bg-gradient-to-l from-foreground/10 to-transparent sm:block" />
+        <div className="relative overflow-hidden bg-background sm:col-span-7">
+          <VisibleIllustrationBlock
+            src={current.imageUrl}
+            fallbackSrc={current.fallbackImageUrl}
+            alt={current.imageAlt}
+            styleKey={styleKey}
+            variant={current.variant}
+          />
         </div>
 
         {/* Story text panel — feels like a real book page */}
