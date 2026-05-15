@@ -80,7 +80,9 @@ export type Database = {
           child_loves: string | null
           child_name: string | null
           child_pronouns: string | null
+          cover_image_path: string | null
           cover_url: string | null
+          cover_validation: Json | null
           created_at: string
           dedication: string | null
           details_avoid: string | null
@@ -97,6 +99,7 @@ export type Database = {
           title: string | null
           updated_at: string
           user_id: string
+          visual_consistency_contract: Json | null
         }
         Insert: {
           art_style?: string | null
@@ -104,7 +107,9 @@ export type Database = {
           child_loves?: string | null
           child_name?: string | null
           child_pronouns?: string | null
+          cover_image_path?: string | null
           cover_url?: string | null
+          cover_validation?: Json | null
           created_at?: string
           dedication?: string | null
           details_avoid?: string | null
@@ -121,6 +126,7 @@ export type Database = {
           title?: string | null
           updated_at?: string
           user_id: string
+          visual_consistency_contract?: Json | null
         }
         Update: {
           art_style?: string | null
@@ -128,7 +134,9 @@ export type Database = {
           child_loves?: string | null
           child_name?: string | null
           child_pronouns?: string | null
+          cover_image_path?: string | null
           cover_url?: string | null
+          cover_validation?: Json | null
           created_at?: string
           dedication?: string | null
           details_avoid?: string | null
@@ -145,6 +153,7 @@ export type Database = {
           title?: string | null
           updated_at?: string
           user_id?: string
+          visual_consistency_contract?: Json | null
         }
         Relationships: []
       }
@@ -420,6 +429,7 @@ export type Database = {
           created_at: string
           currency: string | null
           id: string
+          metadata: Json | null
           provider: string
           provider_payment_intent: string | null
           provider_session_id: string | null
@@ -433,6 +443,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           id?: string
+          metadata?: Json | null
           provider?: string
           provider_payment_intent?: string | null
           provider_session_id?: string | null
@@ -446,6 +457,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           id?: string
+          metadata?: Json | null
           provider?: string
           provider_payment_intent?: string | null
           provider_session_id?: string | null

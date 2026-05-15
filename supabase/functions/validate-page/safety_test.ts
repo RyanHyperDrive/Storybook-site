@@ -84,6 +84,36 @@ Deno.test("borderline 0.85 scores do NOT force regeneration", () => {
   assertEquals(r.data.regeneration_recommended, false);
 });
 
+Deno.test("character consistency below 0.88 forces regeneration", () => {
+  const r = validate(baseReport({ character_consistency_score: 0.7 }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+});
+
+Deno.test("text inside image always forces regeneration", () => {
+  const r = validate(baseReport({ text_inside_image_detected: true }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+});
+
+Deno.test("comic_book + speech_bubble_detected forces regeneration", () => {
+  const r = validate(baseReport({ speech_bubble_detected: true }), { styleKey: "comic_book" });
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+});
+
+Deno.test("comic_book art-style anchor forbids bubbles + sound-effect text", async () => {
+  const src = await Deno.readTextFile(
+    new URL("../../../src/lib/art-styles.ts", import.meta.url),
+  );
+  const m = src.match(/key:\s*"comic_book"[\s\S]*?aiAnchor:\s*"([^"]+)"/);
+  if (!m) throw new Error("comic_book aiAnchor not found");
+  const anchor = m[1].toLowerCase();
+  for (const phrase of ["no speech bubbles", "no thought bubbles", "no word balloons", "no caption boxes", "no readable text", "no sound effect words"]) {
+    if (!anchor.includes(phrase)) throw new Error(`comic_book anchor missing: "${phrase}"`);
+  }
+});
+
 // --- Sample modal contract tests (string-level guardrails) -------------
 
 Deno.test("sample modal: no exact page-count promise", async () => {
