@@ -162,27 +162,93 @@ function Home() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      {/* HOW IT WORKS — image-led visual proof flow */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
-        <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-          Four small steps. One book they'll never forget.
-        </h2>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 md:mt-10 md:grid-cols-4">
+        <div className="max-w-2xl">
+          <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+            Four small steps. One book they'll never forget.
+          </h2>
+          <p className="mt-3 text-sm text-muted-foreground md:text-base">
+            See exactly how a real photo becomes a personalized illustrated character — and then a finished book you read together.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: Camera, title: "Add a photo", body: "One clear, well-lit photo so we can sketch the character." },
-            { icon: Heart, title: "Share what they love", body: "Their name, age (2–10), and the things that make them light up." },
-            { icon: Wand2, title: "Approve the character", body: "Review the illustrated version. Regenerate free until it feels right." },
-            { icon: BookOpen, title: "Read together", body: "Cover, dedication, and at least 10 illustrated pages — ready in 10–20 minutes." },
-          ].map(({ icon: Icon, title, body }, i) => (
-            <div key={i} className="rounded-lg border border-border bg-background p-5">
-              <div className="grid h-9 w-9 place-items-center rounded-md bg-ember/15 text-ember">
-                <Icon className="h-4 w-4" />
+            {
+              n: 1,
+              title: "Add a photo",
+              body: "One clear, well-lit photo so we can sketch the character.",
+              note: "Private to your account.",
+              img: howPhotos,
+              alt: "Two example uploaded photos: a young boy in a yellow shirt and a young girl in a pink dress",
+              tag: "Upload",
+            },
+            {
+              n: 2,
+              title: "Share what they love",
+              body: "Their name, age (2–10), and the things that make them light up.",
+              note: "Rockets, dinosaurs, ponies, princesses, planets — you choose.",
+              img: howLoves,
+              alt: "Playful storybook illustrations of a rocket, dinosaur, crown, pony, and ringed planet",
+              tag: "Their world",
+            },
+            {
+              n: 3,
+              title: "Approve the character",
+              body: "Review the illustrated version of your child. Regenerate free until it feels right.",
+              note: "Same hair, skin, and outfit as the photo.",
+              img: howCharacters,
+              alt: "Illustrated storybook versions of the same boy and girl, matching hair, skin tone, and outfits",
+              tag: "Parent-approved",
+            },
+            {
+              n: 4,
+              title: "Read together",
+              body: "Cover, dedication, and at least 10 illustrated pages — ready in 10–20 minutes.",
+              note: "Web reader + downloadable PDF.",
+              img: howReading,
+              alt: "A father reading a personalized illustrated ebook to his young daughter on a cozy couch",
+              tag: "Tonight",
+            },
+          ].map((step) => (
+            <article
+              key={step.n}
+              className="group flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-[0_10px_30px_-18px_oklch(0.22_0.03_260/0.45)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-18px_oklch(0.22_0.03_260/0.55)]"
+            >
+              <div className="relative aspect-[4/3] overflow-hidden bg-paper">
+                <img
+                  src={step.img}
+                  alt={step.alt}
+                  loading="lazy"
+                  width={1024}
+                  height={1024}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                />
+                <div className="absolute left-3 top-3 flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-ember text-[12px] font-semibold text-ember-foreground shadow">
+                    {step.n}
+                  </span>
+                  <span className="rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground shadow-sm backdrop-blur">
+                    {step.tag}
+                  </span>
+                </div>
               </div>
-              <div className="mt-4 text-sm font-semibold">{i + 1}. {title}</div>
-              <p className="mt-1 text-sm text-muted-foreground">{body}</p>
-            </div>
+              <div className="flex flex-1 flex-col gap-2 p-5">
+                <div className="font-display text-lg font-semibold leading-tight">{step.title}</div>
+                <p className="text-sm text-muted-foreground">{step.body}</p>
+                <p className="mt-auto flex items-start gap-1.5 pt-2 text-xs font-medium text-sage">
+                  <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  {step.note}
+                </p>
+              </div>
+            </article>
           ))}
         </div>
+
+        <p className="mt-6 text-xs text-muted-foreground">
+          Example children shown are fictional, generated previews — not real customer photos. Your child's photo is private to your account and never used to train models.
+        </p>
       </section>
 
       {/* SAMPLES — book-cover cards with HTML title in a clean lower jacket band */}
