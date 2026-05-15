@@ -163,7 +163,7 @@ function Home() {
       </section>
 
       {/* HOW IT WORKS — image-led visual proof flow */}
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
+      <section data-testid="how-it-works" className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
         <div className="max-w-2xl">
           <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
             Four small steps. One book they'll never forget.
