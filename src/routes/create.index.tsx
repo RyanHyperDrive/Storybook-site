@@ -275,7 +275,7 @@ function StepCard({
 
 function JourneyPreview() {
   return (
-    <div className="relative">
+    <div className="relative" data-testid="journey-preview">
       {/* soft decorative blur */}
       <div
         aria-hidden
