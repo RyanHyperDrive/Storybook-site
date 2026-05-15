@@ -285,11 +285,14 @@ function Spread({
     return (
       <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
         <div className="aspect-[4/5] w-full overflow-hidden bg-paper">
-          {current.imageUrl ? (
-            <img src={current.imageUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <StyleArtwork styleKey={styleKey} variant="cover" />
-          )}
+          <ResilientArtwork
+            src={current.imageUrl}
+            fallbackSrc={current.fallbackImageUrl}
+            alt={current.imageAlt}
+            styleKey={styleKey}
+            variant="cover"
+            imgClassName="h-full w-full object-cover"
+          />
         </div>
         <div className="border-t border-border bg-background p-4 sm:p-6">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -329,15 +332,14 @@ function Spread({
         {/* Illustration panel — large on both mobile & desktop */}
         <div className="relative sm:col-span-7">
           <div className="aspect-[4/3] w-full overflow-hidden bg-paper sm:aspect-auto sm:h-full sm:min-h-[26rem]">
-            {current.imageUrl ? (
-              <img
-                src={current.imageUrl}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <StyleArtwork styleKey={styleKey} variant={current.variant} />
-            )}
+            <ResilientArtwork
+              src={current.imageUrl}
+              fallbackSrc={current.fallbackImageUrl}
+              alt={current.imageAlt}
+              styleKey={styleKey}
+              variant={current.variant}
+              imgClassName="h-full w-full object-cover"
+            />
           </div>
           {/* Subtle inner page-edge shadow toward the spine on desktop */}
           <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-6 bg-gradient-to-l from-foreground/10 to-transparent sm:block" />
