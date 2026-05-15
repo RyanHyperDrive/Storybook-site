@@ -128,7 +128,7 @@ function Home() {
             </div>
 
             <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-[3.4rem]">
-              A bedtime story
+              A bedtime story{" "}
               <br className="hidden sm:block" />
               starring<span className="text-ember"> your child</span>.
             </h1>
