@@ -43,7 +43,7 @@ export const ART_STYLES: ArtStyle[] = [
     description:
       "Bold ink lines, halftone dots, and friendly action panels — a cozy Saturday-morning comic.",
     aiAnchor:
-      "Children's adventure comic book illustration, bold ink outlines, halftone dot shading, vivid but cozy colors, friendly dynamic composition, expressive faces, decorative empty speech-bubble shapes allowed but no readable text, no weapons, no fire, no scary peril, consistent character design, premium kid-friendly comic art, no readable text in image.",
+      "Children's adventure comic book illustration, bold ink outlines, halftone dot shading, motion lines, starbursts, panel-border framing, expressive poses, vivid but cozy kid-friendly colors, consistent character design, premium kid-friendly comic art. No speech bubbles, no thought bubbles, no word balloons, no blank bubbles, no empty bubbles, no caption boxes, no readable text, no letters, no typography, no signs, no sound effect words (no POW, BAM, WOW, ZAP), no weapons, no fire, no scary peril.",
     sampleTone: "from-ember/30 via-ember/10 to-paper",
     sampleAccent: "bg-ember/30",
     sampleTitle: "Nova and the Treehouse Owl",
