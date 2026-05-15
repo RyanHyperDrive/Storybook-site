@@ -3,6 +3,12 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
+import {
+  CHARACTER_CONSISTENCY_CLAUSE,
+  contractToPromptFragment,
+  styleNegatives,
+  type VisualConsistencyContract,
+} from "../_shared/visual-contract.ts";
 
 /**
  * POST /illustrate-page
