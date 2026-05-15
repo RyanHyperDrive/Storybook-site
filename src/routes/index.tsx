@@ -253,7 +253,7 @@ function Home() {
       </section>
 
       {/* SAMPLES — premium storefront feel: book covers with spine + page edges */}
-      <section id="examples" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 sm:py-16">
+      <section id="examples" data-testid="samples" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 sm:py-16">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
