@@ -68,7 +68,7 @@ export function SignInPanel({ message, title, bullets }: { message?: string; tit
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-12">
+    <div className="mx-auto max-w-md px-4 py-12" data-testid="auth-gate">
       <h1 className="font-display text-3xl font-semibold">{title ?? "Sign in to continue"}</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         {message ?? "Continue with Google, Apple, or email — no password needed."}
