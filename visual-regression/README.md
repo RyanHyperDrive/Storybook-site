@@ -1,5 +1,7 @@
 # Visual regression baselines
 
+## How it works section
+
 `scripts/visual-regression-howitworks.mjs` writes screenshots of the homepage
 "How it works" section here at three widths:
 
@@ -7,16 +9,58 @@
 - `howitworks-mobile-430.png` — iPhone Pro Max
 - `howitworks-desktop-1280.png` — small desktop
 
-## Run
-
 ```bash
 bunx playwright install chromium   # one-time
 PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-howitworks.mjs
 ```
 
-Diff the new PNGs against the committed baselines (Git diff, Preview, or any
-image-diff tool). Re-commit the baselines intentionally when the section's
-design changes.
-
 The script targets `[data-testid="how-it-works"]` on `/`. If that attribute is
 removed or renamed, the script fails fast.
+
+## Sample reader modal ("Five art styles")
+
+`scripts/visual-regression-sample-modal.mjs` opens each of the 5 sample books
+from the homepage, clicks through Cover → Dedication → Page 1 → Page 2, and:
+
+- saves a screenshot of the modal at Page 1 and Page 2 to
+  `visual-regression/sample-modal/{style}-{viewport}-page{1,2}.png`
+  for desktop (1280) and mobile (390),
+- asserts the illustration panel is **not mostly blank cream/white** by
+  drawing the rendered `<img>` into a canvas and checking both the
+  non-near-white pixel ratio (≥ 0.55) and the per-channel color range (≥ 60),
+- asserts the footer trust line ("Fictional sample preview…") and the
+  "Start free character preview" CTA stay visible.
+
+```bash
+bunx playwright install chromium   # one-time
+PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-sample-modal.mjs
+```
+
+Exit code is non-zero on any failure (blank illustration, missing footer/CTA,
+selector change).
+
+### Comic Book art-content rule
+
+The Comic Book sample (`comic_book-*.png`) must remain free of:
+
+- speech bubbles or word balloons (filled or empty),
+- caption boxes,
+- sound-effect words ("BAM", "POW", …),
+- any readable embedded text inside the artwork.
+
+This is enforced by the generation prompt and asset review — the script
+cannot OCR for it. Whenever the comic_book sample assets change, open the
+saved `comic_book-desktop-1280-page1.png` and `comic_book-desktop-1280-page2.png`
+and visually confirm the rule before committing.
+
+### Required test hooks
+
+The script depends on these stable selectors — do not remove them without
+updating the script:
+
+- `[data-testid="samples"]` on the "Five art styles" section
+- `[data-testid="sample-card-{styleKey}"]` on each sample cover button
+- `[data-testid="modal-illustration"]` on the modal's illustration panel
+- The modal's pager "Next page" button (`aria-label="Next page"`)
+- Footer copy beginning with "Fictional sample preview"
+- Footer link labelled "Start free character preview"

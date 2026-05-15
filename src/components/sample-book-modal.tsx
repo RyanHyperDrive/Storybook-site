@@ -340,7 +340,7 @@ function VisibleIllustrationBlock({
   const fallbackIsVisible = !shouldLoadPrimary || !primaryLoaded;
 
   return (
-    <div className="relative h-[18.5rem] w-full overflow-hidden bg-background sm:h-full sm:min-h-[26rem]">
+    <div data-testid="modal-illustration" className="relative h-[18.5rem] w-full overflow-hidden bg-background sm:h-full sm:min-h-[26rem]">
       {coverFallbackSrc ? (
         <img
           src={coverFallbackSrc}
