@@ -52,9 +52,18 @@ const PROMPT_TEMPLATE = (input: {
   visualMustHaves: string[];
   visualMustNotInclude: string[];
   ageBand: string;
+  contractFragment: string;
+  hasCoverRef: boolean;
+  isTwins: boolean;
 }) => `Create a children's storybook illustration in the approved style: ${input.styleKey}.
 
-Use the attached approved character sheet as the source of truth for the main character's appearance. Preserve the character's face shape, hair, outfit anchors, accessories, and overall childlike illustrated identity.
+You are given reference images:
+- Image 1: the approved character sheet (canonical look of the main character${input.isTwins ? "s — twins must remain visually distinguishable" : ""}).
+${input.hasCoverRef ? "- Image 2: the approved book cover (secondary canonical look — match its character rendering exactly).\n" : ""}
+${input.contractFragment ? input.contractFragment + "\n" : ""}
+${CHARACTER_CONSISTENCY_CLAUSE}
+
+Style negatives for ${input.styleKey}: ${styleNegatives(input.styleKey)}
 
 Scene:
 ${input.sceneDescription}
@@ -74,8 +83,8 @@ If the scene description would push the image past this safety rule, soften it v
 
 Composition:
 - Full storybook page illustration.
-- No page text embedded in the image.
-- Keep the character clearly visible.
+- No page text embedded in the image. All titles and page text are rendered by the app over the image.
+- Keep the character clearly visible and on-model with the character sheet${input.hasCoverRef ? " and cover" : ""}.
 - Warm, safe, age-appropriate mood for ages ${input.ageBand}.
 - Consistent color palette and line quality with the character sheet.`;
 
