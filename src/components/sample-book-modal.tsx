@@ -290,28 +290,55 @@ function Spread({
 
   if (current.kind === "dedication") {
     return (
-      <div className="flex min-h-[18rem] items-center justify-center rounded-lg border border-border bg-background px-6 py-10 shadow-sm">
-        <p className="font-display text-base italic leading-relaxed text-foreground sm:text-lg">
+      <div className="relative flex min-h-[20rem] items-center justify-center overflow-hidden rounded-lg border border-border bg-gradient-to-br from-paper via-background to-paper/60 px-6 py-12 shadow-sm sm:min-h-[24rem]">
+        {/* Decorative corner flourishes */}
+        <div className="pointer-events-none absolute left-4 top-4 h-6 w-6 border-l-2 border-t-2 border-ember/40" />
+        <div className="pointer-events-none absolute right-4 top-4 h-6 w-6 border-r-2 border-t-2 border-ember/40" />
+        <div className="pointer-events-none absolute bottom-4 left-4 h-6 w-6 border-b-2 border-l-2 border-ember/40" />
+        <div className="pointer-events-none absolute bottom-4 right-4 h-6 w-6 border-b-2 border-r-2 border-ember/40" />
+        <p className="max-w-md text-center font-display text-lg italic leading-relaxed text-foreground sm:text-xl">
           “{current.text}”
         </p>
       </div>
     );
   }
 
+  // Story page — premium book spread. Illustration is the dominant visual element.
+  const firstLetter = current.bodyText.trim().charAt(0);
+  const restOfText = current.bodyText.trim().slice(1);
+
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
-      <div className="grid gap-0 sm:grid-cols-5">
-        <div className="sm:col-span-3">
-          <div className="aspect-[4/3] w-full overflow-hidden bg-paper sm:aspect-auto sm:h-full">
+      <div className="flex flex-col sm:grid sm:min-h-[26rem] sm:grid-cols-12">
+        {/* Illustration panel — large on both mobile & desktop */}
+        <div className="relative sm:col-span-7">
+          <div className="aspect-[4/3] w-full overflow-hidden bg-paper sm:aspect-auto sm:h-full sm:min-h-[26rem]">
             {current.imageUrl ? (
-              <img src={current.imageUrl} alt="" className="h-full w-full object-cover" />
+              <img
+                src={current.imageUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
             ) : (
               <StyleArtwork styleKey={styleKey} variant={current.variant} />
             )}
           </div>
+          {/* Subtle inner page-edge shadow toward the spine on desktop */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-6 bg-gradient-to-l from-foreground/10 to-transparent sm:block" />
         </div>
-        <div className="flex min-h-[10rem] flex-col justify-center p-5 font-display text-[15px] leading-relaxed text-foreground sm:col-span-2 sm:text-base">
-          {current.bodyText}
+
+        {/* Story text panel — feels like a real book page */}
+        <div className="relative flex flex-col justify-center bg-gradient-to-br from-paper/40 via-background to-background p-6 sm:col-span-5 sm:p-8">
+          <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-6 bg-gradient-to-r from-foreground/10 to-transparent sm:block" />
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Page {current.pageNumber}
+          </div>
+          <p className="font-display text-[15px] leading-[1.7] text-foreground sm:text-base">
+            <span className="float-left mr-2 mt-1 font-display text-4xl font-semibold leading-none text-ember sm:text-5xl">
+              {firstLetter}
+            </span>
+            {restOfText}
+          </p>
         </div>
       </div>
     </div>
