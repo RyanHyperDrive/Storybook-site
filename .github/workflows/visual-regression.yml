@@ -90,6 +90,17 @@ jobs:
           A11Y_FAIL_IMPACTS: "serious,critical"
         run: node scripts/a11y-checkout.mjs
 
+      - name: Run /checkout visual regression
+        env:
+          PREVIEW_URL: http://127.0.0.1:8080
+        run: node scripts/visual-regression-checkout.mjs
+
+      - name: Diff /checkout screenshots vs baseline
+        env:
+          DIFF_PIXEL_THRESHOLD: "0.1"
+          DIFF_RATIO_THRESHOLD: "0.005"
+        run: node scripts/visual-regression-checkout-diff.mjs
+
       - name: Stop preview server
         if: always()
         run: |
