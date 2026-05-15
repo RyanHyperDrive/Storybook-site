@@ -107,7 +107,7 @@ function Home() {
         onOpenChange={(v) => !v && setOpenKey(null)}
       />
       {/* HERO — premium product preview composition */}
-      <section className="relative overflow-hidden bg-warm-grad">
+      <section data-testid="hero" className="relative overflow-hidden bg-warm-grad">
         {/* soft decorative blobs to break up the cream */}
         <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-ember/10 blur-3xl" />
         <div aria-hidden className="pointer-events-none absolute -bottom-32 right-[-6rem] h-80 w-80 rounded-full bg-sage/15 blur-3xl" />
