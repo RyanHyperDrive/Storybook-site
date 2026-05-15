@@ -98,18 +98,33 @@ Screenshots: `visual-regression/create/create-{desktop-1280,mobile-390}.png`.
 
 `scripts/visual-regression-create-journey.mjs` walks every step of the
 multi-step book creation flow at desktop (1280) and mobile (390):
+`/create/profile`, `/create/photos`, `/create/story`, `/create/style`,
+`/create/character-sheet`.
 
-- `/create/profile` — must render the wizard layout (auth-optional)
-- `/create/photos`, `/create/story`, `/create/style`, `/create/character-sheet`
-  — must render either the wizard layout or the sign-in gate (these routes
-  are auth-gated, so unauthenticated runs are expected to land on the gate)
+### Deterministic fixtures
+
+All wizard data is pinned by `scripts/fixtures/create-journey.js`. Before
+each navigation the script:
+
+- freezes `Date.now()` / `new Date()` at a fixed moment,
+- forces `prefers-reduced-motion: reduce` so transitions don't flicker,
+- seeds `localStorage` with a fake Supabase auth session, a fixed draft
+  book id, and a fixed profile draft,
+- mocks every Supabase REST/Storage/Auth call to return the same fixture
+  rows (book, child profile, uploaded photo, child subject) and a stable
+  placeholder image for any signed URL.
+
+That means screenshots do not depend on the real backend, the real time,
+randomly-generated UUIDs, or animation phase. To change what the fixture
+renders, edit `scripts/fixtures/create-journey.js` only.
 
 For each route + viewport it asserts:
 
-- `[data-testid="wizard-layout"]` OR `[data-testid="auth-gate"]` is visible
-- exactly one `<h1>` is rendered
-- when the wizard renders, the stepper exposes all 5 steps
-- no `pageerror` or `console.error` was emitted while loading
+- `[data-testid="wizard-layout"]` is visible (the auth gate must NOT render —
+  fixture session is supposed to bypass it),
+- exactly one `<h1>`,
+- the stepper exposes all 5 steps,
+- no `pageerror` or `console.error` while loading.
 
 ```bash
 bunx playwright install chromium   # one-time
