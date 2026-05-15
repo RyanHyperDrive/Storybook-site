@@ -168,3 +168,18 @@ When CI fails, the diff PNGs are written to
 `visual-regression/create-journey/diff/` and uploaded as part of the
 `visual-regression-screenshots` artifact alongside the actual + baseline
 images.
+
+## Homepage hero + first-steps
+
+`scripts/visual-regression-home.mjs` captures the homepage above-the-fold
+viewport, the hero section (`[data-testid="hero"]`), and the "How it works"
+first-steps section (`[data-testid="how-it-works"]`) at desktop (1280) and
+mobile (390). It also asserts the H1, primary CTA, $29.99 price, 4 hero trust
+bullets, and 4 numbered steps are present. PNGs are written to
+`visual-regression/home/`.
+
+Run locally:
+
+```sh
+PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-home.mjs
+```

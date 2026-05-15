@@ -41,6 +41,11 @@ jobs:
           PREVIEW_URL: http://127.0.0.1:8080
         run: node scripts/visual-regression-howitworks.mjs
 
+      - name: Run homepage hero + first-steps visual regression
+        env:
+          PREVIEW_URL: http://127.0.0.1:8080
+        run: node scripts/visual-regression-home.mjs
+
       - name: Run sample reader modal visual regression
         env:
           PREVIEW_URL: http://127.0.0.1:8080
