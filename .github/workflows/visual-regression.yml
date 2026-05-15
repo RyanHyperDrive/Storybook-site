@@ -78,6 +78,12 @@ jobs:
           DIFF_RATIO_THRESHOLD: "0.005"
         run: node scripts/visual-regression-pricing-diff.mjs
 
+      - name: Run /pricing accessibility check (axe-core)
+        env:
+          PREVIEW_URL: http://127.0.0.1:8080
+          A11Y_FAIL_IMPACTS: "serious,critical"
+        run: node scripts/a11y-pricing.mjs
+
       - name: Stop preview server
         if: always()
         run: |
@@ -90,6 +96,7 @@ jobs:
           name: visual-regression-screenshots
           path: |
             visual-regression/**/*.png
+            visual-regression/pricing-a11y/*.json
             preview.log
           if-no-files-found: ignore
           retention-days: 14
