@@ -19,13 +19,18 @@ import {
   Heart,
   Mail,
   FileText,
+  Star,
+  Clock,
+  Check,
+  Lock,
 } from "lucide-react";
-import hero from "@/assets/hero-reading.jpg";
 import sampleComic from "@/assets/sample-comic-nova.jpg";
 import sampleCartoon from "@/assets/sample-cartoon-leo.jpg";
 import sampleWatercolor from "@/assets/sample-watercolor-pip.jpg";
 import sampleManga from "@/assets/sample-manga-yuki.jpg";
 import samplePixel from "@/assets/sample-pixel-quinn.jpg";
+import sampleWatercolorPage1 from "@/assets/sample-watercolor-pip-page1.jpg";
+import sampleWatercolorPage2 from "@/assets/sample-watercolor-pip-page2.jpg";
 import howPhotos from "@/assets/howitworks-photos.jpg";
 import howLoves from "@/assets/howitworks-loves.jpg";
 import howCharacters from "@/assets/howitworks-characters.jpg";
