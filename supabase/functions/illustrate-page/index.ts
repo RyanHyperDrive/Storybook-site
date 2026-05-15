@@ -131,11 +131,11 @@ serve(async (req) => {
       return errorResponse("sceneDescription is required");
     }
 
-    // Verify book ownership AND fetch reading_level/age so the visual safety
-    // clause matches what the story was written for.
+    // Verify book ownership AND fetch reading_level/age + contract + cover so the
+    // visual safety clause + character consistency contract are honored on every page.
     const { data: book, error: bookErr } = await admin
       .from("books")
-      .select("id, user_id, reading_level, child_age")
+      .select("id, user_id, reading_level, child_age, is_twins, art_style, visual_consistency_contract, cover_image_path, cover_url")
       .eq("id", bookId)
       .maybeSingle();
     if (bookErr) return errorResponse(bookErr.message, 500);
@@ -156,6 +156,18 @@ serve(async (req) => {
     }
     if (!refUrl) return errorResponse("No approved character sheet found for this book", 412);
 
+    // Resolve cover reference (secondary canonical look). Optional — first
+    // page generation may not have a cover yet.
+    let coverUrl: string | undefined;
+    if (book.cover_image_path) {
+      const { data: signed } = await admin.storage
+        .from("generated-pages")
+        .createSignedUrl(book.cover_image_path, 60 * 10);
+      coverUrl = signed?.signedUrl ?? undefined;
+    } else if (book.cover_url) {
+      coverUrl = book.cover_url;
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
@@ -166,6 +178,9 @@ serve(async (req) => {
       lvl === "ages_7_10" || lvl === "ages_6_8" ? "7-10" :
       "4-6";
 
+    const contract = (book.visual_consistency_contract ?? null) as VisualConsistencyContract | null;
+    const contractFragment = contractToPromptFragment(contract);
+
     const prompt = PROMPT_TEMPLATE({
       styleKey,
       sceneDescription,
@@ -173,10 +188,24 @@ serve(async (req) => {
       visualMustHaves: arr(visualMustHaves),
       visualMustNotInclude: arr(visualMustNotInclude),
       ageBand,
+      contractFragment,
+      hasCoverRef: !!coverUrl,
+      isTwins: !!book.is_twins,
     });
 
-    // Inline reference as data URL so the gateway always has access (private bucket signed URLs may be OK too).
+    // Inline reference as data URL so the gateway always has access.
     const refDataUrl = refUrl.startsWith("data:") ? refUrl : await fetchAsDataUrl(refUrl);
+    const coverDataUrl = coverUrl
+      ? (coverUrl.startsWith("data:") ? coverUrl : await fetchAsDataUrl(coverUrl))
+      : null;
+
+    const userContent: any[] = [
+      { type: "text", text: prompt },
+      { type: "image_url", image_url: { url: refDataUrl } },
+    ];
+    if (coverDataUrl) {
+      userContent.push({ type: "image_url", image_url: { url: coverDataUrl } });
+    }
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -188,13 +217,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash-image",
         modalities: ["image", "text"],
         messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
-              { type: "image_url", image_url: { url: refDataUrl } },
-            ],
-          },
+          { role: "user", content: userContent },
         ],
       }),
     });
