@@ -282,6 +282,7 @@ function Home() {
             <button
               type="button"
               key={s.key}
+              data-testid={`sample-card-${s.key}`}
               onClick={() => setOpenKey(s.key)}
               className="group relative flex flex-col text-left focus:outline-none"
               aria-label={`Preview sample book in ${s.styleName} style`}
