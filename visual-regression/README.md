@@ -207,3 +207,26 @@ To refresh baselines after an intentional design change:
 ```sh
 UPDATE_BASELINES=1 node scripts/visual-regression-pricing-diff.mjs
 ```
+
+## /pricing accessibility (axe-core)
+
+`scripts/a11y-pricing.mjs` runs axe-core against `/pricing` at desktop (1280)
+and mobile (390) using WCAG 2.1 A + AA + best-practice rules. Build fails on
+any `serious` or `critical` violation (color contrast, button-name, ARIA,
+landmarks, etc.). Full JSON reports per viewport are written to
+`visual-regression/pricing-a11y/`.
+
+Run locally:
+
+```sh
+PREVIEW_URL=http://localhost:8080 node scripts/a11y-pricing.mjs
+```
+
+Tune via env vars:
+
+- `A11Y_FAIL_IMPACTS` — comma list of impact levels that fail the run.
+  Default `serious,critical`. Use `minor,moderate,serious,critical` to be
+  stricter, or `critical` to be looser.
+- `A11Y_DISABLE_RULES` — comma list of axe rule ids to skip
+  (e.g. `region,landmark-one-main`) when a finding is owned by shared layout
+  code outside this page.
