@@ -139,3 +139,32 @@ Screenshots: `visual-regression/create-journey/{slug}-{desktop-1280,mobile-390}.
 - `[data-testid="wizard-stepper"]` — the 5-step `<ol>` inside the layout
 - `[data-testid="auth-gate"]` — root of the `SignInPanel` rendered by `AuthGate`
 
+
+### Pixel-diff against baseline
+
+`scripts/visual-regression-create-journey-diff.mjs` compares the freshly
+captured screenshots against committed baselines under
+`visual-regression/create-journey/baseline/` using `pixelmatch`. CI fails the
+build if any image differs by more than the ratio threshold.
+
+```bash
+# 1. capture screenshots (must run first)
+PREVIEW_URL=http://localhost:8080 node scripts/visual-regression-create-journey.mjs
+
+# 2. diff vs committed baselines
+node scripts/visual-regression-create-journey-diff.mjs
+```
+
+Knobs (env vars):
+
+- `DIFF_PIXEL_THRESHOLD` — per-pixel color tolerance, 0..1. Default `0.1`.
+- `DIFF_RATIO_THRESHOLD` — max fraction of differing pixels per image.
+  Default `0.005` (0.5%). Anything higher fails the build.
+- `UPDATE_BASELINES=1` — overwrite baselines from the latest screenshots and
+  skip diffing. Use locally after a deliberate UI change, then commit
+  `visual-regression/create-journey/baseline/*.png`.
+
+When CI fails, the diff PNGs are written to
+`visual-regression/create-journey/diff/` and uploaded as part of the
+`visual-regression-screenshots` artifact alongside the actual + baseline
+images.
