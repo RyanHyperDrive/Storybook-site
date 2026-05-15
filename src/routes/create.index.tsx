@@ -70,7 +70,7 @@ function CreateLanding() {
             </div>
 
             {/* Trust grid — visible without scroll on desktop */}
-            <ul className="mt-5 grid gap-2 text-sm sm:grid-cols-2">
+            <ul data-testid="trust-grid" className="mt-5 grid gap-2 text-sm sm:grid-cols-2">
               <TrustItem icon={Lock}>Private child photos</TrustItem>
               <TrustItem icon={ShieldCheck}>Not used to train models</TrustItem>
               <TrustItem icon={Wand2}>
