@@ -35,7 +35,7 @@ export const Route = createFileRoute("/create/")({
 
 function CreateLanding() {
   return (
-    <div className="bg-warm-grad">
+    <div className="bg-warm-grad" data-testid="create-landing">
       {/* TOP: workspace-style hero */}
       <section className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:pt-12 lg:pb-14 lg:pt-16">
         <div className="grid gap-8 lg:grid-cols-12 lg:items-start lg:gap-10">
