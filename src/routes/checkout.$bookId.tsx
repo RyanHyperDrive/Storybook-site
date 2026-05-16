@@ -109,8 +109,10 @@ function CheckoutPage() {
           </div>
 
           <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
-            <li>• Full storybook PDF + web reader</li>
+            <li>• Custom cover + dedication + 10 story pages</li>
+            <li>• Designed for ages 4–7</li>
             <li>• Your approved character on every page</li>
+            <li>• Web reader + downloadable PDF</li>
             <li>• Free regenerations of any single page</li>
           </ul>
         </div>
