@@ -155,7 +155,7 @@ function Home() {
               </div>
               <p data-testid="hero-urgency" className="mt-3 flex items-center gap-2 text-xs font-semibold text-ember">
                 <Moon className="h-4 w-4 shrink-0" />
-                Start tonight. Read it together tomorrow.
+                Start today. Read together tonight.
               </p>
               <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-sage">
                 <ShieldCheck className="h-4 w-4 shrink-0" />
