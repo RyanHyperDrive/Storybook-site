@@ -431,25 +431,16 @@ function Home() {
                       </div>
                     </div>
 
-                    {/* hover CTA pinned to bottom edge, above the title gradient */}
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-center p-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-[11px] font-semibold text-foreground shadow-md">
-                        <BookOpen className="h-3.5 w-3.5 text-ember" />
-                        Preview sample
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-3 flex items-start justify-between gap-2 px-0.5">
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {s.styleName} · Sample
-                  </div>
-                  <div className="mt-1 inline-flex items-center rounded-full bg-sage/15 px-2 py-0.5 text-[10px] font-medium text-sage">
-                    {s.parentTag}
-                  </div>
+              <div className="mt-3 flex items-center justify-between gap-2 px-0.5">
+                <div className="font-display text-[13px] font-medium text-foreground/80">
+                  {s.styleName} edition
+                </div>
+                <div className="inline-flex items-center rounded-full bg-sage/15 px-2 py-0.5 text-[10px] font-medium text-sage">
+                  {s.parentTag}
                 </div>
               </div>
             </button>
