@@ -94,6 +94,7 @@ export type Database = {
           page_count: number | null
           reading_level: string | null
           status: string
+          story_json: Json | null
           story_prompt: string | null
           story_theme: string | null
           title: string | null
@@ -121,6 +122,7 @@ export type Database = {
           page_count?: number | null
           reading_level?: string | null
           status?: string
+          story_json?: Json | null
           story_prompt?: string | null
           story_theme?: string | null
           title?: string | null
@@ -148,6 +150,7 @@ export type Database = {
           page_count?: number | null
           reading_level?: string | null
           status?: string
+          story_json?: Json | null
           story_prompt?: string | null
           story_theme?: string | null
           title?: string | null
