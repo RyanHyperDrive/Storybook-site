@@ -38,27 +38,28 @@ function StoryStep() {
   const [busy, setBusy] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
-  // Graceful redirect: if no profile has been entered yet, send the parent back
-  // to step 1 with a friendly toast instead of showing an empty form.
+  // Redirect if missing prerequisites from earlier steps.
   useEffect(() => {
     if (authLoading) return;
-    if (typeof window === "undefined") return;
-    if (user && id) return; // signed in with a draft — safe to render
-    const raw = localStorage.getItem(PROFILE_LOCAL_KEY);
-    let hasProfile = false;
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        hasProfile = !!parsed?.children?.[0]?.name;
-      } catch {
-        /* ignore */
-      }
-    }
-    if (!hasProfile) {
+    if (!user) return;
+    if (!id) {
       setRedirecting(true);
-      toast.info("Let's start with your child's details first.");
-      navigate({ to: "/create/profile" });
+      toast.info("Let's start with your child's photo.");
+      navigate({ to: "/create/photos" });
+      return;
     }
+    (async () => {
+      const { data: kids } = await supabase
+        .from("child_profiles")
+        .select("id")
+        .eq("book_id", id)
+        .limit(1);
+      if (!kids || kids.length === 0) {
+        setRedirecting(true);
+        toast.info("Let's add your child's details first.");
+        navigate({ to: "/create/profile" });
+      }
+    })();
   }, [authLoading, user, id, navigate]);
 
   // Hydrate from localStorage (for anonymous parents) so they don't lose typing.
