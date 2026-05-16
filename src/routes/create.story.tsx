@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AuthGate } from "@/components/auth-gate";
+import { useAuth } from "@/hooks/use-auth";
 import { WizardLayout } from "@/components/wizard-layout";
-import { getDraftId } from "@/lib/draft";
+import { getDraftId, PROFILE_LOCAL_KEY, STORY_LOCAL_KEY } from "@/lib/draft";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,16 +14,13 @@ import { toast } from "sonner";
 import { storySchema, READING_LEVELS, THEMES } from "@/lib/create-schema";
 
 export const Route = createFileRoute("/create/story")({
-  component: () => (
-    <AuthGate>
-      <Inner />
-    </AuthGate>
-  ),
+  component: StoryStep,
   head: () => ({ meta: [{ title: "Story — Create — StoryNest" }] }),
 });
 
-function Inner() {
+function StoryStep() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const id = getDraftId();
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState<string>(THEMES[0]);
@@ -31,13 +28,57 @@ function Inner() {
   const [detailsInclude, setDetailsInclude] = useState("");
   const [detailsAvoid, setDetailsAvoid] = useState("");
   const [dedication, setDedication] = useState("");
-  const [readingLevel, setReadingLevel] =
-    useState<string>("ages_4_6");
+  const [readingLevel, setReadingLevel] = useState<string>("ages_4_6");
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
+  // Graceful redirect: if no profile has been entered yet, send the parent back
+  // to step 1 with a friendly toast instead of showing an empty form.
   useEffect(() => {
-    if (!id) return;
+    if (authLoading) return;
+    if (typeof window === "undefined") return;
+    if (user && id) return; // signed in with a draft — safe to render
+    const raw = localStorage.getItem(PROFILE_LOCAL_KEY);
+    let hasProfile = false;
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        hasProfile = !!parsed?.children?.[0]?.name;
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!hasProfile) {
+      setRedirecting(true);
+      toast.info("Let's start with your child's details first.");
+      navigate({ to: "/create/profile" });
+    }
+  }, [authLoading, user, id, navigate]);
+
+  // Hydrate from localStorage (for anonymous parents) so they don't lose typing.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = localStorage.getItem(STORY_LOCAL_KEY);
+    if (!raw) return;
+    try {
+      const s = JSON.parse(raw);
+      if (s.title) setTitle(s.title);
+      if (s.theme) setTheme(s.theme);
+      if (s.prompt) setPrompt(s.prompt);
+      if (s.detailsInclude) setDetailsInclude(s.detailsInclude);
+      if (s.detailsAvoid) setDetailsAvoid(s.detailsAvoid);
+      if (s.dedication) setDedication(s.dedication);
+      if (s.readingLevel) setReadingLevel(s.readingLevel);
+      if (s.consent) setConsent(true);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // For signed-in parents with an existing draft, hydrate from the database.
+  useEffect(() => {
+    if (!id || !user) return;
     supabase
       .from("books")
       .select("*")
@@ -45,14 +86,12 @@ function Inner() {
       .maybeSingle()
       .then(({ data }: { data: any }) => {
         if (!data) return;
-        setTitle(data.title ?? "");
-        setTheme(data.story_theme ?? THEMES[0]);
-        setPrompt(data.story_prompt ?? "");
-        setDetailsInclude(data.details_include ?? "");
-        setDetailsAvoid(data.details_avoid ?? "");
-        setDedication(data.dedication ?? "");
-        // Map any legacy reading_level value into the new bands so the select
-        // always lands on a valid option.
+        if (data.title) setTitle(data.title);
+        if (data.story_theme) setTheme(data.story_theme);
+        if (data.story_prompt) setPrompt(data.story_prompt);
+        if (data.details_include) setDetailsInclude(data.details_include);
+        if (data.details_avoid) setDetailsAvoid(data.details_avoid);
+        if (data.dedication) setDedication(data.dedication);
         const raw = (data.reading_level as string | null) ?? "ages_4_6";
         const mapped =
           raw === "ages_2_3" || raw === "ages_7_10" || raw === "ages_4_6"
@@ -63,13 +102,37 @@ function Inner() {
                 ? "ages_7_10"
                 : "ages_4_6";
         setReadingLevel(mapped);
-        setConsent(!!data.guardian_consent_at);
+        if (data.guardian_consent_at) setConsent(true);
       });
-  }, [id]);
+  }, [id, user]);
+
+  function persistLocal(next?: Partial<{
+    title: string;
+    theme: string;
+    prompt: string;
+    detailsInclude: string;
+    detailsAvoid: string;
+    dedication: string;
+    readingLevel: string;
+    consent: boolean;
+  }>) {
+    if (typeof window === "undefined") return;
+    const payload = {
+      title,
+      theme,
+      prompt,
+      detailsInclude,
+      detailsAvoid,
+      dedication,
+      readingLevel,
+      consent,
+      ...next,
+    };
+    localStorage.setItem(STORY_LOCAL_KEY, JSON.stringify(payload));
+  }
 
   async function next(e: React.FormEvent) {
     e.preventDefault();
-    if (!id) return;
 
     const parsed = storySchema.safeParse({
       title,
@@ -83,6 +146,15 @@ function Inner() {
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
+      return;
+    }
+
+    persistLocal();
+
+    if (!user || !id) {
+      // Anonymous — keep going to the style step. We'll sync to the
+      // database after sign-in on the photo step.
+      navigate({ to: "/create/style" });
       return;
     }
 
@@ -105,6 +177,16 @@ function Inner() {
     navigate({ to: "/create/style" });
   }
 
+  if (redirecting) {
+    return (
+      <WizardLayout>
+        <div className="grid min-h-[20vh] place-items-center text-sm text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </div>
+      </WizardLayout>
+    );
+  }
+
   return (
     <WizardLayout>
       <h1 className="font-display text-3xl font-semibold">Shape the story</h1>
@@ -119,7 +201,7 @@ function Inner() {
             id="title"
             maxLength={80}
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setTitle(e.target.value); persistLocal({ title: e.target.value }); }}
             placeholder="The Brave Little Explorer"
           />
         </div>
@@ -131,7 +213,7 @@ function Inner() {
               <button
                 type="button"
                 key={t}
-                onClick={() => setTheme(t)}
+                onClick={() => { setTheme(t); persistLocal({ theme: t }); }}
                 className={[
                   "rounded-md border px-3 py-1.5 text-sm transition-colors",
                   theme === t
@@ -150,7 +232,7 @@ function Inner() {
           <select
             id="reading-level"
             value={readingLevel}
-            onChange={(e) => setReadingLevel(e.target.value)}
+            onChange={(e) => { setReadingLevel(e.target.value); persistLocal({ readingLevel: e.target.value }); }}
             className="mt-2 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             {READING_LEVELS.map((r) => (
@@ -171,7 +253,7 @@ function Inner() {
             rows={4}
             maxLength={800}
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => { setPrompt(e.target.value); persistLocal({ prompt: e.target.value }); }}
             placeholder="They've been nervous about kindergarten. We'd love a story where they discover a kind classmate."
           />
         </div>
@@ -184,7 +266,7 @@ function Inner() {
               rows={3}
               maxLength={400}
               value={detailsInclude}
-              onChange={(e) => setDetailsInclude(e.target.value)}
+              onChange={(e) => { setDetailsInclude(e.target.value); persistLocal({ detailsInclude: e.target.value }); }}
               placeholder="Grandma Rose, our cabin by the lake, the red rain boots."
             />
           </div>
@@ -195,7 +277,7 @@ function Inner() {
               rows={3}
               maxLength={400}
               value={detailsAvoid}
-              onChange={(e) => setDetailsAvoid(e.target.value)}
+              onChange={(e) => { setDetailsAvoid(e.target.value); persistLocal({ detailsAvoid: e.target.value }); }}
               placeholder="No scary monsters, no thunderstorms."
             />
           </div>
@@ -208,7 +290,7 @@ function Inner() {
             rows={3}
             maxLength={280}
             value={dedication}
-            onChange={(e) => setDedication(e.target.value)}
+            onChange={(e) => { setDedication(e.target.value); persistLocal({ dedication: e.target.value }); }}
             placeholder="For Ada, our brave explorer. Love, Mom & Dad."
           />
           <p className="mt-1 text-xs text-muted-foreground">
@@ -220,7 +302,7 @@ function Inner() {
           <label className="flex cursor-pointer items-start gap-3">
             <Checkbox
               checked={consent}
-              onCheckedChange={(v) => setConsent(v === true)}
+              onCheckedChange={(v) => { const c = v === true; setConsent(c); persistLocal({ consent: c }); }}
               className="mt-0.5"
               aria-label="Guardian consent"
             />
@@ -236,16 +318,21 @@ function Inner() {
           </label>
         </div>
 
-        <div className="flex items-center justify-between">
-          <Link to="/create/photos">
-            <Button variant="ghost">
+        <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Link to="/create/profile" className="w-full sm:w-auto">
+            <Button type="button" variant="ghost" className="w-full sm:w-auto">
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
           </Link>
-          <Button type="submit" variant="ember" disabled={busy || !consent}>
-            {busy && <Loader2 className="h-4 w-4 animate-spin" />} Continue{" "}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <Button type="submit" variant="ember" disabled={busy || !consent}>
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />} Choose the art style{" "}
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              No payment until you approve the illustrated character.
+            </p>
+          </div>
         </div>
       </form>
     </WizardLayout>
