@@ -59,6 +59,7 @@ function Inner() {
   const [children, setChildren] = useState<Child[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [refUrls, setRefUrls] = useState<Record<string, string>>({});
+  const [characterUrls, setCharacterUrls] = useState<Record<string, string>>({});
   const [busyChild, setBusyChild] = useState<string | null>(null);
   const [twinsConfirmed, setTwinsConfirmed] = useState(false);
   const [approving, setApproving] = useState(false);
@@ -96,16 +97,29 @@ function Inner() {
       setSubjects((subs ?? []) as Subject[]);
 
       const urls: Record<string, string> = {};
+      const charUrls: Record<string, string> = {};
       await Promise.all(
         (subs ?? []).map(async (s: any) => {
-          if (!s.reference_storage_path) return;
-          const { data } = await supabase.storage
-            .from(RAW_BUCKET)
-            .createSignedUrl(s.reference_storage_path, 600);
-          if (data?.signedUrl) urls[s.id] = data.signedUrl;
+          if (s.reference_storage_path) {
+            const { data } = await supabase.storage
+              .from(RAW_BUCKET)
+              .createSignedUrl(s.reference_storage_path, 600);
+            if (data?.signedUrl) urls[s.id] = data.signedUrl;
+          }
+          if (s.character_image_url) {
+            if (/^https?:\/\//i.test(s.character_image_url)) {
+              charUrls[s.id] = s.character_image_url;
+            } else {
+              const { data } = await supabase.storage
+                .from("character-sheets")
+                .createSignedUrl(s.character_image_url, 600);
+              if (data?.signedUrl) charUrls[s.id] = data.signedUrl;
+            }
+          }
         }),
       );
       setRefUrls(urls);
+      setCharacterUrls(charUrls);
     } catch (e: any) {
       setLoadError(e.message ?? "Failed to load character data.");
     } finally {
