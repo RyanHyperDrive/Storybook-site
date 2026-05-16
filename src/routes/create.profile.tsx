@@ -116,7 +116,7 @@ function ProfileStep() {
     if (typeof window !== "undefined") localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
 
     if (!user) {
-      navigate({ to: "/create/photos" });
+      navigate({ to: "/create/story" });
       return;
     }
     if (!bookId) return;
@@ -157,7 +157,7 @@ function ProfileStep() {
     const { error } = await supabase.from("child_profiles").insert(rows);
     setBusy(false);
     if (error) return toast.error(error.message);
-    navigate({ to: "/create/photos" });
+    navigate({ to: "/create/story" });
   }
 
   return (
@@ -198,11 +198,11 @@ function ProfileStep() {
         <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5 text-sage" />
-            We'll ask you to sign in before uploading any photos.
+            You'll sign in before uploading a photo so it stays private to your account.
           </p>
           <Button type="submit" variant="ember" disabled={busy} className="w-full sm:w-auto">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            Continue <ArrowRight className="h-4 w-4" />
+            Choose the story <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </form>
@@ -250,7 +250,7 @@ function ChildFieldset({
             placeholder="5"
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Personalized for ages 2–10. Reading level adapts to your child.
+            Designed for ages 4–7. Reading level is adjusted for your child.
           </p>
         </div>
         <div>
