@@ -186,7 +186,7 @@ function CreateLanding() {
             <p className="text-center text-xs text-muted-foreground sm:text-left">
               Designed for ages 4–7 · Custom cover + dedication + 10 story pages · Web reader + PDF
             </p>
-            <Link to="/create/profile" className="w-full sm:w-auto">
+            <Link to="/create/photos" className="w-full sm:w-auto">
               <Button variant="ember" size="lg" className="w-full sm:w-auto">
                 Start free character preview
                 <ArrowRight className="ml-1 h-4 w-4" />
