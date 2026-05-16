@@ -178,6 +178,18 @@ async function runSuccess(browser, vp) {
     await page.waitForTimeout(150);
     await page.screenshot({ path: resolve(OUT, `checkout-success-${vp.name}.png`), fullPage: true });
     console.log(`✓ checkout-success @ ${vp.name} → captured`);
+
+    // Verify "Watch progress" navigates to /jobs/<jobId> from the fixture.
+    const expectedJobsPath = `/jobs/${FIXTURE_JOB_ROW.id}`;
+    await page.getByRole("button", { name: /Watch progress/i }).first().click();
+    try {
+      await page.waitForURL((u) => u.pathname === expectedJobsPath, { timeout: 5_000 });
+    } catch {
+      const got = new URL(page.url()).pathname + new URL(page.url()).search;
+      failures.push(
+        `${vp.name}: 'Watch progress' should navigate to ${expectedJobsPath}, got ${got}`,
+      );
+    }
   } catch (e) {
     failures.push(`checkout-success @ ${vp.name}: ${e.message}`);
   } finally {
@@ -215,6 +227,18 @@ async function runCancel(browser, vp) {
     await page.waitForTimeout(150);
     await page.screenshot({ path: resolve(OUT, `checkout-cancel-${vp.name}.png`), fullPage: true });
     console.log(`✓ checkout-cancel @ ${vp.name} → captured`);
+
+    // Verify "Try again" navigates back to /checkout/<bookId>.
+    const expectedCheckoutPath = `/checkout/${FIXTURE_DRAFT_BOOK_ID}`;
+    await page.getByRole("button", { name: /Try again/i }).first().click();
+    try {
+      await page.waitForURL((u) => u.pathname === expectedCheckoutPath, { timeout: 5_000 });
+    } catch {
+      const got = new URL(page.url()).pathname + new URL(page.url()).search;
+      failures.push(
+        `${vp.name}: 'Try again' should navigate to ${expectedCheckoutPath}, got ${got}`,
+      );
+    }
   } catch (e) {
     failures.push(`checkout-cancel @ ${vp.name}: ${e.message}`);
   } finally {
