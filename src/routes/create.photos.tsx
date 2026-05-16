@@ -18,16 +18,6 @@ import {
   ShieldCheck,
   Trash2,
 } from "lucide-react";
-  ArrowLeft,
-  ArrowRight,
-  Camera,
-  CheckCircle2,
-  ImagePlus,
-  Loader2,
-  RefreshCcw,
-  ShieldCheck,
-  Trash2,
-} from "lucide-react";
 import { toast } from "sonner";
 
 const BUCKET = "raw-uploads";
