@@ -141,11 +141,17 @@ function Inner() {
     if (!user) return null;
     const existing = subjectByChild[child.id];
     if (existing) return existing;
+    const { data: photo } = await supabase
+      .from("uploaded_photos")
+      .select("storage_path")
+      .eq("child_profile_id", child.id)
+      .maybeSingle();
     const { data, error } = await supabase
       .from("child_subjects")
       .insert({
         user_id: user.id,
         child_profile_id: child.id,
+        reference_storage_path: photo?.storage_path ?? null,
         status: "pending",
       })
       .select()
@@ -163,47 +169,29 @@ function Inner() {
     try {
       const subject = await ensureSubjectFor(child);
       if (!subject) return;
-      // Mark generating so we can show the async loading state.
-      await supabase
-        .from("child_subjects")
-        .update({ status: "generating", approved: false, error_message: null })
-        .eq("id", subject.id);
+      if (!subject.reference_storage_path) {
+        toast.error("Upload a child photo before generating their character.");
+        navigate({ to: "/create/photos" });
+        return;
+      }
       await load();
-
-      // Simulated async generation. Wire into your generation server fn here.
-      await new Promise((r) => setTimeout(r, 1500));
-
-      const placeholder = `https://images.unsplash.com/photo-1549887534-1541e9326642?w=900&q=80&sig=${child.id.slice(0, 6)}`;
-      const description = [
-        child.personality_traits ? `${child.personality_traits},` : "",
-        child.favorite_color ? `wearing ${child.favorite_color},` : "",
-        "warm friendly expression, consistent across scenes.",
-      ]
-        .join(" ")
-        .trim();
-
-      await supabase
-        .from("child_subjects")
-        .update({
-          status: "ready",
-          character_image_url: placeholder,
-          description,
-          regenerations: (subject.regenerations ?? 0) + 1,
-          approved: false,
-          error_message: null,
-        })
-        .eq("id", subject.id);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-character-sheet`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ childSubjectId: subject.id }),
+      });
+      const payload = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(payload?.error ?? "Character generation failed");
       await load();
     } catch (e: any) {
       toast.error(e.message ?? "Generation failed");
-      const subject = subjectByChild[child.id];
-      if (subject) {
-        await supabase
-          .from("child_subjects")
-          .update({ status: "error", error_message: e.message ?? "Unknown error" })
-          .eq("id", subject.id);
-        await load();
-      }
+      await load();
     } finally {
       setBusyChild(null);
     }
