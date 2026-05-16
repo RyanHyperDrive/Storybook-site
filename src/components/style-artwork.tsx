@@ -310,30 +310,10 @@ function MangaPageB() {
   );
 }
 
-function PixelCover() {
-  return (
-    <Svg>
-      <rect width="400" height="500" fill="#f5c6c1" />
-      <g shapeRendering="crispEdges">
-        <rect x="0" y="0" width="400" height="240" fill="#f7b9b4" />
-        <rect x="0" y="240" width="400" height="60" fill="#5a8a5c" />
-        <rect x="0" y="300" width="400" height="200" fill="#3f6b48" />
-        <rect x="160" y="180" width="80" height="80" fill="#c9a0a0" />
-        <rect x="180" y="160" width="40" height="20" fill="#a07878" />
-        <rect x="190" y="320" width="20" height="40" fill="#3a5aa0" />
-        <rect x="186" y="300" width="28" height="20" fill="#f1c8a0" />
-        <rect x="220" y="340" width="20" height="20" fill="#e85d3a" />
-      </g>
-    </Svg>
-  );
-}
-const PixelPageA = PixelCover;
-const PixelPageB = PixelCover;
-
 const SCENES: Record<ArtStyleKey, Record<Variant, () => ReactElement>> = {
   comic_book: { cover: ClassicCover, "page-a": ClassicPageA, "page-b": ClassicPageB },
   soft_cartoon: { cover: SoftCover, "page-a": SoftPageA, "page-b": SoftPageB },
   watercolor_adventure: { cover: WaterCover, "page-a": WaterPageA, "page-b": WaterPageB },
   manga_inspired: { cover: MangaCover, "page-a": MangaPageA, "page-b": MangaPageB },
-  pixel_art: { cover: PixelCover, "page-a": PixelPageA, "page-b": PixelPageB },
 };
+
