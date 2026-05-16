@@ -226,7 +226,17 @@ function Inner() {
       }
     }
     await ensureChildSubjects();
-    navigate({ to: "/create/story" });
+    navigate({ to: "/create/character-sheet" });
+  }
+
+  if (syncing) {
+    return (
+      <WizardLayout>
+        <div className="grid min-h-[30vh] place-items-center">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      </WizardLayout>
+    );
   }
 
   if (!bookId) {
@@ -239,10 +249,10 @@ function Inner() {
 
   return (
     <WizardLayout>
-      <h1 className="font-display text-3xl font-semibold">Add a clear photo</h1>
+      <h1 className="font-display text-3xl font-semibold">Sign in to upload your child's photo</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        We use the photo only to design the illustrated character. Originals stay private to your
-        account.
+        We ask you to sign in here so your child's photo stays private to your account. We use it
+        only to design the illustrated character — originals are never used to train models.
       </p>
 
       <PhotoGuidance />
@@ -271,13 +281,13 @@ function Inner() {
       </p>
 
       <div className="mt-10 flex items-center justify-between">
-        <Link to="/create/profile">
+        <Link to="/create/style">
           <Button variant="ghost">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
         </Link>
         <Button variant="ember" onClick={onContinue}>
-          Continue <ArrowRight className="h-4 w-4" />
+          Approve their illustrated character <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
     </WizardLayout>
