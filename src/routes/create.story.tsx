@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { AuthGate } from "@/components/auth-gate";
 import { WizardLayout } from "@/components/wizard-layout";
-import { getDraftId, PROFILE_LOCAL_KEY, STORY_LOCAL_KEY } from "@/lib/draft";
+import { getDraftId, STORY_LOCAL_KEY } from "@/lib/draft";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,11 @@ import { toast } from "sonner";
 import { storySchema, READING_LEVELS, THEMES } from "@/lib/create-schema";
 
 export const Route = createFileRoute("/create/story")({
-  component: StoryStep,
+  component: () => (
+    <AuthGate title="Sign in to continue">
+      <StoryStep />
+    </AuthGate>
+  ),
   head: () => ({ meta: [{ title: "Story — Create — StoryNest" }] }),
 });
 
