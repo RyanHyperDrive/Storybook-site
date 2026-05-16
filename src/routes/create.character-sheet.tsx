@@ -364,7 +364,7 @@ function Inner() {
           </div>
 
           <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Link to="/create/photos">
+            <Link to="/create/style">
               <Button variant="ghost">
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>

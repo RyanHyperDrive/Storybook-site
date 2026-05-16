@@ -6,9 +6,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { ensureDraftBook, getDraftId, syncAnonymousDraftToDb } from "@/lib/draft";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertTriangle,
-  ArrowLeft,
   ArrowRight,
   Camera,
   CheckCircle2,
@@ -17,6 +17,7 @@ import {
   RefreshCcw,
   ShieldCheck,
   Trash2,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -190,27 +191,6 @@ function Inner() {
     refresh();
   }
 
-  async function ensureChildSubjects() {
-    if (!user) return;
-    // Create a child_subjects row for every child_profile that doesn't have one yet.
-    const { data: existing } = await supabase
-      .from("child_subjects")
-      .select("child_profile_id")
-      .in("child_profile_id", children.map((c) => c.id));
-    const have = new Set((existing ?? []).map((r: any) => r.child_profile_id));
-    const missing = children.filter((c) => !have.has(c.id));
-    if (missing.length === 0) return;
-    await supabase.from("child_subjects").insert(
-      missing.map((c) => {
-        const photo = photos.find((p) => p.child_profile_id === c.id);
-        return {
-          user_id: user.id,
-          child_profile_id: c.id,
-          reference_storage_path: photo?.storage_path ?? null,
-        };
-      }),
-    );
-  }
 
   async function onContinue() {
     // Require at least the primary photo. Twins additionally require the sibling slot.
@@ -225,8 +205,13 @@ function Inner() {
         return;
       }
     }
-    await ensureChildSubjects();
-    navigate({ to: "/create/character-sheet" });
+    navigate({ to: "/create/profile" });
+  }
+
+  async function toggleTwins(v: boolean) {
+    if (!bookId) return;
+    setIsTwins(v);
+    await supabase.from("books").update({ is_twins: v }).eq("id", bookId);
   }
 
   if (syncing) {
@@ -249,11 +234,25 @@ function Inner() {
 
   return (
     <WizardLayout>
-      <h1 className="font-display text-3xl font-semibold">Sign in to upload your child's photo</h1>
+      <h1 className="font-display text-3xl font-semibold">Upload your child's photo</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        We ask you to sign in here so your child's photo stays private to your account. We use it
-        only to design the illustrated character — originals are never used to train models.
+        One clear, well-lit photo is enough to get started. We'll use it only to design the
+        illustrated character — originals stay private to your account and are never used to
+        train models.
       </p>
+
+      <div className="mt-6 flex items-center justify-between rounded-md border border-border bg-paper/40 p-4">
+        <div className="flex items-center gap-3">
+          <Users className="h-5 w-5 text-ember" />
+          <div>
+            <div className="text-sm font-semibold">Creating for twins?</div>
+            <p className="text-xs text-muted-foreground">
+              We'll ask for a photo of each child, and an optional photo together.
+            </p>
+          </div>
+        </div>
+        <Switch checked={isTwins} onCheckedChange={toggleTwins} aria-label="Twins" />
+      </div>
 
       <PhotoGuidance />
 
@@ -280,14 +279,9 @@ function Inner() {
         behalf) can read them.
       </p>
 
-      <div className="mt-10 flex items-center justify-between">
-        <Link to="/create/style">
-          <Button variant="ghost">
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Button>
-        </Link>
+      <div className="mt-10 flex items-center justify-end">
         <Button variant="ember" onClick={onContinue}>
-          Approve their illustrated character <ArrowRight className="h-4 w-4" />
+          Continue to your child's details <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
     </WizardLayout>
@@ -485,11 +479,7 @@ function EmptyDraft() {
   return (
     <div className="rounded-md border border-border bg-paper/40 p-6 text-center">
       <p className="text-sm">
-        No active draft.{" "}
-        <Link to="/create/profile" className="font-medium text-ember underline">
-          Start over
-        </Link>
-        .
+        We couldn't open a draft for your account. Please reload this page to try again.
       </p>
     </div>
   );

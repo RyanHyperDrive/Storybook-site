@@ -248,7 +248,7 @@ export function SampleBookModal({
                 <p className="text-[11px] leading-snug text-muted-foreground sm:max-w-[60%]">
                   Fictional sample preview. Your book uses your child's approved character — no payment until you approve it.
                 </p>
-                <Link to="/create/profile" onClick={() => onOpenChange(false)} className="shrink-0">
+                <Link to="/create/photos" onClick={() => onOpenChange(false)} className="shrink-0">
                   <Button variant="ember" size="sm" className="w-full sm:w-auto">
                     Start free character preview
                     <ArrowRight className="ml-1 h-4 w-4" />

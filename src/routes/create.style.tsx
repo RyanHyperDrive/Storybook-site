@@ -58,7 +58,7 @@ function StyleStep() {
     if (user && id) {
       await supabase.from("books").update({ art_style: picked }).eq("id", id);
     }
-    navigate({ to: "/create/photos" });
+    navigate({ to: "/create/character-sheet" });
   }
 
   return (
@@ -128,11 +128,11 @@ function StyleStep() {
         </Link>
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
           <Button variant="ember" onClick={next} className="w-full sm:w-auto">
-            Upload photo securely <ArrowRight className="h-4 w-4" />
+            Approve their illustrated character <ArrowRight className="h-4 w-4" />
           </Button>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5 text-sage" />
-            Your child's photo is private and never used to train models.
+            No payment until you approve the illustrated character.
           </p>
         </div>
       </div>
