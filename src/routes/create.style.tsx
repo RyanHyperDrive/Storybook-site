@@ -58,7 +58,7 @@ function StyleStep() {
     if (user && id) {
       await supabase.from("books").update({ art_style: picked }).eq("id", id);
     }
-    navigate({ to: "/create/photos" });
+    navigate({ to: "/create/character-sheet" });
   }
 
   return (
