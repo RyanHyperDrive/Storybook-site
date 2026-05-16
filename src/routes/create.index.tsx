@@ -87,13 +87,13 @@ function CreateLanding() {
                 What happens after you start
               </div>
               <ol className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px] text-foreground/85">
+                <Mini>Sign in + photo</Mini>
+                <Sep />
                 <Mini>About child</Mini>
                 <Sep />
                 <Mini>Story</Mini>
                 <Sep />
                 <Mini>Art style</Mini>
-                <Sep />
-                <Mini>Sign in + photo</Mini>
                 <Sep />
                 <Mini>Approve character</Mini>
                 <Sep />
