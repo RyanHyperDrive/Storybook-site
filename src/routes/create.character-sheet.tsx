@@ -589,9 +589,9 @@ function EmptyChildren() {
 function EmptyDraft() {
   return (
     <div className="rounded-md border border-border bg-paper/40 p-6 text-center text-sm">
-      No active draft.{" "}
-      <Link to="/create/profile" className="font-medium text-ember underline">
-        Start over
+      We need your child's photo before we can make their illustrated character.{" "}
+      <Link to="/create/photos" className="font-medium text-ember underline">
+        Upload a photo
       </Link>
       .
     </div>
