@@ -120,7 +120,7 @@ function CreateLanding() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
-                Five small steps. One book they'll never forget.
+                Six small steps. One book they'll never forget.
               </h2>
               <p className="mt-2 max-w-xl text-sm text-muted-foreground">
                 Every step is reviewable. You can tweak details right up to the
@@ -311,7 +311,7 @@ function JourneyPreview() {
             label="2. Character"
             note="You approve it"
             image={howitworksCharacters}
-            alt="Illustrated character preview generated from the photo"
+            alt="Illustrated character generated from the photo"
             highlight
           />
           <JourneyStep
