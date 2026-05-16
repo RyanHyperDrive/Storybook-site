@@ -170,25 +170,57 @@ function Home() {
             </div>
           </div>
 
-          {/* RIGHT — single calm product proof: one cover only */}
+          {/* RIGHT — finished book cover, typeset like a real ebook */}
           <div className="relative mx-auto w-full max-w-sm md:max-w-md">
             <div className="relative">
               {/* page edges peeking from right for "real book" depth */}
               <span aria-hidden className="absolute inset-y-2 right-[-3px] w-[3px] rounded-r-sm bg-foreground/15" />
               <span aria-hidden className="absolute inset-y-4 right-[-6px] w-[2px] rounded-r-sm bg-foreground/10" />
-              <div className="relative overflow-hidden rounded-md border border-border bg-background shadow-[0_30px_60px_-22px_oklch(0.22_0.03_260/0.55)]">
-                <span aria-hidden className="absolute inset-y-0 left-0 z-10 w-[6px] bg-gradient-to-b from-foreground/30 via-foreground/10 to-foreground/30" />
-                <img
-                  src={sampleWatercolor}
-                  alt="Sample StoryNest book cover starring the child as the hero, watercolor style"
-                  width={900}
-                  height={1200}
-                  loading="eager"
-                  className="block aspect-[3/4] w-full object-cover"
-                />
-                <div className="absolute left-3 top-3 rounded-full bg-foreground/85 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background backdrop-blur">
-                  Watercolor sample
+              <div
+                data-testid="hero-cover"
+                className="relative overflow-hidden rounded-md border border-border bg-background shadow-[0_30px_60px_-22px_oklch(0.22_0.03_260/0.55)]"
+              >
+                {/* spine */}
+                <span aria-hidden className="absolute inset-y-0 left-0 z-20 w-[6px] bg-gradient-to-b from-foreground/30 via-foreground/10 to-foreground/30" />
+                <span aria-hidden className="absolute inset-y-0 left-[6px] z-20 w-px bg-background/60" />
+
+                <div className="relative aspect-[3/4] w-full">
+                  <img
+                    src={sampleWatercolor}
+                    alt="Finished StoryNest storybook cover: The Tea Party with Pip, watercolor illustration"
+                    width={900}
+                    height={1200}
+                    loading="eager"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+
+                  {/* top wordmark band */}
+                  <div className="absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-foreground/55 via-foreground/15 to-transparent px-5 pb-8 pt-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-background/95">
+                      A StoryNest Book
+                    </div>
+                  </div>
+
+                  {/* bottom title block */}
+                  <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-foreground/85 via-foreground/55 to-transparent px-5 pb-5 pt-14">
+                    <div className="font-display text-[1.55rem] font-semibold leading-[1.05] tracking-tight text-background drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)] sm:text-3xl">
+                      The Tea Party<br />with Pip
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-background/85">
+                      <span className="h-px w-6 bg-background/70" />
+                      Featuring your little one
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* subtle caption outside the jacket */}
+              <div className="mt-3 flex items-center justify-between px-1 text-[11px] text-muted-foreground">
+                <span>Sample book · Watercolor style</span>
+                <span className="inline-flex items-center gap-1 text-foreground/70">
+                  <BookOpen className="h-3 w-3 text-ember" />
+                  Cover + 10 pages
+                </span>
               </div>
             </div>
           </div>
@@ -370,8 +402,8 @@ function Home() {
                       return cover ? (
                         <img
                           src={cover}
-                          alt={`${s.title} sample cover in ${s.styleName} style`}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                          alt={`${s.title} — finished StoryNest sample cover in ${s.styleName} style`}
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                           loading="lazy"
                           width={1024}
                           height={1280}
@@ -381,12 +413,27 @@ function Home() {
                       );
                     })()}
 
-                    <div className="absolute left-2 top-2 rounded-full bg-foreground/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background backdrop-blur">
-                      {s.styleName}
+                    {/* top wordmark band */}
+                    <div className="absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-foreground/55 via-foreground/15 to-transparent px-3 pb-6 pt-2">
+                      <div className="text-[9px] font-semibold uppercase tracking-[0.22em] text-background/95">
+                        A StoryNest Book
+                      </div>
                     </div>
 
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-foreground/65 via-foreground/15 to-transparent p-3">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-[11px] font-semibold text-foreground shadow-md transition-transform group-hover:scale-105">
+                    {/* bottom title block — typeset like a real cover */}
+                    <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-foreground/85 via-foreground/55 to-transparent px-3 pb-10 pt-12">
+                      <div className="font-display text-[1.05rem] font-semibold leading-[1.1] tracking-tight text-background drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)] sm:text-[1.15rem]">
+                        {s.title}
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-background/85">
+                        <span className="h-px w-4 bg-background/70" />
+                        Featuring your child
+                      </div>
+                    </div>
+
+                    {/* hover CTA pinned to bottom edge, above the title gradient */}
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-center p-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-[11px] font-semibold text-foreground shadow-md">
                         <BookOpen className="h-3.5 w-3.5 text-ember" />
                         Preview sample
                       </span>
@@ -395,15 +442,14 @@ function Home() {
                 </div>
               </div>
 
-              <div className="mt-3 px-0.5">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  A StoryNest book
-                </div>
-                <div className="mt-0.5 line-clamp-2 font-display text-[15px] font-semibold leading-snug text-foreground">
-                  {s.title}
-                </div>
-                <div className="mt-1.5 inline-flex items-center rounded-full bg-sage/15 px-2 py-0.5 text-[10px] font-medium text-sage">
-                  {s.parentTag}
+              <div className="mt-3 flex items-start justify-between gap-2 px-0.5">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {s.styleName} · Sample
+                  </div>
+                  <div className="mt-1 inline-flex items-center rounded-full bg-sage/15 px-2 py-0.5 text-[10px] font-medium text-sage">
+                    {s.parentTag}
+                  </div>
                 </div>
               </div>
             </button>
