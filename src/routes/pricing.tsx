@@ -198,9 +198,9 @@ function Pricing() {
             </div>
 
             {/* Sample style strip */}
-            <a href="/#examples" className="group mt-5 flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground">
+            <a href="/examples" className="group mt-5 flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground">
               <div className="flex -space-x-2">
-                {[sampleWatercolor, sampleCartoon, sampleComic, sampleManga, samplePixel].map((src, i) => (
+                {[sampleWatercolor, sampleCartoon, sampleComic, sampleManga].map((src, i) => (
                   <span
                     key={i}
                     className="grid h-9 w-9 place-items-center overflow-hidden rounded-md border-2 border-background bg-paper shadow-sm"
@@ -210,7 +210,7 @@ function Pricing() {
                 ))}
               </div>
               <span>
-                <span className="font-medium text-foreground">5 art styles included</span> — see real samples
+                <span className="font-medium text-foreground">4 art styles included</span> — see real samples
                 <span className="ml-1 inline-block transition-transform group-hover:translate-x-0.5">→</span>
               </span>
             </a>
