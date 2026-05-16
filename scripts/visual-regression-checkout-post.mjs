@@ -227,6 +227,18 @@ async function runCancel(browser, vp) {
     await page.waitForTimeout(150);
     await page.screenshot({ path: resolve(OUT, `checkout-cancel-${vp.name}.png`), fullPage: true });
     console.log(`✓ checkout-cancel @ ${vp.name} → captured`);
+
+    // Verify "Try again" navigates back to /checkout/<bookId>.
+    const expectedCheckoutPath = `/checkout/${FIXTURE_DRAFT_BOOK_ID}`;
+    await page.getByRole("button", { name: /Try again/i }).first().click();
+    try {
+      await page.waitForURL((u) => u.pathname === expectedCheckoutPath, { timeout: 5_000 });
+    } catch {
+      const got = new URL(page.url()).pathname + new URL(page.url()).search;
+      failures.push(
+        `${vp.name}: 'Try again' should navigate to ${expectedCheckoutPath}, got ${got}`,
+      );
+    }
   } catch (e) {
     failures.push(`checkout-cancel @ ${vp.name}: ${e.message}`);
   } finally {
