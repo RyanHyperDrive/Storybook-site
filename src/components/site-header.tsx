@@ -47,12 +47,6 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
-          <a
-            href={examplesHref}
-            className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            Examples
-          </a>
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
