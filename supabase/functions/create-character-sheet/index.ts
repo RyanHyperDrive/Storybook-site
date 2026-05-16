@@ -66,9 +66,12 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return errorResponse("Method not allowed", 405);
 
+  let childSubjectId: string | undefined;
+  let adminForError: any = null;
   try {
     const { user, admin } = await requireUser(req);
-    const { childSubjectId } = await req.json();
+    adminForError = admin;
+    ({ childSubjectId } = await req.json());
     if (!childSubjectId) return errorResponse("childSubjectId is required");
 
     const subject = await assertOwnership(admin, "child_subjects", childSubjectId, user.id);
@@ -179,10 +182,8 @@ serve(async (req) => {
     if (e instanceof Response) return e;
     console.error("create-character-sheet error", e);
     try {
-      const { childSubjectId } = await req.clone().json().catch(() => ({}));
-      if (childSubjectId) {
-        const { admin } = await requireUser(req);
-        await admin
+      if (childSubjectId && adminForError) {
+        await adminForError
           .from("child_subjects")
           .update({ status: "error", error_message: e?.message ?? "Internal error" })
           .eq("id", childSubjectId);
