@@ -122,12 +122,12 @@ function Home() {
             </div>
 
             <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-[3.4rem]">
-              A storybook starring{" "}
+              A bedtime story starring{" "}
               <br className="hidden sm:block" />
               <span className="text-ember">your child</span>.
             </h1>
             <p className="mt-4 max-w-xl text-base text-muted-foreground md:text-[1.05rem]">
-              Upload one photo. We turn it into an illustrated character for you to approve, then write and illustrate a custom storybook in the style you choose.
+              Upload one photo. We create an illustrated version of your child for you to approve, then write and illustrate a custom storybook in the style you choose.
             </p>
 
             {/* Conversion card: price + CTA + approval line + trust bullets, grouped */}
@@ -216,7 +216,7 @@ function Home() {
 
               {/* subtle caption outside the jacket */}
               <div className="mt-3 flex items-center justify-between px-1 text-[11px] text-muted-foreground">
-                <span>Sample book · Watercolor style</span>
+                <span>Sample book · Watercolor · Cover + 10 pages</span>
                 <span className="inline-flex items-center gap-1 text-foreground/70">
                   <BookOpen className="h-3 w-3 text-ember" />
                   Cover + 10 pages
@@ -357,10 +357,10 @@ function Home() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-              A peek at the art styles
+              Choose a look they'll love.
             </h2>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Tap any cover to flip through a sample book. Want more? See the full gallery.
+              Open any cover to flip through a sample book, or visit the full gallery.
             </p>
           </div>
           <Link to="/examples" className="text-sm font-medium text-ember underline-offset-4 hover:underline">
@@ -448,7 +448,7 @@ function Home() {
         </div>
 
         <p className="mt-6 max-w-3xl text-xs text-muted-foreground">
-          These sample covers are fictional generated previews — not real customer children. Your own book stars your child as an illustrated character that you approve before we generate any story pages.
+          Sample children are fictional. Your child's photo stays private, and you approve the illustrated character before checkout.
         </p>
       </section>
 
@@ -456,7 +456,7 @@ function Home() {
       <section className="bg-paper/60">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:py-16 md:grid-cols-2">
           <div className="rounded-lg border border-border bg-background p-6 sm:p-8">
-            <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">One book</div>
+            <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">One custom book</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="font-display text-4xl font-semibold sm:text-5xl">$29.99</div>
               <div className="text-sm text-muted-foreground">one-time</div>
@@ -474,7 +474,7 @@ function Home() {
             </Link>
             <p className="mt-3 flex items-center gap-2 text-xs font-medium text-sage">
               <ShieldCheck className="h-4 w-4 shrink-0" />
-              No payment until you approve the character preview.
+              No payment until you approve the illustrated character.
             </p>
           </div>
           <div className="min-w-0">

@@ -152,7 +152,7 @@ function ExamplesPage() {
         </div>
 
         <p className="mt-6 max-w-3xl text-xs text-muted-foreground">
-          Sample covers are fictional generated previews — not real customer children. Your own book stars your child as an illustrated character that you approve before we generate any story pages.
+          Sample children are fictional. Your child's photo stays private, and you approve the illustrated character before checkout.
         </p>
 
         {/* Diversity asset TODOs — intentionally not rendered as cards so we
@@ -172,7 +172,7 @@ function ExamplesPage() {
             Ready to see your child as the hero?
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Free character preview · pay $29.99 only after you approve.
+            Free illustrated character · pay $29.99 only after you approve.
           </p>
           <Link to="/create" className="mt-5 inline-block">
             <Button variant="ember" size="lg">

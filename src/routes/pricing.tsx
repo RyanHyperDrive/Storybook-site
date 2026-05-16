@@ -94,7 +94,7 @@ const faqs = [
   },
   {
     q: "When am I actually charged?",
-    a: "Only after you approve the illustrated character preview. You can upload a photo, see the character, and back out at zero cost. No subscription, no recurring charges — one-time $29.99 per book.",
+    a: "Only after you approve the illustrated character. You can upload a photo, see the character, and back out at zero cost. No subscription, no recurring charges — one-time $29.99 per book.",
   },
   {
     q: "Are my child's photos private?",
@@ -399,7 +399,7 @@ function Pricing() {
             Ready to see your child as the hero?
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Free character preview · pay $29.99 only after you approve.
+            Free illustrated character · pay $29.99 only after you approve.
           </p>
           <Link to="/create" className="mt-4 inline-block">
             <Button size="lg" variant="ember">
