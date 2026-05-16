@@ -26,17 +26,14 @@ import sampleWatercolorP2 from "@/assets/sample-watercolor-pip-page2.jpg";
 import sampleManga from "@/assets/sample-manga-yuki.jpg";
 import sampleMangaP1 from "@/assets/sample-manga-yuki-page1.jpg";
 import sampleMangaP2 from "@/assets/sample-manga-yuki-page2.jpg";
-import samplePixel from "@/assets/sample-pixel-quinn.jpg";
-import samplePixelP1 from "@/assets/sample-pixel-quinn-page1.jpg";
-import samplePixelP2 from "@/assets/sample-pixel-quinn-page2.jpg";
 
 const FALLBACK_ASSETS: Record<ArtStyleKey, { cover: string; page_1: string; page_2: string }> = {
   comic_book: { cover: sampleComic, page_1: sampleComicP1, page_2: sampleComicP2 },
   soft_cartoon: { cover: sampleCartoon, page_1: sampleCartoonP1, page_2: sampleCartoonP2 },
   watercolor_adventure: { cover: sampleWatercolor, page_1: sampleWatercolorP1, page_2: sampleWatercolorP2 },
   manga_inspired: { cover: sampleManga, page_1: sampleMangaP1, page_2: sampleMangaP2 },
-  pixel_art: { cover: samplePixel, page_1: samplePixelP1, page_2: samplePixelP2 },
 };
+
 
 function usableImageUrl(url: string | null | undefined) {
   return typeof url === "string" && url.trim().length > 0 ? url : undefined;
