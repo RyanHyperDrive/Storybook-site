@@ -144,7 +144,7 @@ function Pricing() {
                 <Clock className="h-3 w-3 text-ember" /> Ready in 10–20 min
               </span>
               <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/70 px-2.5 py-0.5 text-[11px] font-medium text-foreground/80 backdrop-blur">
-                <BookOpen className="h-3 w-3 text-ember" /> 10+ illustrated pages
+                <BookOpen className="h-3 w-3 text-ember" /> 10 story pages · ages 4–7
               </span>
             </div>
 
