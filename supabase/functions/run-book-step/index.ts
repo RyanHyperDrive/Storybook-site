@@ -1,0 +1,226 @@
+// deno-lint-ignore-file no-explicit-any
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
+import { requireUser } from "../_shared/auth.ts";
+
+/**
+ * POST /run-book-step
+ * Body: { jobId: string }
+ *
+ * Client-driven orchestrator. Does ONE unit of work per call and returns,
+ * so the browser can poll without hitting edge-function timeouts. Steps:
+ *
+ *   photo_check → character_profile → character_sheet → story_writing
+ *   → page_illustrations (one page per call, 10 calls)
+ *   → quality_checks → pdf_assembly → ready
+ */
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const TOTAL_PAGES = 10;
+
+async function callFn(fn: string, auth: string, body: unknown) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
+    method: "POST",
+    headers: { Authorization: auth, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  let json: any = null;
+  try { json = await res.json(); } catch { /* */ }
+  return { status: res.status, json };
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return errorResponse("Method not allowed", 405);
+  const authHeader = req.headers.get("Authorization") ?? "";
+
+  try {
+    const { user, admin } = await requireUser(req);
+    const { jobId } = await req.json();
+    if (!jobId) return errorResponse("jobId is required");
+
+    const { data: job } = await admin.from("jobs").select("*").eq("id", jobId).maybeSingle();
+    if (!job || job.user_id !== user.id) return errorResponse("Not found", 403);
+    if (job.status === "done" || job.status === "error") {
+      return jsonResponse({ ok: true, done: true, job });
+    }
+
+    const bookId = job.book_id as string;
+    const { data: book } = await admin.from("books").select("*").eq("id", bookId).maybeSingle();
+    if (!book) return errorResponse("Book missing", 404);
+
+    const step = (job.current_step as string) || "photo_check";
+
+    async function updateJob(patch: Record<string, any>) {
+      await admin.from("jobs").update({ ...patch, status: "running" }).eq("id", jobId);
+    }
+    async function finishJob(message?: string) {
+      await admin.from("jobs").update({
+        status: "done", progress: 100, current_step: "ready",
+        message: message ?? "Your book is ready.",
+      }).eq("id", jobId);
+    }
+    async function failJob(message: string) {
+      await admin.from("jobs").update({
+        status: "error", message,
+      }).eq("id", jobId);
+    }
+
+    try {
+      if (step === "photo_check") {
+        // Verify an uploaded photo exists.
+        const { data: photo } = await admin
+          .from("uploaded_photos").select("id").eq("user_id", user.id).limit(1).maybeSingle();
+        if (!photo) { await failJob("No uploaded photo found."); return jsonResponse({ ok: false }); }
+        await updateJob({ current_step: "character_profile", progress: 12, message: "Photo verified." });
+        return jsonResponse({ ok: true });
+      }
+
+      if (step === "character_profile") {
+        const { data: profile } = await admin
+          .from("child_profiles").select("id").eq("book_id", bookId).limit(1).maybeSingle();
+        if (!profile) { await failJob("Child profile missing."); return jsonResponse({ ok: false }); }
+        await updateJob({ current_step: "character_sheet", progress: 22, message: "Character profile ready." });
+        return jsonResponse({ ok: true });
+      }
+
+      if (step === "character_sheet") {
+        const { data: sheet } = await admin
+          .from("character_sheets").select("image_url, approved")
+          .eq("book_id", bookId).eq("approved", true)
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (!sheet?.image_url) {
+          await failJob("Approve a character sheet first.");
+          return jsonResponse({ ok: false });
+        }
+        await updateJob({ current_step: "story_writing", progress: 32, message: "Character sheet locked in." });
+        return jsonResponse({ ok: true });
+      }
+
+      if (step === "story_writing") {
+        // Already written?
+        if (book.story_json && Array.isArray((book.story_json as any).pages)) {
+          await updateJob({ current_step: "page_illustrations", progress: 45, message: "Story ready." });
+          return jsonResponse({ ok: true, skipped: true });
+        }
+        const childDetails = [
+          book.child_name && `Name: ${book.child_name}`,
+          book.child_age != null && `Age: ${book.child_age}`,
+          book.child_pronouns && `Pronouns: ${book.child_pronouns}`,
+          book.child_loves && `Loves: ${book.child_loves}`,
+        ].filter(Boolean).join(". ");
+
+        const r = await callFn("write-story", authHeader, {
+          theme: book.story_theme || book.story_prompt || "a gentle bedtime adventure",
+          child_details: childDetails || `A child named ${book.child_name ?? "the hero"}.`,
+          favorites: book.details_include ?? "",
+          avoid: book.details_avoid ?? "",
+          bookId,
+          reading_level: book.reading_level ?? "ages_4_6",
+        });
+        if (r.status >= 400 || !r.json?.story) {
+          await failJob(r.json?.error ?? "Story generation failed.");
+          return jsonResponse({ ok: false });
+        }
+        // Persist (write-story may have failed best-effort on story_json column).
+        await admin.from("books").update({
+          story_json: r.json.story,
+          title: r.json.story.title ?? book.title,
+          dedication: book.dedication ?? r.json.story.dedication ?? null,
+        }).eq("id", bookId);
+
+        await updateJob({ current_step: "page_illustrations", progress: 45, message: "Story written." });
+        return jsonResponse({ ok: true });
+      }
+
+      if (step === "page_illustrations") {
+        const story = book.story_json as any;
+        if (!story?.pages) { await failJob("Story missing."); return jsonResponse({ ok: false }); }
+
+        // Find next page that isn't ready yet.
+        const { data: existing } = await admin
+          .from("book_pages").select("page_number, status")
+          .eq("book_id", bookId);
+        const readyNumbers = new Set((existing ?? []).filter(p => p.status === "ready").map(p => p.page_number));
+        const nextPage = story.pages.find((p: any) => !readyNumbers.has(p.page_number));
+
+        if (!nextPage) {
+          await updateJob({ current_step: "quality_checks", progress: 88, message: "All pages illustrated." });
+          return jsonResponse({ ok: true });
+        }
+
+        // Persist page text upfront so the reader has copy even if illustration retries.
+        await admin.from("book_pages").upsert({
+          user_id: user.id,
+          book_id: bookId,
+          page_number: nextPage.page_number,
+          text_content: nextPage.page_text,
+          status: "generating",
+        }, { onConflict: "book_id,page_number" } as any).select();
+
+        const r = await callFn("illustrate-page", authHeader, {
+          bookId,
+          pageNumber: nextPage.page_number,
+          styleKey: book.art_style ?? "watercolor_classic",
+          sceneDescription: nextPage.scene_description,
+          charactersPresent: nextPage.characters_present ?? [],
+          visualMustHaves: nextPage.visual_must_haves ?? [],
+          visualMustNotInclude: nextPage.visual_must_not_include ?? [],
+        });
+        if (r.status >= 400) {
+          await failJob(r.json?.error ?? `Page ${nextPage.page_number} failed.`);
+          return jsonResponse({ ok: false });
+        }
+
+        // Re-attach text after illustrate-page upsert (it doesn't set text).
+        await admin.from("book_pages").update({
+          text_content: nextPage.page_text,
+        }).eq("book_id", bookId).eq("page_number", nextPage.page_number);
+
+        // Use page 1 as cover image.
+        if (nextPage.page_number === 1 && r.json?.storagePath) {
+          await admin.from("books").update({
+            cover_image_path: r.json.storagePath,
+            cover_url: r.json.storagePath,
+          }).eq("id", bookId);
+        }
+
+        const doneCount = readyNumbers.size + 1;
+        const pct = 45 + Math.round((doneCount / TOTAL_PAGES) * 40); // 45..85
+        await updateJob({
+          progress: Math.min(85, pct),
+          message: `Illustrated page ${nextPage.page_number} of ${TOTAL_PAGES}.`,
+        });
+        return jsonResponse({ ok: true, pageDone: nextPage.page_number });
+      }
+
+      if (step === "quality_checks") {
+        await updateJob({ current_step: "pdf_assembly", progress: 94, message: "Quality reviewed." });
+        return jsonResponse({ ok: true });
+      }
+
+      if (step === "pdf_assembly") {
+        await admin.from("books").update({ status: "ready" }).eq("id", bookId);
+        await finishJob();
+        return jsonResponse({ ok: true, done: true });
+      }
+
+      if (step === "ready") {
+        await finishJob();
+        return jsonResponse({ ok: true, done: true });
+      }
+
+      await failJob(`Unknown step: ${step}`);
+      return jsonResponse({ ok: false });
+    } catch (e: any) {
+      console.error("run-book-step inner error", e);
+      await failJob(e?.message ?? "Unexpected error.");
+      return jsonResponse({ ok: false, error: e?.message ?? "Unexpected error." });
+    }
+  } catch (e: any) {
+    if (e instanceof Response) return e;
+    console.error("run-book-step error", e);
+    return errorResponse(e?.message ?? "Internal error", 500);
+  }
+});

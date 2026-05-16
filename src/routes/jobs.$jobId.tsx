@@ -69,54 +69,38 @@ function Inner() {
 
   useEffect(() => {
     let active = true;
-    async function tick() {
+    let inFlight = false;
+
+    async function poll() {
       const { data, error } = await supabase
-        .from("jobs")
-        .select("*")
-        .eq("id", jobId)
-        .maybeSingle();
+        .from("jobs").select("*").eq("id", jobId).maybeSingle();
       if (!active) return;
       setLoading(false);
-      if (error) {
-        setError(error.message);
-        return;
-      }
+      if (error) { setError(error.message); return; }
       setJob(data);
       if (!data) return;
-
-      // Simulated progression. Replace with the real worker that updates jobs rows.
-      if (data.status !== "done" && data.status !== "error" && (data.progress ?? 0) < 100) {
-        const currentStep = (data.current_step as StepKey) || stepFromProgress(data.progress ?? 0);
-        const target = STEPS.find((s) => s.key === nextStep(currentStep))!;
-        const nextPct = Math.min(100, Math.max(data.progress ?? 0, target.pct));
-        const status = nextPct >= 100 ? "done" : "running";
-        await supabase
-          .from("jobs")
-          .update({
-            progress: nextPct,
-            status,
-            current_step: target.key,
-            message: target.helper,
-          })
-          .eq("id", jobId);
-        if (status === "done" && data.book_id) {
-          await supabase
-            .from("books")
-            .update({
-              status: "ready",
-              cover_url:
-                "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=800&q=80",
-            })
-            .eq("id", data.book_id);
-        }
+      if (data.status === "done" || data.status === "error") return;
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (!token) return;
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/run-book-step`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId }),
+        });
+      } catch (e) {
+        console.error("run-book-step error", e);
+      } finally {
+        inFlight = false;
       }
     }
-    tick();
-    const t = setInterval(tick, 1800);
-    return () => {
-      active = false;
-      clearInterval(t);
-    };
+
+    poll();
+    const t = setInterval(poll, 3000);
+    return () => { active = false; clearInterval(t); };
   }, [jobId]);
 
   if (loading) {
