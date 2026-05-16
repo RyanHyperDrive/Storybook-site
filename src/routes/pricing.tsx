@@ -114,7 +114,7 @@ const faqs = [
   },
   {
     q: "Is it readable for kids with low vision or dyslexia?",
-    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Every illustration has descriptive alt text. Reading level adapts from board-book to early-reader so the page feels right for ages 2–10.",
+    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Every illustration has descriptive alt text. Reading level is tuned for ages 4–7 — from pre-readers being read to, to confident early readers.",
   },
   {
     q: "Is this made with AI?",
