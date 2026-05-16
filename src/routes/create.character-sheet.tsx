@@ -347,6 +347,7 @@ function Inner() {
                 isTwins={isTwins}
                 subject={subjectByChild[child.id] ?? null}
                 refUrl={subjectByChild[child.id]?.id ? refUrls[subjectByChild[child.id]!.id] : undefined}
+                characterUrl={subjectByChild[child.id]?.id ? characterUrls[subjectByChild[child.id]!.id] : undefined}
                 busy={busyChild === child.id}
                 onGenerate={() => generateFor(child)}
               />
@@ -405,6 +406,7 @@ function CharacterCard({
   isTwins,
   subject,
   refUrl,
+  characterUrl,
   busy,
   onGenerate,
 }: {
@@ -413,6 +415,7 @@ function CharacterCard({
   isTwins: boolean;
   subject: Subject | null;
   refUrl: string | undefined;
+  characterUrl: string | undefined;
   busy: boolean;
   onGenerate: () => void;
 }) {
@@ -448,9 +451,9 @@ function CharacterCard({
         <div>
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Character</div>
           <div className="relative mt-1 aspect-[4/5] overflow-hidden rounded-md border border-border bg-muted">
-            {status === "ready" && subject?.character_image_url ? (
+            {status === "ready" && characterUrl ? (
               <img
-                src={subject.character_image_url}
+                src={characterUrl}
                 alt={`${label} character`}
                 className="h-full w-full object-cover"
               />
