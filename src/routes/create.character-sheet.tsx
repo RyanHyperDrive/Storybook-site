@@ -140,12 +140,21 @@ function Inner() {
   async function ensureSubjectFor(child: Child): Promise<Subject | null> {
     if (!user) return null;
     const existing = subjectByChild[child.id];
-    if (existing) return existing;
     const { data: photo } = await supabase
       .from("uploaded_photos")
       .select("storage_path")
       .eq("child_profile_id", child.id)
       .maybeSingle();
+    if (existing) {
+      if (!existing.reference_storage_path && photo?.storage_path) {
+        await supabase
+          .from("child_subjects")
+          .update({ reference_storage_path: photo.storage_path })
+          .eq("id", existing.id);
+        return { ...existing, reference_storage_path: photo.storage_path };
+      }
+      return existing;
+    }
     const { data, error } = await supabase
       .from("child_subjects")
       .insert({
