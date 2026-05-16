@@ -337,7 +337,7 @@ function JourneyPreview() {
                   <Check className="h-3 w-3 text-sage" /> Custom cover + dedication
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="h-3 w-3 text-sage" /> 10+ illustrated pages
+                  <Check className="h-3 w-3 text-sage" /> 10 story pages · ages 4–7
                 </li>
                 <li className="flex items-center gap-1.5">
                   <Check className="h-3 w-3 text-sage" /> Web reader + PDF
