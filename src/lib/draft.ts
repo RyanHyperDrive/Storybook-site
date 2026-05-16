@@ -118,7 +118,16 @@ export async function syncAnonymousDraftToDb(userId: string, bookId: string) {
   }>(STORY_LOCAL_KEY);
 
   if (story) {
-    const update: Record<string, unknown> = {};
+    const update: Partial<{
+      title: string;
+      story_theme: string;
+      story_prompt: string;
+      details_include: string;
+      details_avoid: string;
+      dedication: string;
+      reading_level: string;
+      guardian_consent_at: string;
+    }> = {};
     if (story.title) update.title = story.title;
     if (story.theme) update.story_theme = story.theme;
     if (story.prompt) update.story_prompt = story.prompt;
