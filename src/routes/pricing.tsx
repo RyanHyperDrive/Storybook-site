@@ -399,7 +399,7 @@ function Pricing() {
             Ready to see your child as the hero?
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Free character preview · pay $29.99 only after you approve.
+            Free illustrated character · pay $29.99 only after you approve.
           </p>
           <Link to="/create" className="mt-4 inline-block">
             <Button size="lg" variant="ember">
