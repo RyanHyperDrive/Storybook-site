@@ -3,10 +3,10 @@ import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 
 const STEPS = [
-  { to: "/create/profile", label: "Profile" },
+  { to: "/create/photos", label: "Sign in + photo" },
+  { to: "/create/profile", label: "About child" },
   { to: "/create/story", label: "Story" },
-  { to: "/create/style", label: "Style" },
-  { to: "/create/photos", label: "Photo" },
+  { to: "/create/style", label: "Art style" },
   { to: "/create/character-sheet", label: "Character" },
 ] as const;
 
