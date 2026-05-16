@@ -127,7 +127,7 @@ function CreateLanding() {
                 character approval — nothing is locked in until you say so.
               </p>
             </div>
-            <Link to="/create/profile" className="hidden sm:block">
+            <Link to="/create/photos" className="hidden sm:block">
               <Button variant="outline" size="sm">
                 Begin step 1
                 <ArrowRight className="ml-1 h-4 w-4" />
@@ -138,32 +138,32 @@ function CreateLanding() {
           <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StepCard
               n={1}
+              icon={Camera}
+              title="Sign in + photo"
+              body="Sign in here so your child's photo stays private to your account. One clear, well-lit photo."
+              example="Originals stay private and are never used to train models."
+              trust
+            />
+            <StepCard
+              n={2}
               icon={Heart}
               title="About your child"
               body="Name, age, pronouns, and the things they love."
               example="“Mira, 5, loves dinosaurs + tea parties.”"
             />
             <StepCard
-              n={2}
+              n={3}
               icon={BookOpen}
               title="Story"
               body="Pick a theme — adventure, bedtime, friendship, curiosity."
               example="“A bedtime story about courage.”"
             />
             <StepCard
-              n={3}
+              n={4}
               icon={Palette}
               title="Art style"
               body="Choose from four illustration styles, each with a finished sample."
               example="Watercolor · Soft cartoon · Comic · Manga"
-            />
-            <StepCard
-              n={4}
-              icon={Camera}
-              title="Sign in + photo"
-              body="Sign in here so your child's photo stays private to your account. One clear, well-lit photo."
-              example="Originals stay private and are never used to train models."
-              trust
             />
             <StepCard
               n={5}
