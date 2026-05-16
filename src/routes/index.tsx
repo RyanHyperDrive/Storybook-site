@@ -122,12 +122,12 @@ function Home() {
             </div>
 
             <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-[3.4rem]">
-              A bedtime story{" "}
+              A storybook with{" "}
               <br className="hidden sm:block" />
-              starring<span className="text-ember"> your child</span>.
+              <span className="text-ember">your child</span> as the hero.
             </h1>
             <p className="mt-4 max-w-xl text-base text-muted-foreground md:text-[1.05rem]">
-              Upload one photo. We design an illustrated character of your child, you approve it, then we build a custom storybook in the art style you choose — read it together tonight.
+              Send us one photo. We'll sketch an illustrated version of your child for you to approve, then build a custom storybook in the art style you pick — ready to read together tonight.
             </p>
 
             {/* Conversion card: price + CTA + approval line + trust bullets, grouped */}
