@@ -225,8 +225,13 @@ function Inner() {
         return;
       }
     }
-    await ensureChildSubjects();
-    navigate({ to: "/create/character-sheet" });
+    navigate({ to: "/create/profile" });
+  }
+
+  async function toggleTwins(v: boolean) {
+    if (!bookId) return;
+    setIsTwins(v);
+    await supabase.from("books").update({ is_twins: v }).eq("id", bookId);
   }
 
   if (syncing) {
