@@ -127,7 +127,7 @@ function Home() {
               <span className="text-ember">your child</span>.
             </h1>
             <p className="mt-4 max-w-xl text-base text-muted-foreground md:text-[1.05rem]">
-              Upload one photo. We turn it into an illustrated character for you to approve, then write and illustrate a custom storybook in the style you choose — ready to read together tonight.
+              Upload one photo. We turn it into an illustrated character for you to approve, then write and illustrate a custom storybook in the style you choose.
             </p>
 
             {/* Conversion card: price + CTA + approval line + trust bullets, grouped */}
