@@ -150,14 +150,20 @@ serve(async (req) => {
           return jsonResponse({ ok: true });
         }
 
-        // Persist page text upfront so the reader has copy even if illustration retries.
-        await admin.from("book_pages").upsert({
-          user_id: user.id,
-          book_id: bookId,
-          page_number: nextPage.page_number,
-          text_content: nextPage.page_text,
-          status: "generating",
-        }, { onConflict: "book_id,page_number" } as any).select();
+        // Pre-write text so reader has copy even mid-illustration.
+        const { data: existingRow } = await admin
+          .from("book_pages").select("id")
+          .eq("book_id", bookId).eq("page_number", nextPage.page_number).maybeSingle();
+        if (existingRow) {
+          await admin.from("book_pages").update({
+            text_content: nextPage.page_text, status: "generating",
+          }).eq("id", existingRow.id);
+        } else {
+          await admin.from("book_pages").insert({
+            user_id: user.id, book_id: bookId, page_number: nextPage.page_number,
+            text_content: nextPage.page_text, status: "generating",
+          });
+        }
 
         const r = await callFn("illustrate-page", authHeader, {
           bookId,
