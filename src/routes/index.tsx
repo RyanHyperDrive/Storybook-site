@@ -159,7 +159,7 @@ function Home() {
               </p>
               <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-sage">
                 <ShieldCheck className="h-4 w-4 shrink-0" />
-                No payment until you approve the character preview.
+                No payment until you approve their illustrated character.
               </p>
               <ul className="mt-4 grid gap-2 border-t border-border pt-4 text-sm text-foreground/85 sm:grid-cols-2">
                 <li className="flex items-start gap-2"><Lock className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Private child photos</li>
