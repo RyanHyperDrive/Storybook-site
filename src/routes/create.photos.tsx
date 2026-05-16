@@ -255,11 +255,25 @@ function Inner() {
 
   return (
     <WizardLayout>
-      <h1 className="font-display text-3xl font-semibold">Sign in to upload your child's photo</h1>
+      <h1 className="font-display text-3xl font-semibold">Upload your child's photo</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        We ask you to sign in here so your child's photo stays private to your account. We use it
-        only to design the illustrated character — originals are never used to train models.
+        One clear, well-lit photo is enough to get started. We'll use it only to design the
+        illustrated character — originals stay private to your account and are never used to
+        train models.
       </p>
+
+      <div className="mt-6 flex items-center justify-between rounded-md border border-border bg-paper/40 p-4">
+        <div className="flex items-center gap-3">
+          <Users className="h-5 w-5 text-ember" />
+          <div>
+            <div className="text-sm font-semibold">Creating for twins?</div>
+            <p className="text-xs text-muted-foreground">
+              We'll ask for a photo of each child, and an optional photo together.
+            </p>
+          </div>
+        </div>
+        <Switch checked={isTwins} onCheckedChange={toggleTwins} aria-label="Twins" />
+      </div>
 
       <PhotoGuidance />
 
@@ -286,14 +300,9 @@ function Inner() {
         behalf) can read them.
       </p>
 
-      <div className="mt-10 flex items-center justify-between">
-        <Link to="/create/style">
-          <Button variant="ghost">
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Button>
-        </Link>
+      <div className="mt-10 flex items-center justify-end">
         <Button variant="ember" onClick={onContinue}>
-          Approve their illustrated character <ArrowRight className="h-4 w-4" />
+          Continue to your child's details <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
     </WizardLayout>
