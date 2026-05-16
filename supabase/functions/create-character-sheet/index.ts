@@ -4,6 +4,52 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
 import { assertOwnership, requireUser } from "../_shared/auth.ts";
 
+const KIE_CREATE_URL = "https://api.kie.ai/api/v1/jobs/createTask";
+const KIE_INFO_URL = "https://api.kie.ai/api/v1/jobs/recordInfo";
+const KIE_MODEL = "gpt-image-2-image-to-image";
+const RAW_BUCKET = "raw-uploads";
+const CHARACTER_BUCKET = "character-sheets";
+
+const STYLE_ANCHORS: Record<string, string> = {
+  watercolor_adventure:
+    "Children's book watercolor illustration, soft pastel washes, visible warm paper texture, gentle ink accents, premium bedtime story feel, no readable text in image.",
+  soft_cartoon:
+    "Soft modern cartoon illustration for a children's storybook, clean rounded shapes, large expressive eyes, friendly proportions, bright balanced colors, smooth gradients, premium preschool animation feel, no readable text in image.",
+  comic_book:
+    "Kid-friendly adventure comic illustration, bold ink outlines, cozy vivid colors, expressive pose, no speech bubbles, no captions, no readable text, no weapons, no scary peril.",
+  manga_inspired:
+    "Manga-inspired children's storybook illustration, expressive large eyes, clean precise linework, dynamic but gentle composition, age-appropriate soft mood, no readable text in image.",
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function buildDescription(child: any, analysis: any) {
+  return [
+    child?.personality_traits,
+    child?.favorite_color ? `favorite color: ${child.favorite_color}` : null,
+    analysis?.hair ? `hair: ${analysis.hair}` : null,
+    analysis?.eyes ? `eyes: ${analysis.eyes}` : null,
+    analysis?.visible_accessories?.length ? `accessories: ${analysis.visible_accessories.join(", ")}` : null,
+    analysis?.distinctive_visual_details?.length
+      ? `visual details: ${analysis.distinctive_visual_details.join(", ")}`
+      : null,
+    "warm friendly expression, consistent across scenes",
+  ]
+    .filter(Boolean)
+    .join("; ");
+}
+
+function resultUrlsFrom(data: any): string[] {
+  const raw = data?.resultJson ?? data?.result_json ?? data?.result;
+  if (!raw) return data?.resultUrls ?? data?.result_urls ?? [];
+  try {
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    return parsed?.resultUrls ?? parsed?.result_urls ?? [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * POST /create-character-sheet
  * Body: { childSubjectId: string }
