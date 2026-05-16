@@ -3,11 +3,21 @@ import { useEffect, useMemo, useState } from "react";
 import { AuthGate } from "@/components/auth-gate";
 import { WizardLayout } from "@/components/wizard-layout";
 import { useAuth } from "@/hooks/use-auth";
-import { getDraftId } from "@/lib/draft";
+import { ensureDraftBook, getDraftId, syncAnonymousDraftToDb } from "@/lib/draft";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Camera,
+  CheckCircle2,
+  ImagePlus,
+  Loader2,
+  RefreshCcw,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
   ArrowLeft,
   ArrowRight,
   Camera,
