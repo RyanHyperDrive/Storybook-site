@@ -172,7 +172,7 @@ function ExamplesPage() {
             Ready to see your child as the hero?
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Free character preview · pay $29.99 only after you approve.
+            Free illustrated character · pay $29.99 only after you approve.
           </p>
           <Link to="/create" className="mt-5 inline-block">
             <Button variant="ember" size="lg">
