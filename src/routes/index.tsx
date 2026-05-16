@@ -285,7 +285,7 @@ function Home() {
               body: "Custom cover + dedication + 10 story pages — ready in 10–20 minutes.",
               note: "Web reader + downloadable PDF",
               img: howReading,
-              alt: "A father reading a personalized illustrated ebook to his young daughter on a cozy couch",
+              alt: "A parent and child reading a personalized illustrated StoryNest book together on a tablet at bedtime.",
             },
           ].map((step) => (
             <li
