@@ -349,8 +349,6 @@ function JourneyPreview() {
 
         <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
           Sample children are fictional. Your child's photo stays private, and you approve the illustrated character before checkout.
-          Your book stars your own child as the illustrated hero — you approve
-          them before any pages are generated.
         </p>
       </div>
     </div>
