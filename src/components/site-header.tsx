@@ -6,6 +6,7 @@ import { BookOpen, Menu, X } from "lucide-react";
 
 const navLinks = [
   { to: "/create" as const, label: "Create" },
+  { to: "/examples" as const, label: "Examples" },
   { to: "/pricing" as const, label: "Pricing" },
   { to: "/library" as const, label: "Library" },
 ];
