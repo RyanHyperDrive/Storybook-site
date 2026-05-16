@@ -30,7 +30,6 @@ import sampleWatercolorPage2 from "@/assets/sample-watercolor-pip-page2.jpg";
 import sampleCartoon from "@/assets/sample-cartoon-leo.jpg";
 import sampleComic from "@/assets/sample-comic-nova.jpg";
 import sampleManga from "@/assets/sample-manga-yuki.jpg";
-import samplePixel from "@/assets/sample-pixel-quinn.jpg";
 
 export const Route = createFileRoute("/pricing")({
   component: Pricing,
@@ -40,16 +39,16 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "$29.99 one-time per personalized illustrated storybook. Includes a custom cover, dedication, and at least 10 illustrated story pages, with pacing and length adapted to your child's age — ready in about 10–20 minutes.",
+          "$29.99 one-time per personalized illustrated storybook. Custom cover + dedication + 10 story pages, designed for ages 4–7 — ready in about 10–20 minutes.",
       },
     ],
   }),
 });
 
 const features = [
-  "Custom cover, dedication, and 10+ illustrated story pages",
-  "Personalized for ages 2–10 — reading level adapts to your child",
-  "Choose from 5 art styles (watercolor, cartoon, comic, manga, pixel)",
+  "Custom cover + dedication + 10 story pages",
+  "Designed for ages 4–7 — reading level adapts to your child",
+  "Choose from 4 art styles (watercolor, soft cartoon, comic, manga)",
   "Parent-approved illustrated character before payment",
   "Free regeneration if it doesn't feel right",
   "Web reader + downloadable printable PDF",
