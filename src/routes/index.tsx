@@ -357,10 +357,10 @@ function Home() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-              A peek at the art styles
+              Choose a look they'll love.
             </h2>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Tap any cover to flip through a sample book. Want more? See the full gallery.
+              Open any cover to flip through a sample book, or visit the full gallery.
             </p>
           </div>
           <Link to="/examples" className="text-sm font-medium text-ember underline-offset-4 hover:underline">
