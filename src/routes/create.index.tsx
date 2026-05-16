@@ -57,7 +57,7 @@ function CreateLanding() {
 
             {/* CTA + immediate trust */}
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link to="/create/profile" className="w-full sm:w-auto">
+              <Link to="/create/photos" className="w-full sm:w-auto">
                 <Button size="lg" variant="ember" className="w-full sm:w-auto">
                   Start free character preview
                   <ArrowRight className="ml-1 h-4 w-4" />
