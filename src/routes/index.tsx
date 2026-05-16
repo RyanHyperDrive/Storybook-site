@@ -122,12 +122,12 @@ function Home() {
             </div>
 
             <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-[3.4rem]">
-              A storybook with{" "}
+              A storybook starring{" "}
               <br className="hidden sm:block" />
-              <span className="text-ember">your child</span> as the hero.
+              <span className="text-ember">your child</span>.
             </h1>
             <p className="mt-4 max-w-xl text-base text-muted-foreground md:text-[1.05rem]">
-              Send us one photo. We'll sketch an illustrated version of your child for you to approve, then build a custom storybook in the art style you pick — ready to read together tonight.
+              Upload one photo. We turn it into an illustrated character for you to approve, then write and illustrate a custom storybook in the style you choose — ready to read together tonight.
             </p>
 
             {/* Conversion card: price + CTA + approval line + trust bullets, grouped */}
@@ -159,7 +159,7 @@ function Home() {
               </p>
               <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-sage">
                 <ShieldCheck className="h-4 w-4 shrink-0" />
-                No payment until you approve the character preview.
+                No payment until you approve their illustrated character.
               </p>
               <ul className="mt-4 grid gap-2 border-t border-border pt-4 text-sm text-foreground/85 sm:grid-cols-2">
                 <li className="flex items-start gap-2"><Lock className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> Private child photos</li>
