@@ -92,13 +92,6 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
-            <a
-              href={examplesHref}
-              onClick={() => setOpen(false)}
-              className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              Examples
-            </a>
             <Link to="/account" className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
               {email ? "Account" : "Sign in"}
             </Link>
