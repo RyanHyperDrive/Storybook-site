@@ -59,6 +59,7 @@ function Inner() {
   const [children, setChildren] = useState<Child[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [refUrls, setRefUrls] = useState<Record<string, string>>({});
+  const [characterUrls, setCharacterUrls] = useState<Record<string, string>>({});
   const [busyChild, setBusyChild] = useState<string | null>(null);
   const [twinsConfirmed, setTwinsConfirmed] = useState(false);
   const [approving, setApproving] = useState(false);
@@ -96,16 +97,29 @@ function Inner() {
       setSubjects((subs ?? []) as Subject[]);
 
       const urls: Record<string, string> = {};
+      const charUrls: Record<string, string> = {};
       await Promise.all(
         (subs ?? []).map(async (s: any) => {
-          if (!s.reference_storage_path) return;
-          const { data } = await supabase.storage
-            .from(RAW_BUCKET)
-            .createSignedUrl(s.reference_storage_path, 600);
-          if (data?.signedUrl) urls[s.id] = data.signedUrl;
+          if (s.reference_storage_path) {
+            const { data } = await supabase.storage
+              .from(RAW_BUCKET)
+              .createSignedUrl(s.reference_storage_path, 600);
+            if (data?.signedUrl) urls[s.id] = data.signedUrl;
+          }
+          if (s.character_image_url) {
+            if (/^https?:\/\//i.test(s.character_image_url)) {
+              charUrls[s.id] = s.character_image_url;
+            } else {
+              const { data } = await supabase.storage
+                .from("character-sheets")
+                .createSignedUrl(s.character_image_url, 600);
+              if (data?.signedUrl) charUrls[s.id] = data.signedUrl;
+            }
+          }
         }),
       );
       setRefUrls(urls);
+      setCharacterUrls(charUrls);
     } catch (e: any) {
       setLoadError(e.message ?? "Failed to load character data.");
     } finally {
@@ -126,12 +140,27 @@ function Inner() {
   async function ensureSubjectFor(child: Child): Promise<Subject | null> {
     if (!user) return null;
     const existing = subjectByChild[child.id];
-    if (existing) return existing;
+    const { data: photo } = await supabase
+      .from("uploaded_photos")
+      .select("storage_path")
+      .eq("child_profile_id", child.id)
+      .maybeSingle();
+    if (existing) {
+      if (!existing.reference_storage_path && photo?.storage_path) {
+        await supabase
+          .from("child_subjects")
+          .update({ reference_storage_path: photo.storage_path })
+          .eq("id", existing.id);
+        return { ...existing, reference_storage_path: photo.storage_path };
+      }
+      return existing;
+    }
     const { data, error } = await supabase
       .from("child_subjects")
       .insert({
         user_id: user.id,
         child_profile_id: child.id,
+        reference_storage_path: photo?.storage_path ?? null,
         status: "pending",
       })
       .select()
@@ -149,47 +178,29 @@ function Inner() {
     try {
       const subject = await ensureSubjectFor(child);
       if (!subject) return;
-      // Mark generating so we can show the async loading state.
-      await supabase
-        .from("child_subjects")
-        .update({ status: "generating", approved: false, error_message: null })
-        .eq("id", subject.id);
+      if (!subject.reference_storage_path) {
+        toast.error("Upload a child photo before generating their character.");
+        navigate({ to: "/create/photos" });
+        return;
+      }
       await load();
-
-      // Simulated async generation. Wire into your generation server fn here.
-      await new Promise((r) => setTimeout(r, 1500));
-
-      const placeholder = `https://images.unsplash.com/photo-1549887534-1541e9326642?w=900&q=80&sig=${child.id.slice(0, 6)}`;
-      const description = [
-        child.personality_traits ? `${child.personality_traits},` : "",
-        child.favorite_color ? `wearing ${child.favorite_color},` : "",
-        "warm friendly expression, consistent across scenes.",
-      ]
-        .join(" ")
-        .trim();
-
-      await supabase
-        .from("child_subjects")
-        .update({
-          status: "ready",
-          character_image_url: placeholder,
-          description,
-          regenerations: (subject.regenerations ?? 0) + 1,
-          approved: false,
-          error_message: null,
-        })
-        .eq("id", subject.id);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-character-sheet`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ childSubjectId: subject.id }),
+      });
+      const payload = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(payload?.error ?? "Character generation failed");
       await load();
     } catch (e: any) {
       toast.error(e.message ?? "Generation failed");
-      const subject = subjectByChild[child.id];
-      if (subject) {
-        await supabase
-          .from("child_subjects")
-          .update({ status: "error", error_message: e.message ?? "Unknown error" })
-          .eq("id", subject.id);
-        await load();
-      }
+      await load();
     } finally {
       setBusyChild(null);
     }
@@ -345,6 +356,7 @@ function Inner() {
                 isTwins={isTwins}
                 subject={subjectByChild[child.id] ?? null}
                 refUrl={subjectByChild[child.id]?.id ? refUrls[subjectByChild[child.id]!.id] : undefined}
+                characterUrl={subjectByChild[child.id]?.id ? characterUrls[subjectByChild[child.id]!.id] : undefined}
                 busy={busyChild === child.id}
                 onGenerate={() => generateFor(child)}
               />
@@ -403,6 +415,7 @@ function CharacterCard({
   isTwins,
   subject,
   refUrl,
+  characterUrl,
   busy,
   onGenerate,
 }: {
@@ -411,6 +424,7 @@ function CharacterCard({
   isTwins: boolean;
   subject: Subject | null;
   refUrl: string | undefined;
+  characterUrl: string | undefined;
   busy: boolean;
   onGenerate: () => void;
 }) {
@@ -446,9 +460,9 @@ function CharacterCard({
         <div>
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Character</div>
           <div className="relative mt-1 aspect-[4/5] overflow-hidden rounded-md border border-border bg-muted">
-            {status === "ready" && subject?.character_image_url ? (
+            {status === "ready" && characterUrl ? (
               <img
-                src={subject.character_image_url}
+                src={characterUrl}
                 alt={`${label} character`}
                 className="h-full w-full object-cover"
               />
