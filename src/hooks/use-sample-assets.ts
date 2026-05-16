@@ -53,5 +53,5 @@ export const SAMPLE_KEY_BY_STYLE: Record<ArtStyleKey, string> = {
   soft_cartoon: "soft_cartoon_leo",
   watercolor_adventure: "watercolor_pip",
   manga_inspired: "manga_yuki",
-  pixel_art: "pixel_quinn",
 };
+
