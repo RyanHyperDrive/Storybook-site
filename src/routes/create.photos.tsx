@@ -38,29 +38,48 @@ type PhotoRow = {
 export const Route = createFileRoute("/create/photos")({
   component: () => (
     <AuthGate
-      title="Sign in to upload photos securely"
-      message="Your child's photo stays private to your account and is not used to train models."
+      title="Sign in to upload your child's photo"
+      message="We ask you to sign in here so your child's photo stays private to your account."
       bullets={[
         "Use a clear, well-lit photo with only the child in frame.",
-        "For twins, you'll upload one clear photo of each child.",
-        "We use the photo only to design the illustrated character — originals stay in your private folder.",
+        "One child per photo (we'll ask for both if you're creating for twins).",
+        "Originals stay private in your account and are never used to train models.",
       ]}
     >
       <Inner />
     </AuthGate>
   ),
-  head: () => ({ meta: [{ title: "Photos — Create — StoryNest" }] }),
+  head: () => ({ meta: [{ title: "Photo — Create — StoryNest" }] }),
 });
 
 function Inner() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const bookId = getDraftId();
+  const [bookId, setBookId] = useState<string | null>(getDraftId());
+  const [syncing, setSyncing] = useState(true);
 
   const [children, setChildren] = useState<ChildRow[]>([]);
   const [isTwins, setIsTwins] = useState(false);
   const [photos, setPhotos] = useState<PhotoRow[]>([]);
   const [busySlot, setBusySlot] = useState<SlotKey | null>(null);
+
+  // After sign-in: make sure we have a draft book, then sync any
+  // anonymously-entered profile/story/style from localStorage into the database.
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      setSyncing(true);
+      try {
+        const book = await ensureDraftBook(user.id);
+        await syncAnonymousDraftToDb(user.id, book.id);
+        setBookId(book.id);
+      } catch (e: any) {
+        toast.error(e.message ?? "Couldn't open your draft");
+      } finally {
+        setSyncing(false);
+      }
+    })();
+  }, [user?.id]);
 
   async function refresh() {
     if (!bookId || !user) return;
