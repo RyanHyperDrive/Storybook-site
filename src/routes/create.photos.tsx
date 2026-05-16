@@ -191,27 +191,6 @@ function Inner() {
     refresh();
   }
 
-  async function ensureChildSubjects() {
-    if (!user) return;
-    // Create a child_subjects row for every child_profile that doesn't have one yet.
-    const { data: existing } = await supabase
-      .from("child_subjects")
-      .select("child_profile_id")
-      .in("child_profile_id", children.map((c) => c.id));
-    const have = new Set((existing ?? []).map((r: any) => r.child_profile_id));
-    const missing = children.filter((c) => !have.has(c.id));
-    if (missing.length === 0) return;
-    await supabase.from("child_subjects").insert(
-      missing.map((c) => {
-        const photo = photos.find((p) => p.child_profile_id === c.id);
-        return {
-          user_id: user.id,
-          child_profile_id: c.id,
-          reference_storage_path: photo?.storage_path ?? null,
-        };
-      }),
-    );
-  }
 
   async function onContinue() {
     // Require at least the primary photo. Twins additionally require the sibling slot.
