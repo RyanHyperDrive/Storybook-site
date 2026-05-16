@@ -68,6 +68,12 @@ function Inner() {
   const style = getArtStyle(book?.art_style);
   const isTwins = !!book?.is_twins;
 
+  useEffect(() => {
+    if (!user || id) return;
+    toast.info("Let's start with your child's photo.");
+    navigate({ to: "/create/photos" });
+  }, [id, navigate, user]);
+
   async function load() {
     if (!id) return;
     setLoadError(null);
@@ -290,7 +296,9 @@ function Inner() {
   if (!id) {
     return (
       <WizardLayout>
-        <EmptyDraft />
+        <div className="grid min-h-[20vh] place-items-center text-sm text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </div>
       </WizardLayout>
     );
   }
@@ -589,9 +597,9 @@ function EmptyChildren() {
 function EmptyDraft() {
   return (
     <div className="rounded-md border border-border bg-paper/40 p-6 text-center text-sm">
-      No active draft.{" "}
-      <Link to="/create/profile" className="font-medium text-ember underline">
-        Start over
+      We need your child's photo before we can make their illustrated character.{" "}
+      <Link to="/create/photos" className="font-medium text-ember underline">
+        Upload a photo
       </Link>
       .
     </div>
