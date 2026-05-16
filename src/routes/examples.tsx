@@ -152,7 +152,7 @@ function ExamplesPage() {
         </div>
 
         <p className="mt-6 max-w-3xl text-xs text-muted-foreground">
-          Sample covers are fictional generated previews — not real customer children. Your own book stars your child as an illustrated character that you approve before we generate any story pages.
+          Sample children are fictional. Your child's photo stays private, and you approve the illustrated character before checkout.
         </p>
 
         {/* Diversity asset TODOs — intentionally not rendered as cards so we
