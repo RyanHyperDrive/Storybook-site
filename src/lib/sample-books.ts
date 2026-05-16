@@ -16,8 +16,8 @@ export const SAMPLE_BOOKS: Record<ArtStyleKey, SampleBook> = {
     dedication:
       "For Nova — who knows the best adventures start in your own backyard, with a good friend by your side.",
     pages: [
-      "Nova clipped on the yellow rain jacket and climbed up to the treehouse. \"Ready?\" hooted Pip, the little owl on the railing. Nova grinned. \"Always ready with you.\"",
-      "Down in the garden they found a patch of glowing wildflowers, full of friendly bumblebees humming a soft good-morning song. Nova waved, and the whole backyard waved back.",
+      "Nova zipped up the yellow rain jacket and climbed up to the treehouse. \"Ready?\" hooted Pip, the little owl on the railing. Nova grinned. \"Always ready with you.\"",
+      "Down in the garden, the same yellow jacket bobbed between glowing wildflowers. Friendly bumblebees hummed a soft good-morning song, and the whole backyard waved back at Nova.",
     ],
   },
   soft_cartoon: {
@@ -53,15 +53,5 @@ export const SAMPLE_BOOKS: Record<ArtStyleKey, SampleBook> = {
       "\"Climb on,\" the dragon rumbled, gentle as a kettle. Yuki gripped its neck, and together they soared above the rooftops, chasing the wind toward the far blue mountains.",
     ],
   },
-  pixel_art: {
-    styleKey: "pixel_art",
-    title: "Quinn's Pixel Quest",
-    childName: "Quinn",
-    dedication:
-      "For Quinn — who knows that every quest is better with a small brave friend at your side.",
-    pages: [
-      "Quinn stepped onto the bridge and the pixel river sparkled below. Tinker the fox hopped up beside her with a happy little chirp. \"Onward!\" Quinn whispered.",
-      "Deep in the friendly forest, a tiny chest blinked with golden light. Quinn opened it slowly — and out tumbled a star, just for them, brighter than any treasure.",
-    ],
-  },
 };
+
