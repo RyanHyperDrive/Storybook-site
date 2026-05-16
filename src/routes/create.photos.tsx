@@ -6,9 +6,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { ensureDraftBook, getDraftId, syncAnonymousDraftToDb } from "@/lib/draft";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertTriangle,
-  ArrowLeft,
   ArrowRight,
   Camera,
   CheckCircle2,
@@ -17,6 +17,7 @@ import {
   RefreshCcw,
   ShieldCheck,
   Trash2,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
