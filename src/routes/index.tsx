@@ -456,7 +456,7 @@ function Home() {
       <section className="bg-paper/60">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:py-16 md:grid-cols-2">
           <div className="rounded-lg border border-border bg-background p-6 sm:p-8">
-            <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">One book</div>
+            <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">One custom book</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="font-display text-4xl font-semibold sm:text-5xl">$29.99</div>
               <div className="text-sm text-muted-foreground">one-time</div>
