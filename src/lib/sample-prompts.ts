@@ -64,20 +64,10 @@ export const SAMPLE_PROMPTS: SamplePromptDef[] = [
         "Same child and paper dragon, same manga-inspired art direction, no words or letters. The child rides a trail of folded paper shapes across a moonlit village sky, dynamic but gentle, vertical 4:5.",
     },
   },
-  {
-    sample_key: "pixel_quinn",
-    style_key: "pixel_art",
-    title: "Quinn's Pixel Quest",
-    prompts: {
-      cover:
-        "A premium children's 8-bit pixel art book cover illustration, no words or letters, no title, no typography, no readable text or pseudo-text glyphs. Charming retro 16-bit RPG style with crisp chunky pixels, limited cheerful palette, a brave kid pixel hero with a tiny pet pixel fox standing on a hill in front of a magical castle at dawn, glittering pixel stars, parallax pixel mountains, premium nostalgic pixel art, vertical 4:5, leave quiet pixel sky space at the top for an HTML title.",
-      page_1:
-        "Same kid pixel hero and pet pixel fox, same 8-bit pixel art direction, no words or letters or pseudo-text glyphs. Crossing a tiny pixel bridge over a sparkling river full of pixel fish, crisp chunky pixel blocks, limited cheerful palette, charming retro RPG feel, vertical 4:5.",
-      page_2:
-        "Same kid pixel hero and pet pixel fox, same 8-bit pixel art direction, no words or letters or pseudo-text glyphs. Finding a glowing pixel treasure chest in a friendly pixel forest clearing with sparkles, crisp chunky pixels, limited cheerful palette, charming retro RPG feel, vertical 4:5.",
-    },
-  },
+  // NOTE: pixel_art sample (Quinn's Pixel Quest) removed from MVP — pixel art
+  // style was cut from the launch lineup. See src/lib/art-styles.ts.
 ];
+
 
 export const ASSET_TYPES: SampleAssetType[] = ["cover", "page_1", "page_2"];
 
