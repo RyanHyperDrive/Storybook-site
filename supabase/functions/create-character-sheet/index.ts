@@ -72,34 +72,124 @@ serve(async (req) => {
     if (!childSubjectId) return errorResponse("childSubjectId is required");
 
     const subject = await assertOwnership(admin, "child_subjects", childSubjectId, user.id);
+    if (!subject.reference_storage_path) {
+      return errorResponse("No reference photo uploaded for this child", 400);
+    }
+
+    const { data: signed, error: signErr } = await admin.storage
+      .from(RAW_BUCKET)
+      .createSignedUrl(subject.reference_storage_path, 60 * 10);
+    if (signErr || !signed?.signedUrl) {
+      return errorResponse(`Could not prepare reference photo: ${signErr?.message ?? "unknown"}`, 500);
+    }
+
+    const { data: child } = subject.child_profile_id
+      ? await admin.from("child_profiles").select("*").eq("id", subject.child_profile_id).maybeSingle()
+      : { data: null } as any;
+    const { data: book } = child?.book_id
+      ? await admin.from("books").select("art_style, is_twins").eq("id", child.book_id).maybeSingle()
+      : { data: null } as any;
+    const styleKey = book?.art_style ?? "soft_cartoon";
+    const styleAnchor = STYLE_ANCHORS[styleKey] ?? STYLE_ANCHORS.soft_cartoon;
+    const analysis = subject.photo_analysis ?? {};
+    const prompt = [
+      `Create a polished illustrated character sheet for ${child?.name ?? "the child"}.`,
+      styleAnchor,
+      "Use the reference photo only for visible appearance details; do not infer sensitive traits.",
+      analysis?.hair ? `Visible hair: ${analysis.hair}.` : "",
+      analysis?.eyes ? `Visible eyes: ${analysis.eyes}.` : "",
+      analysis?.outfit ? `Reference outfit: ${analysis.outfit}.` : "",
+      child?.favorite_color ? `Include a tasteful outfit accent in ${child.favorite_color}.` : "",
+      child?.accessibility_details ? `Include these parent-provided details: ${child.accessibility_details}.` : "",
+      "Single full-body child character, plain warm off-white background, friendly bedtime storybook mood, no UI, no text, no labels, no watermark.",
+    ].filter(Boolean).join("\n");
 
     await admin
       .from("child_subjects")
       .update({ status: "generating", error_message: null })
       .eq("id", childSubjectId);
 
-    // TODO: call Kie.ai. Pseudocode:
-    // const KIE_API_KEY = Deno.env.get("KIE_API_KEY")!;
-    // const res = await fetch("https://api.kie.ai/v1/images/generate", {
-    //   method: "POST",
-    //   headers: { Authorization: `Bearer ${KIE_API_KEY}`, "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     prompt: buildCharacterPrompt(subject),
-    //     reference_image_url: await signRefPhoto(admin, subject.reference_storage_path),
-    //   }),
-    // });
-    // const { image_url } = await res.json();
-    const image_url: string | null = null; // STUB
+    const KIE_API_KEY = Deno.env.get("KIE_API_KEY");
+    if (!KIE_API_KEY) return errorResponse("KIE_API_KEY is not configured", 500);
+
+    const createRes = await fetch(KIE_CREATE_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${KIE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: KIE_MODEL,
+        input: {
+          prompt,
+          input_urls: [signed.signedUrl],
+          aspect_ratio: "3:4",
+          resolution: "1K",
+        },
+      }),
+    });
+    const createJson: any = await createRes.json().catch(() => ({}));
+    const taskId = createJson?.data?.taskId ?? createJson?.data?.task_id ?? createJson?.taskId;
+    if (!createRes.ok || !taskId) {
+      throw new Error(`Image generation did not start: ${JSON.stringify(createJson).slice(0, 300)}`);
+    }
+
+    let sourceUrl: string | null = null;
+    for (let attempt = 0; attempt < 18; attempt++) {
+      await sleep(5000);
+      const infoRes = await fetch(`${KIE_INFO_URL}?taskId=${encodeURIComponent(taskId)}`, {
+        headers: { Authorization: `Bearer ${KIE_API_KEY}` },
+      });
+      const infoJson: any = await infoRes.json().catch(() => ({}));
+      const data = infoJson?.data ?? {};
+      const state = data.state ?? data.status;
+      if (state === "success" || state === "completed") {
+        sourceUrl = resultUrlsFrom(data)[0] ?? null;
+        break;
+      }
+      if (state === "fail" || state === "failed") {
+        throw new Error(data.failMsg || data.errorMessage || "Image generation failed");
+      }
+    }
+    if (!sourceUrl) throw new Error("Image generation is taking longer than expected. Please try again.");
+
+    const imgRes = await fetch(sourceUrl);
+    if (!imgRes.ok) throw new Error(`Generated image download failed (${imgRes.status})`);
+    const bytes = new Uint8Array(await imgRes.arrayBuffer());
+    const imagePath = `${user.id}/${childSubjectId}-${Date.now()}.png`;
+    const { error: uploadErr } = await admin.storage
+      .from(CHARACTER_BUCKET)
+      .upload(imagePath, bytes, { contentType: "image/png", upsert: true });
+    if (uploadErr) throw new Error(`Could not save generated character: ${uploadErr.message}`);
+
+    const image_url = imagePath;
+    const description = buildDescription(child, analysis);
 
     await admin
       .from("child_subjects")
-      .update({ status: image_url ? "ready" : "pending", character_image_url: image_url })
+      .update({
+        status: "ready",
+        character_image_url: image_url,
+        description,
+        regenerations: (subject.regenerations ?? 0) + 1,
+        approved: false,
+        error_message: null,
+      })
       .eq("id", childSubjectId);
 
-    return jsonResponse({ ok: true, childSubjectId, character_image_url: image_url, stub: true });
+    return jsonResponse({ ok: true, childSubjectId, character_image_url: image_url, stub: false });
   } catch (e: any) {
     if (e instanceof Response) return e;
     console.error("create-character-sheet error", e);
+    try {
+      const { childSubjectId } = await req.clone().json().catch(() => ({}));
+      if (childSubjectId) {
+        const { admin } = await requireUser(req);
+        await admin
+          .from("child_subjects")
+          .update({ status: "error", error_message: e?.message ?? "Internal error" })
+          .eq("id", childSubjectId);
+      }
+    } catch {
+      // Keep the original error response.
+    }
     return errorResponse(e?.message ?? "Internal error", 500);
   }
 });
