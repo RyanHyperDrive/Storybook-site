@@ -90,7 +90,7 @@ const addons = [
 const faqs = [
   {
     q: "What's included for $29.99?",
-    a: "One personalized storybook: a custom cover, a dedication page, and at least 10 illustrated story pages (more for older kids). You can read it in any browser and download it as a printable PDF, stored privately in your library.",
+    a: "One personalized storybook: a custom cover, a dedication, and 10 illustrated story pages, designed for ages 4–7. You can read it in any browser and download it as a printable PDF, stored privately in your library.",
   },
   {
     q: "When am I actually charged?",
