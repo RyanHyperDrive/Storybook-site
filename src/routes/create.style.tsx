@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AuthGate } from "@/components/auth-gate";
+import { useAuth } from "@/hooks/use-auth";
 import { WizardLayout } from "@/components/wizard-layout";
-import { getDraftId } from "@/lib/draft";
+import { getDraftId, STYLE_LOCAL_KEY } from "@/lib/draft";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock, ShieldCheck } from "lucide-react";
 import {
   ART_STYLES,
   COMING_SOON_STYLES,
@@ -16,17 +16,26 @@ import {
 import { StyleArtwork } from "@/components/style-artwork";
 
 export const Route = createFileRoute("/create/style")({
-  component: () => <AuthGate><Inner /></AuthGate>,
+  component: StyleStep,
   head: () => ({ meta: [{ title: "Style — Create — StoryNest" }] }),
 });
 
-function Inner() {
+function StyleStep() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const id = getDraftId();
   const [picked, setPicked] = useState<ArtStyleKey>(DEFAULT_ART_STYLE_KEY);
 
+  // Hydrate from localStorage first (works for anonymous parents).
   useEffect(() => {
-    if (!id) return;
+    if (typeof window === "undefined") return;
+    const local = localStorage.getItem(STYLE_LOCAL_KEY);
+    if (local && isArtStyleKey(local)) setPicked(local);
+  }, []);
+
+  // If signed in with a draft, prefer the saved book value.
+  useEffect(() => {
+    if (!id || !user) return;
     supabase
       .from("books")
       .select("art_style")
@@ -37,19 +46,27 @@ function Inner() {
           setPicked(data.art_style);
         }
       });
-  }, [id]);
+  }, [id, user]);
+
+  function choose(key: ArtStyleKey) {
+    setPicked(key);
+    if (typeof window !== "undefined") localStorage.setItem(STYLE_LOCAL_KEY, key);
+  }
 
   async function next() {
-    if (!id) return;
-    await supabase.from("books").update({ art_style: picked }).eq("id", id);
-    navigate({ to: "/create/character-sheet" });
+    if (typeof window !== "undefined") localStorage.setItem(STYLE_LOCAL_KEY, picked);
+    if (user && id) {
+      await supabase.from("books").update({ art_style: picked }).eq("id", id);
+    }
+    navigate({ to: "/create/photos" });
   }
 
   return (
     <WizardLayout>
       <h1 className="font-display text-3xl font-semibold">Pick an illustration style</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Every page in the book uses this style. You can preview it on the character sheet next.
+        Every page in the book uses this style. You'll preview it on your child's illustrated
+        character next.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -59,7 +76,7 @@ function Inner() {
             <button
               key={s.key}
               type="button"
-              onClick={() => setPicked(s.key)}
+              onClick={() => choose(s.key)}
               aria-pressed={active}
               className={[
                 "group flex items-stretch gap-3 overflow-hidden rounded-lg border bg-background p-2 text-left transition-all",
@@ -103,15 +120,21 @@ function Inner() {
         </div>
       </div>
 
-      <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-10 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Link to="/create/story" className="w-full sm:w-auto">
           <Button variant="ghost" className="w-full sm:w-auto">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
         </Link>
-        <Button variant="ember" onClick={next} className="w-full sm:w-auto">
-          Continue <ArrowRight className="h-4 w-4" />
-        </Button>
+        <div className="flex flex-col items-stretch gap-2 sm:items-end">
+          <Button variant="ember" onClick={next} className="w-full sm:w-auto">
+            Upload photo securely <ArrowRight className="h-4 w-4" />
+          </Button>
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <ShieldCheck className="h-3.5 w-3.5 text-sage" />
+            Your child's photo is private and never used to train models.
+          </p>
+        </div>
       </div>
     </WizardLayout>
   );

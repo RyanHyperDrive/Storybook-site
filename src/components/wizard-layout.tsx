@@ -4,9 +4,9 @@ import type { ReactNode } from "react";
 
 const STEPS = [
   { to: "/create/profile", label: "Profile" },
-  { to: "/create/photos", label: "Photos" },
   { to: "/create/story", label: "Story" },
   { to: "/create/style", label: "Style" },
+  { to: "/create/photos", label: "Photo" },
   { to: "/create/character-sheet", label: "Character" },
 ] as const;
 

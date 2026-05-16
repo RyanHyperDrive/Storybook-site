@@ -298,12 +298,13 @@ function Inner() {
   return (
     <WizardLayout>
       <h1 className="font-display text-3xl font-semibold">
-        {isTwins ? "Approve both characters" : "Approve the illustrated character"}
+        {isTwins ? "Approve their illustrated characters" : "Approve their illustrated character"}
       </h1>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         The character{isTwins ? "s" : ""} you approve here become{isTwins ? "" : "s"} the visual
-        reference used for every page of the storybook. Spend a moment making sure{" "}
-        {isTwins ? "they look right" : "it looks right"} — regenerations are free.
+        reference used for every page of the storybook. Take a moment to make sure{" "}
+        {isTwins ? "they look like your kids" : "it feels like them"} — free regeneration if it
+        doesn't feel like them.
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -362,20 +363,25 @@ function Inner() {
             reference for every page of the storybook. You can still regenerate before approving.
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Link to="/create/style">
+          <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Link to="/create/photos">
               <Button variant="ghost">
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
             </Link>
-            <Button
-              variant="ember"
-              onClick={approveAll}
-              disabled={approving || busyChild !== null}
-            >
-              {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {isTwins ? "Approve both & continue to checkout" : "Approve character & continue to checkout"}
-            </Button>
+            <div className="flex flex-col items-stretch gap-2 sm:items-end">
+              <Button
+                variant="ember"
+                onClick={approveAll}
+                disabled={approving || busyChild !== null}
+              >
+                {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Create my book — $29.99
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Approve the character, then pay. Free regeneration if it doesn't feel like them.
+              </p>
+            </div>
           </div>
         </div>
       )}

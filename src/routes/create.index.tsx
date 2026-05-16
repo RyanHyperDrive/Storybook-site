@@ -89,13 +89,15 @@ function CreateLanding() {
               <ol className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px] text-foreground/85">
                 <Mini>About child</Mini>
                 <Sep />
-                <Mini>Photo upload</Mini>
+                <Mini>Story</Mini>
                 <Sep />
-                <Mini>Story + style</Mini>
+                <Mini>Art style</Mini>
+                <Sep />
+                <Mini>Sign in + photo</Mini>
                 <Sep />
                 <Mini>Approve character</Mini>
                 <Sep />
-                <Mini>Pay (only now)</Mini>
+                <Mini>Pay only after approval</Mini>
                 <Sep />
                 <Mini>
                   <Clock className="mr-1 inline h-3 w-3" />
@@ -118,7 +120,7 @@ function CreateLanding() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
-                Five small steps. One book they'll never forget.
+                Six small steps. One book they'll never forget.
               </h2>
               <p className="mt-2 max-w-xl text-sm text-muted-foreground">
                 Every step is reviewable. You can tweak details right up to the
@@ -133,7 +135,7 @@ function CreateLanding() {
             </Link>
           </div>
 
-          <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StepCard
               n={1}
               icon={Heart}
@@ -143,33 +145,40 @@ function CreateLanding() {
             />
             <StepCard
               n={2}
-              icon={Camera}
-              title="Photo + sign in"
-              body="One clear, well-lit photo. We ask you to sign in here so the photo stays linked to your private account."
-              example="Photos are encrypted at rest and never used to train models."
-              trust
-            />
-            <StepCard
-              n={3}
               icon={BookOpen}
               title="Story"
               body="Pick a theme — adventure, bedtime, friendship, curiosity."
               example="“A bedtime story about courage.”"
             />
             <StepCard
-              n={4}
+              n={3}
               icon={Palette}
               title="Art style"
               body="Choose from four illustration styles, each with a finished sample."
               example="Watercolor · Soft cartoon · Comic · Manga"
             />
             <StepCard
+              n={4}
+              icon={Camera}
+              title="Sign in + photo"
+              body="Sign in here so your child's photo stays private to your account. One clear, well-lit photo."
+              example="Originals stay private and are never used to train models."
+              trust
+            />
+            <StepCard
               n={5}
               icon={ShieldCheck}
               title="Approve character"
-              body="Review the illustrated version of your child. Free regeneration until it feels right — only then do you pay."
-              example="$29.99 one-time, after approval."
+              body="Review the illustrated version of your child. Free regeneration until it feels like them."
+              example="No payment until you approve the illustrated character."
               trust
+            />
+            <StepCard
+              n={6}
+              icon={Sparkles}
+              title="Pay only after approval"
+              body="One-time $29.99. Your finished book is ready in 10–20 minutes."
+              example="Custom cover + dedication + 10 story pages · Web reader + PDF"
             />
           </ol>
 
@@ -302,7 +311,7 @@ function JourneyPreview() {
             label="2. Character"
             note="You approve it"
             image={howitworksCharacters}
-            alt="Illustrated character preview generated from the photo"
+            alt="Illustrated character generated from the photo"
             highlight
           />
           <JourneyStep
