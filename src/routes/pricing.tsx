@@ -94,7 +94,7 @@ const faqs = [
   },
   {
     q: "When am I actually charged?",
-    a: "Only after you approve the illustrated character preview. You can upload a photo, see the character, and back out at zero cost. No subscription, no recurring charges — one-time $29.99 per book.",
+    a: "Only after you approve the illustrated character. You can upload a photo, see the character, and back out at zero cost. No subscription, no recurring charges — one-time $29.99 per book.",
   },
   {
     q: "Are my child's photos private?",
