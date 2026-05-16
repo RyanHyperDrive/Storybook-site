@@ -479,11 +479,7 @@ function EmptyDraft() {
   return (
     <div className="rounded-md border border-border bg-paper/40 p-6 text-center">
       <p className="text-sm">
-        No active draft.{" "}
-        <Link to="/create/profile" className="font-medium text-ember underline">
-          Start over
-        </Link>
-        .
+        We couldn't open a draft for your account. Please reload this page to try again.
       </p>
     </div>
   );
