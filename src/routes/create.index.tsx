@@ -160,8 +160,8 @@ function CreateLanding() {
               n={4}
               icon={Palette}
               title="Art style"
-              body="Choose from five illustration styles, each with a finished sample."
-              example="Watercolor · Comic · Soft cartoon · Manga · Pixel"
+              body="Choose from four illustration styles, each with a finished sample."
+              example="Watercolor · Soft cartoon · Comic · Manga"
             />
             <StepCard
               n={5}
@@ -175,8 +175,7 @@ function CreateLanding() {
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
             <p className="text-center text-xs text-muted-foreground sm:text-left">
-              Personalized for ages 2–10 · Web reader + downloadable PDF ·
-              Reading level adapts
+              Designed for ages 4–7 · Custom cover + dedication + 10 story pages · Web reader + PDF
             </p>
             <Link to="/create/profile" className="w-full sm:w-auto">
               <Button variant="ember" size="lg" className="w-full sm:w-auto">
@@ -338,7 +337,7 @@ function JourneyPreview() {
                   <Check className="h-3 w-3 text-sage" /> Custom cover + dedication
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="h-3 w-3 text-sage" /> 10+ illustrated pages
+                  <Check className="h-3 w-3 text-sage" /> 10 story pages · ages 4–7
                 </li>
                 <li className="flex items-center gap-1.5">
                   <Check className="h-3 w-3 text-sage" /> Web reader + PDF

@@ -30,7 +30,6 @@ import sampleWatercolorPage2 from "@/assets/sample-watercolor-pip-page2.jpg";
 import sampleCartoon from "@/assets/sample-cartoon-leo.jpg";
 import sampleComic from "@/assets/sample-comic-nova.jpg";
 import sampleManga from "@/assets/sample-manga-yuki.jpg";
-import samplePixel from "@/assets/sample-pixel-quinn.jpg";
 
 export const Route = createFileRoute("/pricing")({
   component: Pricing,
@@ -40,16 +39,16 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "$29.99 one-time per personalized illustrated storybook. Includes a custom cover, dedication, and at least 10 illustrated story pages, with pacing and length adapted to your child's age — ready in about 10–20 minutes.",
+          "$29.99 one-time per personalized illustrated storybook. Custom cover + dedication + 10 story pages, designed for ages 4–7 — ready in about 10–20 minutes.",
       },
     ],
   }),
 });
 
 const features = [
-  "Custom cover, dedication, and 10+ illustrated story pages",
-  "Personalized for ages 2–10 — reading level adapts to your child",
-  "Choose from 5 art styles (watercolor, cartoon, comic, manga, pixel)",
+  "Custom cover + dedication + 10 story pages",
+  "Designed for ages 4–7 — reading level adapts to your child",
+  "Choose from 4 art styles (watercolor, soft cartoon, comic, manga)",
   "Parent-approved illustrated character before payment",
   "Free regeneration if it doesn't feel right",
   "Web reader + downloadable printable PDF",
@@ -91,7 +90,7 @@ const addons = [
 const faqs = [
   {
     q: "What's included for $29.99?",
-    a: "One personalized storybook: a custom cover, a dedication page, and at least 10 illustrated story pages (more for older kids). You can read it in any browser and download it as a printable PDF, stored privately in your library.",
+    a: "One personalized storybook: a custom cover, a dedication, and 10 illustrated story pages, designed for ages 4–7. You can read it in any browser and download it as a printable PDF, stored privately in your library.",
   },
   {
     q: "When am I actually charged?",
@@ -115,7 +114,7 @@ const faqs = [
   },
   {
     q: "Is it readable for kids with low vision or dyslexia?",
-    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Every illustration has descriptive alt text. Reading level adapts from board-book to early-reader so the page feels right for ages 2–10.",
+    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Every illustration has descriptive alt text. Reading level is tuned for ages 4–7 — from pre-readers being read to, to confident early readers.",
   },
   {
     q: "Is this made with AI?",
@@ -145,7 +144,7 @@ function Pricing() {
                 <Clock className="h-3 w-3 text-ember" /> Ready in 10–20 min
               </span>
               <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/70 px-2.5 py-0.5 text-[11px] font-medium text-foreground/80 backdrop-blur">
-                <BookOpen className="h-3 w-3 text-ember" /> 10+ illustrated pages
+                <BookOpen className="h-3 w-3 text-ember" /> 10 story pages · ages 4–7
               </span>
             </div>
 
@@ -199,9 +198,9 @@ function Pricing() {
             </div>
 
             {/* Sample style strip */}
-            <a href="/#examples" className="group mt-5 flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground">
+            <a href="/examples" className="group mt-5 flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground">
               <div className="flex -space-x-2">
-                {[sampleWatercolor, sampleCartoon, sampleComic, sampleManga, samplePixel].map((src, i) => (
+                {[sampleWatercolor, sampleCartoon, sampleComic, sampleManga].map((src, i) => (
                   <span
                     key={i}
                     className="grid h-9 w-9 place-items-center overflow-hidden rounded-md border-2 border-background bg-paper shadow-sm"
@@ -211,7 +210,7 @@ function Pricing() {
                 ))}
               </div>
               <span>
-                <span className="font-medium text-foreground">5 art styles included</span> — see real samples
+                <span className="font-medium text-foreground">4 art styles included</span> — see real samples
                 <span className="ml-1 inline-block transition-transform group-hover:translate-x-0.5">→</span>
               </span>
             </a>

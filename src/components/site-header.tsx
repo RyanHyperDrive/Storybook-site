@@ -6,6 +6,7 @@ import { BookOpen, Menu, X } from "lucide-react";
 
 const navLinks = [
   { to: "/create" as const, label: "Create" },
+  { to: "/examples" as const, label: "Examples" },
   { to: "/pricing" as const, label: "Pricing" },
   { to: "/library" as const, label: "Library" },
 ];
@@ -23,9 +24,6 @@ export function SiteHeader() {
 
   // Close mobile menu on route change
   useEffect(() => { setOpen(false); }, [pathname]);
-
-  // Examples → in-page anchor on home, else navigate home with hash.
-  const examplesHref = pathname === "/" ? "#examples" : "/#examples";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
@@ -49,12 +47,6 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
-          <a
-            href={examplesHref}
-            className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            Examples
-          </a>
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
@@ -100,13 +92,6 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
-            <a
-              href={examplesHref}
-              onClick={() => setOpen(false)}
-              className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              Examples
-            </a>
             <Link to="/account" className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
               {email ? "Account" : "Sign in"}
             </Link>
