@@ -1,15 +1,15 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { AuthGate } from "@/components/auth-gate";
 import { WizardLayout } from "@/components/wizard-layout";
 import { useAuth } from "@/hooks/use-auth";
-import { ensureDraftBook } from "@/lib/draft";
+import { ensureDraftBook, getDraftId } from "@/lib/draft";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { ArrowRight, Loader2, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { childSchema, emptyChild, type ChildDraft } from "@/lib/create-schema";
 
@@ -21,7 +21,14 @@ type ProfileState = {
 };
 
 export const Route = createFileRoute("/create/profile")({
-  component: ProfileStep,
+  component: () => (
+    <AuthGate
+      title="Sign in to continue"
+      message="Your child's details stay private to your account."
+    >
+      <ProfileStep />
+    </AuthGate>
+  ),
   head: () => ({ meta: [{ title: "About your child — StoryNest" }] }),
 });
 
