@@ -190,7 +190,7 @@ function Inner() {
             <Link to="/library">
               <Button size="sm" variant="outline">Back to library</Button>
             </Link>
-            <Link to="/create/profile">
+            <Link to="/create/photos">
               <Button size="sm" variant="ember">Start a new book</Button>
             </Link>
           </div>
