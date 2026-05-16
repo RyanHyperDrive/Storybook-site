@@ -41,8 +41,9 @@ function ProfileStep() {
   });
   const [busy, setBusy] = useState(false);
   const [bookId, setBookId] = useState<string | null>(null);
+  const [missingDraft, setMissingDraft] = useState(false);
 
-  // Hydrate from localStorage so anonymous parents don't lose typing.
+  // Hydrate from localStorage so re-visits don't lose typing.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = localStorage.getItem(LOCAL_KEY);
@@ -56,9 +57,16 @@ function ProfileStep() {
     }
   }, []);
 
-  // If signed in, hydrate from the actual draft book + child profiles.
+  // Use the draft created during the photo step. If none exists, redirect.
   useEffect(() => {
     if (!user) return;
+    const id = getDraftId();
+    if (!id) {
+      setMissingDraft(true);
+      toast.info("Let's start with your child's photo.");
+      navigate({ to: "/create/photos" });
+      return;
+    }
     (async () => {
       const b = await ensureDraftBook(user.id);
       setBookId(b.id);
@@ -74,35 +82,32 @@ function ProfileStep() {
           isTwins: !!sibling || !!b.is_twins,
           children: [rowToDraft(primary), sibling ? rowToDraft(sibling) : { ...emptyChild }],
         });
-      } else if (b.child_name) {
-        // Fall back to legacy book columns (single child).
+      } else {
+        // No child_profiles yet — inherit twins flag from the book (set on photo step).
         setState((s) => ({
           ...s,
-          children: [
-            {
-              ...emptyChild,
-              name: b.child_name ?? "",
-              age: b.child_age?.toString() ?? "",
-              pronouns: b.child_pronouns ?? "",
-              loves: b.child_loves ?? "",
-            },
-            { ...emptyChild },
-          ],
+          isTwins: !!b.is_twins,
+          children: b.child_name
+            ? [
+                {
+                  ...emptyChild,
+                  name: b.child_name ?? "",
+                  age: b.child_age?.toString() ?? "",
+                  pronouns: b.child_pronouns ?? "",
+                  loves: b.child_loves ?? "",
+                },
+                { ...emptyChild },
+              ]
+            : s.children,
         }));
       }
     })().catch((e) => toast.error(e.message));
-  }, [user]);
+  }, [user, navigate]);
 
   function updateChild(idx: 0 | 1, key: keyof ChildDraft, value: string) {
     const children = [...state.children] as [ChildDraft, ChildDraft];
     children[idx] = { ...children[idx], [key]: value };
     const next = { ...state, children };
-    setState(next);
-    if (typeof window !== "undefined") localStorage.setItem(LOCAL_KEY, JSON.stringify(next));
-  }
-
-  function setTwins(v: boolean) {
-    const next = { ...state, isTwins: v };
     setState(next);
     if (typeof window !== "undefined") localStorage.setItem(LOCAL_KEY, JSON.stringify(next));
   }
@@ -121,16 +126,10 @@ function ProfileStep() {
     }
 
     if (typeof window !== "undefined") localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
-
-    if (!user) {
-      navigate({ to: "/create/story" });
-      return;
-    }
-    if (!bookId) return;
+    if (!user || !bookId) return;
     setBusy(true);
 
     const primary = state.children[0];
-    // Sync primary child to legacy book columns + twin flag.
     const { error: bErr } = await supabase
       .from("books")
       .update({
@@ -161,10 +160,41 @@ function ProfileStep() {
       personality_traits: c.personality_traits || null,
       accessibility_details: c.accessibility_details || null,
     }));
-    const { error } = await supabase.from("child_profiles").insert(rows);
+    const { data: inserted, error } = await supabase
+      .from("child_profiles")
+      .insert(rows)
+      .select("id, slot");
+    if (error) {
+      setBusy(false);
+      return toast.error(error.message);
+    }
+
+    // Backfill uploaded_photos.child_profile_id by slot so the photo from
+    // step 1 is linked to the child we just created.
+    if (inserted) {
+      for (const row of inserted) {
+        if (!row.slot) continue;
+        await supabase
+          .from("uploaded_photos")
+          .update({ child_profile_id: row.id })
+          .eq("book_id", bookId)
+          .eq("slot", row.slot)
+          .is("child_profile_id", null);
+      }
+    }
+
     setBusy(false);
-    if (error) return toast.error(error.message);
     navigate({ to: "/create/story" });
+  }
+
+  if (missingDraft) {
+    return (
+      <WizardLayout>
+        <div className="grid min-h-[20vh] place-items-center text-sm text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </div>
+      </WizardLayout>
+    );
   }
 
   return (
@@ -174,19 +204,6 @@ function ProfileStep() {
         These details shape the character and the story's voice. Share what makes your child
         unique — you don't need to include any sensitive details.
       </p>
-
-      <div className="mt-6 flex items-center justify-between rounded-md border border-border bg-paper/40 p-4">
-        <div className="flex items-center gap-3">
-          <Users className="h-5 w-5 text-ember" />
-          <div>
-            <div className="text-sm font-semibold">Creating for twins?</div>
-            <p className="text-xs text-muted-foreground">
-              We'll feature both children together throughout the book.
-            </p>
-          </div>
-        </div>
-        <Switch checked={state.isTwins} onCheckedChange={setTwins} aria-label="Twins" />
-      </div>
 
       <form onSubmit={next} className="mt-8 space-y-10">
         <ChildFieldset
@@ -203,10 +220,11 @@ function ProfileStep() {
         )}
 
         <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="h-3.5 w-3.5 text-sage" />
-            You'll sign in before uploading a photo so it stays private to your account.
-          </p>
+          <Link to="/create/photos" className="w-full sm:w-auto">
+            <Button type="button" variant="ghost" className="w-full sm:w-auto">
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+          </Link>
           <Button type="submit" variant="ember" disabled={busy} className="w-full sm:w-auto">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             Choose the story <ArrowRight className="h-4 w-4" />
