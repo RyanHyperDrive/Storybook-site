@@ -216,7 +216,7 @@ function Home() {
 
               {/* subtle caption outside the jacket */}
               <div className="mt-3 flex items-center justify-between px-1 text-[11px] text-muted-foreground">
-                <span>Sample book · Watercolor style</span>
+                <span>Sample book · Watercolor · Cover + 10 pages</span>
                 <span className="inline-flex items-center gap-1 text-foreground/70">
                   <BookOpen className="h-3 w-3 text-ember" />
                   Cover + 10 pages
