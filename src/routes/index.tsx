@@ -232,7 +232,7 @@ function Home() {
               Four small steps. One book they'll never forget.
             </h2>
             <p className="mt-3 text-sm text-muted-foreground md:text-base">
-              See exactly how a real photo becomes a personalized illustrated character — and then a finished book you read together.
+              See how one photo becomes an illustrated character you approve — and then a finished book you read together.
             </p>
           </div>
           <Link to="/create" className="text-sm font-medium text-ember underline-offset-4 hover:underline">
@@ -255,7 +255,7 @@ function Home() {
               n: 1,
               icon: Camera,
               title: "Add a photo",
-              body: "One clear, well-lit photo so we can sketch the character.",
+              body: "One clear, well-lit photo is enough to get started.",
               note: "Private to your account",
               img: howPhotos,
               alt: "Two example uploaded photos: a young boy in a yellow shirt and a young girl in a pink dress",
@@ -344,7 +344,7 @@ function Home() {
         </div>
 
         <p className="mt-4 text-xs text-muted-foreground">
-          Example children shown are fictional, generated previews — not real customer photos. Your child's photo is private to your account and never used to train models.
+          Sample children are fictional. Your child's photo stays private and is never used to train models.
         </p>
       </section>
 
