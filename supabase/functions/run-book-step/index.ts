@@ -69,6 +69,43 @@ serve(async (req) => {
       }).eq("id", jobId);
     }
 
+    // Append a structured validation event to jobs.audit and bump counters.
+    // Stored shape: { events: [...], totals: { validations, failures, retries } }
+    async function appendAudit(event: {
+      target: "cover" | "page";
+      page_number?: number;
+      attempt: number;
+      passed: boolean;
+      will_retry: boolean;
+      shipped_with_warnings?: boolean;
+      scores?: Record<string, number | undefined>;
+      reasons?: string[];
+      banned_content_detected?: string[];
+      regeneration_instruction?: string;
+    }) {
+      const { data: jr } = await admin
+        .from("jobs")
+        .select("audit, total_validations, total_failures, total_retries")
+        .eq("id", jobId)
+        .maybeSingle();
+      const audit = (jr?.audit as any) ?? { events: [], totals: { validations: 0, failures: 0, retries: 0 } };
+      const entry = { at: new Date().toISOString(), ...event };
+      const nextEvents = Array.isArray(audit.events) ? [...audit.events, entry] : [entry];
+      // Cap to last 500 events so the column never balloons.
+      const trimmed = nextEvents.length > 500 ? nextEvents.slice(-500) : nextEvents;
+      const totals = {
+        validations: (audit.totals?.validations ?? 0) + 1,
+        failures: (audit.totals?.failures ?? 0) + (event.passed ? 0 : 1),
+        retries: (audit.totals?.retries ?? 0) + (event.will_retry ? 1 : 0),
+      };
+      await admin.from("jobs").update({
+        audit: { events: trimmed, totals },
+        total_validations: (jr?.total_validations ?? 0) + 1,
+        total_failures: (jr?.total_failures ?? 0) + (event.passed ? 0 : 1),
+        total_retries: (jr?.total_retries ?? 0) + (event.will_retry ? 1 : 0),
+      }).eq("id", jobId);
+    }
+
     try {
       if (step === "photo_check") {
         // Verify an uploaded photo exists.
