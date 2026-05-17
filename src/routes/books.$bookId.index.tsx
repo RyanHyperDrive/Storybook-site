@@ -3,6 +3,16 @@ import { useEffect, useMemo, useState } from "react";
 import { AuthGate } from "@/components/auth-gate";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,10 +21,13 @@ import {
   Heart,
   Loader2,
   Mail,
+  Pencil,
   Printer,
   RefreshCcw,
+  Save,
   Settings2,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import s1 from "@/assets/sample-1.jpg";
