@@ -250,7 +250,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
-    const userPrompt = buildUserPrompt({ theme, child_details, favorites, avoid });
+    const userPrompt = buildUserPrompt({ theme, child_details, favorites, avoid, cast: Array.isArray(cast) ? cast : [] });
     const SYSTEM_PROMPT = buildSystemPrompt(target);
 
     // Try up to 2 times if the model returns invalid JSON / wrong page count.
