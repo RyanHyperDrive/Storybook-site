@@ -273,7 +273,7 @@ serve(async (req) => {
         // MAX_RETRIES (shipped with warnings).
         const { data: existing } = await admin
           .from("book_pages")
-          .select("page_number, status, regenerations, needs_review, quality_metadata")
+          .select("page_number, status, regenerations, needs_review, quality_metadata, image_storage_path")
           .eq("book_id", bookId);
         const isDone = (p: any) =>
           p.status === "ready" && (
