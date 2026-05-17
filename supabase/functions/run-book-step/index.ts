@@ -310,14 +310,15 @@ serve(async (req) => {
         // enrich it with the specific wrong/missing details so the next
         // attempt has concrete targets, not just a vague instruction.
         const qm: any = currentRow?.quality_metadata ?? {};
-        const lastReport: any = qm?.last_report ?? qm; // backward compatible
         const correctiveBits: string[] = [];
         if (typeof qm?.regeneration_instruction === "string" && qm.regeneration_instruction.trim()) {
           correctiveBits.push(qm.regeneration_instruction.trim());
         }
-        const wrong = Array.isArray(lastReport?.wrong_character_details) ? lastReport.wrong_character_details : [];
-        const missingChar = Array.isArray(lastReport?.missing_required_character_details) ? lastReport.missing_required_character_details : [];
+        const wrong = Array.isArray(qm?.wrong_character_details) ? qm.wrong_character_details : [];
+        const missingChar = Array.isArray(qm?.missing_required_character_details) ? qm.missing_required_character_details : [];
         const missingEl = Array.isArray(qm?.missing_required_elements) ? qm.missing_required_elements : [];
+        const banned = Array.isArray(qm?.banned_content_detected) ? qm.banned_content_detected : [];
+        if (banned.length) correctiveBits.push(`Remove entirely: ${banned.join(", ")}`);
         if (wrong.length) correctiveBits.push(`Fix wrong character details: ${wrong.join("; ")}`);
         if (missingChar.length) correctiveBits.push(`Restore missing character details: ${missingChar.join("; ")}`);
         if (missingEl.length) correctiveBits.push(`Add required scene elements: ${missingEl.join("; ")}`);
