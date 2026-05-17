@@ -91,7 +91,7 @@ export function styleNegatives(styleKey: string): string {
 
 /** Fixed consistency clause appended to every page prompt. */
 export const CHARACTER_CONSISTENCY_CLAUSE =
-  "The child character must look like the approved character sheet and cover character. Preserve the same facial structure, hair, skin tone, outfit cues, distinguishing features, and accessibility details. Do not redesign the character. Do not age the character up or down. Do not change hair style/color, skin tone, face shape, or outfit color palette.";
+  "The child character must look like the same real child shown in the approved character sheet and cover. Preserve facial structure, hair texture and color, skin tone AND undertone, eye/nose/lip shape, outfit cues, distinguishing features, and accessibility details. Do NOT lighten or desaturate skin. Do NOT straighten, loosen, or thin out textured/coily/curly hair. Do NOT narrow a wide nose, thin full lips, or anglicize features. Do not redesign the character. Do not age the character up or down. Do not change hair style/color, skin tone, face shape, or outfit color palette. If you are unsure, copy the reference image rendering exactly.";
 
 /** Render the contract as a prompt fragment. */
 export function contractToPromptFragment(
