@@ -203,6 +203,29 @@ serve(async (req) => {
     const contract = (book.visual_consistency_contract ?? null) as VisualConsistencyContract | null;
     const contractFragment = contractToPromptFragment(contract);
 
+    // #4 — fold parent's details_avoid into the page's must-not-include list
+    // so the illustrator sees a single combined ban list.
+    const parentAvoid = typeof book.details_avoid === "string" && book.details_avoid.trim()
+      ? book.details_avoid.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean)
+      : [];
+    const combinedAvoid = Array.from(new Set([...arr(visualMustNotInclude), ...parentAvoid]));
+
+    // #6 — when both twins are present on this page, surface the canonical
+    // differentiator (outfit/accessory difference) so they read as two
+    // distinct kids, not as duplicates.
+    let twinDifferentiator = "";
+    if (book.is_twins && contract && Array.isArray(contract.subjects) && contract.subjects.length >= 2) {
+      const named = arr(charactersPresent).map((s) => s.toLowerCase());
+      const twinsPresent = contract.subjects.filter(
+        (s) => named.length === 0 || named.some((n) => n.includes(String(s.display_name).toLowerCase())),
+      );
+      if (twinsPresent.length >= 2) {
+        twinDifferentiator = twinsPresent
+          .map((s) => `${s.display_name} = ${s.canonical_outfit ?? "canonical outfit"}${s.distinguishing_features ? ` (${s.distinguishing_features})` : ""}`)
+          .join("; ") + ". Each twin must be unambiguously identifiable by these cues — never render them as identical or with swapped cues.";
+      }
+    }
+
     const prompt = PROMPT_TEMPLATE({
       styleKey,
       sceneDescription: (correctiveNote && typeof correctiveNote === "string")
@@ -210,11 +233,12 @@ serve(async (req) => {
         : sceneDescription,
       charactersPresent: arr(charactersPresent),
       visualMustHaves: arr(visualMustHaves),
-      visualMustNotInclude: arr(visualMustNotInclude),
+      visualMustNotInclude: combinedAvoid,
       ageBand,
       contractFragment,
       hasCoverRef: !!coverUrl && !isCover,
       isTwins: !!book.is_twins,
+      twinDifferentiator,
     });
 
     // Inline reference as data URL so the gateway always has access.
