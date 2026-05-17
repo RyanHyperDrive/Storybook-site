@@ -157,7 +157,7 @@ serve(async (req) => {
     // visual safety clause + character consistency contract are honored on every page.
     const { data: book, error: bookErr } = await admin
       .from("books")
-      .select("id, user_id, reading_level, child_age, is_twins, art_style, visual_consistency_contract, cover_image_path, cover_url")
+      .select("id, user_id, reading_level, child_age, is_twins, art_style, details_avoid, visual_consistency_contract, cover_image_path, cover_url")
       .eq("id", bookId)
       .maybeSingle();
     if (bookErr) return errorResponse(bookErr.message, 500);
