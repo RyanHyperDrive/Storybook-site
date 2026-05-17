@@ -197,6 +197,93 @@ async function signed(admin: any, bucket: string, path: string): Promise<string 
   return data?.signedUrl ?? null;
 }
 
+/**
+ * Synonym / compound-form expansion for parent-banned terms. The goal is to
+ * reduce false negatives where the model sees "balloon animals" but the
+ * parent only wrote "balloons". Keys are lowercased canonical roots; values
+ * are extra surface forms to surface to the vision model.
+ *
+ * This is intentionally conservative — only well-known compound/plural/visual
+ * variants of the same underlying object. We do NOT add unrelated items
+ * (a lantern is not a balloon) to avoid false positives.
+ */
+const BANNED_SYNONYM_MAP: Record<string, string[]> = {
+  balloon: ["balloons", "balloon animal", "balloon animals", "water balloon", "water balloons", "hot air balloon", "hot-air balloon", "balloon arch", "party balloon", "party balloons", "helium balloon"],
+  snake: ["snakes", "serpent", "serpents", "python", "boa", "cobra", "viper"],
+  spider: ["spiders", "tarantula", "tarantulas", "arachnid", "arachnids", "spider web", "cobweb"],
+  clown: ["clowns", "jester", "harlequin"],
+  gun: ["guns", "pistol", "rifle", "handgun", "firearm", "firearms", "shotgun", "toy gun", "water gun"],
+  knife: ["knives", "blade", "dagger", "switchblade"],
+  sword: ["swords", "saber", "katana", "cutlass"],
+  blood: ["bleeding", "bloody", "gore"],
+  fire: ["fires", "flame", "flames", "bonfire", "campfire"],
+  smoking: ["cigarette", "cigarettes", "cigar", "vape", "vaping", "pipe smoking"],
+  alcohol: ["beer", "wine", "liquor", "cocktail", "drinking glass with alcohol"],
+  monster: ["monsters", "creature", "beast", "demon"],
+  ghost: ["ghosts", "specter", "phantom", "spirit"],
+  witch: ["witches", "warlock", "sorceress"],
+  skull: ["skulls", "skeleton", "skeletons", "bones"],
+  bee: ["bees", "wasp", "wasps", "hornet", "hornets"],
+  dog: ["dogs", "puppy", "puppies"],
+  cat: ["cats", "kitten", "kittens"],
+};
+
+function singularize(s: string): string {
+  const lower = s.toLowerCase();
+  if (lower.endsWith("ies") && lower.length > 4) return lower.slice(0, -3) + "y";
+  if (lower.endsWith("ses") || lower.endsWith("xes") || lower.endsWith("zes")) return lower.slice(0, -2);
+  if (lower.endsWith("s") && !lower.endsWith("ss") && lower.length > 3) return lower.slice(0, -1);
+  return lower;
+}
+
+function expandBannedTerm(term: string): string[] {
+  const out = new Set<string>();
+  const original = term.trim();
+  if (!original) return [];
+  out.add(original);
+  const lower = original.toLowerCase();
+  out.add(lower);
+  const root = singularize(lower);
+  if (BANNED_SYNONYM_MAP[root]) {
+    for (const v of BANNED_SYNONYM_MAP[root]) out.add(v);
+  }
+  // Also include keyed compound entries where the root appears as a token
+  // (e.g. parent typed "balloon animals" → root "balloon animal" → fall back
+  // to the "balloon" group).
+  for (const key of Object.keys(BANNED_SYNONYM_MAP)) {
+    if (lower.split(/\s+/).includes(key) || lower.split(/\s+/).includes(key + "s")) {
+      for (const v of BANNED_SYNONYM_MAP[key]) out.add(v);
+    }
+  }
+  return Array.from(out);
+}
+
+/**
+ * Map each detected item back to the canonical banned term the parent wrote,
+ * when the model returned a synonym/variant instead. Falls back to the raw
+ * detected string if no group matches.
+ */
+function normalizeDetectedBanned(
+  detected: unknown[],
+  groups: { canonical: string; variants: string[] }[],
+): string[] {
+  const out = new Set<string>();
+  for (const item of detected) {
+    if (typeof item !== "string") continue;
+    const lower = item.trim().toLowerCase();
+    if (!lower) continue;
+    let mapped: string | null = null;
+    for (const g of groups) {
+      if (g.variants.some((v) => v.toLowerCase() === lower || lower.includes(v.toLowerCase()))) {
+        mapped = g.canonical;
+        break;
+      }
+    }
+    out.add(mapped ?? item.trim());
+  }
+  return Array.from(out);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return errorResponse("Method not allowed", 405);
