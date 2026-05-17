@@ -314,6 +314,17 @@ function Inner() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setStoryEditorOpen(true)}
+            disabled={regenBusyKey === "story"}
+          >
+            {regenBusyKey === "story"
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <Wand2 className="h-4 w-4" />}
+            Rewrite story
+          </Button>
           <Button variant="outline" size="sm" onClick={downloadPdf}>
             <Download className="h-4 w-4" /> Download PDF
           </Button>
@@ -335,7 +346,15 @@ function Inner() {
       <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
         <div className="grid md:grid-cols-2">
           <IllustrationPane spread={cur} fallback={s1} />
-          <TextPane spread={cur} childName={book.child_name} />
+          <TextPane
+            spread={cur}
+            childName={book.child_name}
+            onSaveText={
+              cur.kind === "story" && cur.storyPage
+                ? (t) => saveTextInline(cur.storyPage!.id, t)
+                : undefined
+            }
+          />
         </div>
         <ReaderControls
           idx={idx}
@@ -343,8 +362,9 @@ function Inner() {
           spread={cur}
           onPrev={() => setIdx((i) => Math.max(0, i - 1))}
           onNext={() => setIdx((i) => Math.min(spreads.length - 1, i + 1))}
-          onRegenerate={cur.kind === "story" ? regenerateCurrent : undefined}
-          regenBusy={regenBusyKey === cur.key}
+          onOpenImageEditor={cur.kind === "story" ? () => setEditorOpen(true) : undefined}
+          onOpenCoverEditor={cur.kind === "cover" ? () => setCoverEditorOpen(true) : undefined}
+          regenBusy={regenBusyKey === cur.key || (cur.kind === "cover" && regenBusyKey === "cover")}
         />
       </div>
 
@@ -353,6 +373,32 @@ function Inner() {
 
       {/* Print actions */}
       <PrintActions bookId={bookId} childName={book.child_name} />
+
+      {/* Editors */}
+      {cur.kind === "story" && cur.storyPage && (
+        <PageImageEditor
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+          page={cur.storyPage}
+          storyJson={book.story_json}
+          busy={regenBusyKey === cur.key}
+          onRegenerate={(opts) => regenImage({ pageId: cur.storyPage!.id, ...opts })}
+        />
+      )}
+      <CoverEditor
+        open={coverEditorOpen}
+        onOpenChange={setCoverEditorOpen}
+        storyJson={book.story_json}
+        busy={regenBusyKey === "cover"}
+        onRegenerate={regenCover}
+      />
+      <StoryRewriteEditor
+        open={storyEditorOpen}
+        onOpenChange={setStoryEditorOpen}
+        currentTheme={book.story_theme ?? book.story_prompt ?? ""}
+        busy={regenBusyKey === "story"}
+        onRegenerate={regenStory}
+      />
     </div>
   );
 }
