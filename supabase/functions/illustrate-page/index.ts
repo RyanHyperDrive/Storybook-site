@@ -142,6 +142,7 @@ serve(async (req) => {
       readingLevel,
       isCover,
       correctiveNote,
+      previousPageImagePath,
     } = body ?? {};
 
     if (!bookId) return errorResponse("bookId is required");
