@@ -12,12 +12,14 @@ import { requireUser } from "../_shared/auth.ts";
  * so the browser can poll without hitting edge-function timeouts. Steps:
  *
  *   photo_check → character_profile → character_sheet → story_writing
- *   → page_illustrations (one page per call, 10 calls)
+ *   → cover_illustration (validate + retry up to MAX_RETRIES)
+ *   → page_illustrations (one page per call, validate + retry up to MAX_RETRIES)
  *   → quality_checks → pdf_assembly → ready
  */
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const TOTAL_PAGES = 10;
+const MAX_RETRIES = 3; // max regen attempts per page/cover before marking needs_review
 
 async function callFn(fn: string, auth: string, body: unknown) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
