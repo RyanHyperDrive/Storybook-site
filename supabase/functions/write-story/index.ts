@@ -197,15 +197,20 @@ function buildUserPrompt(input: {
   child_details: string;
   favorites?: string;
   avoid?: string;
+  cast?: string[];
 }): string {
+  const cast = (input.cast ?? []).filter(Boolean);
   return [
     `Theme: ${input.theme}`,
     `Main character(s): ${input.child_details}`,
+    cast.length
+      ? `Approved cast (ONLY these named human characters may appear; "characters_present" on every page MUST be a subset of this list — do NOT invent siblings, friends, classmates, or other named humans not on this list): ${cast.join(", ")}. Animal companions and incidental background figures are fine but must remain unnamed.`
+      : "",
     `Favorite details to include: ${input.favorites?.trim() || "(none provided)"}`,
     `Details to avoid: ${input.avoid?.trim() || "(none provided)"}`,
     "",
     "Write the storybook now. Return strict JSON only.",
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 serve(async (req) => {
@@ -215,7 +220,7 @@ serve(async (req) => {
   try {
     const { user, admin } = await requireUser(req);
     const body = await req.json();
-    const { theme, child_details, favorites, avoid, bookId, reading_level } = body ?? {};
+    const { theme, child_details, favorites, avoid, bookId, reading_level, cast } = body ?? {};
 
     if (typeof theme !== "string" || !theme.trim()) return errorResponse("theme is required");
     if (typeof child_details !== "string" || !child_details.trim()) {
@@ -245,7 +250,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
-    const userPrompt = buildUserPrompt({ theme, child_details, favorites, avoid });
+    const userPrompt = buildUserPrompt({ theme, child_details, favorites, avoid, cast: Array.isArray(cast) ? cast : [] });
     const SYSTEM_PROMPT = buildSystemPrompt(target);
 
     // Try up to 2 times if the model returns invalid JSON / wrong page count.

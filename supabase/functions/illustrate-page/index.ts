@@ -45,6 +45,21 @@ function visualSafetyFor(ageBand: string | undefined): string {
   return VISUAL_SAFETY[String(ageBand ?? "4-6")] ?? VISUAL_SAFETY["4-6"];
 }
 
+// Age-band composition guidance. Drives camera, character size, background
+// density, and emotional pacing so a 2-3 board-book page doesn't get the same
+// composition as a 7-10 adventure page. Used in every illustrate-page prompt.
+const COMPOSITION_GUIDANCE: Record<string, string> = {
+  "2-3":
+    "Composition (ages 2-3): one big, friendly subject filling 50-70% of the frame, eye-level, centered. Simple uncluttered background, 1-2 supporting props max. Bright, high-contrast, rounded shapes. Calm pose, soft smile. No tiny details requiring close inspection.",
+  "4-6":
+    "Composition (ages 4-6): classic picture-book staging. Character clearly readable at 30-50% of the frame, mid-shot or environmental. Background tells the scene with 3-5 supporting elements. Dynamic but stable pose. Clear focal point and gentle leading lines.",
+  "7-10":
+    "Composition (ages 7-10): richer cinematic framing allowed — wide environmental shots, over-the-shoulder, low/high angles when it serves the scene. Character can be 15-40% of the frame. Detailed background with depth layers, supporting cast in poses. Expressive but age-appropriate emotion.",
+};
+function compositionFor(ageBand: string | undefined): string {
+  return COMPOSITION_GUIDANCE[String(ageBand ?? "4-6")] ?? COMPOSITION_GUIDANCE["4-6"];
+}
+
 const PROMPT_TEMPLATE = (input: {
   styleKey: string;
   sceneDescription: string;
@@ -55,6 +70,7 @@ const PROMPT_TEMPLATE = (input: {
   contractFragment: string;
   hasCoverRef: boolean;
   isTwins: boolean;
+  twinDifferentiator?: string;
 }) => `Create a children's storybook illustration in the approved style: ${input.styleKey}.
 
 You are given reference images:
@@ -81,6 +97,8 @@ AGE-APPROPRIATENESS (HARD GATE — image is for ages ${input.ageBand}):
 ${visualSafetyFor(input.ageBand)}
 If the scene description would push the image past this safety rule, soften it visually (reframe, off-screen, friendly substitute) — never produce unsafe imagery.
 
+${compositionFor(input.ageBand)}
+${input.twinDifferentiator ? `\nTWIN DIFFERENTIATION (HARD GATE): ${input.twinDifferentiator}\n` : ""}
 Composition:
 - Full storybook page illustration.
 - No page text embedded in the image. All titles and page text are rendered by the app over the image.
@@ -139,7 +157,7 @@ serve(async (req) => {
     // visual safety clause + character consistency contract are honored on every page.
     const { data: book, error: bookErr } = await admin
       .from("books")
-      .select("id, user_id, reading_level, child_age, is_twins, art_style, visual_consistency_contract, cover_image_path, cover_url")
+      .select("id, user_id, reading_level, child_age, is_twins, art_style, details_avoid, visual_consistency_contract, cover_image_path, cover_url")
       .eq("id", bookId)
       .maybeSingle();
     if (bookErr) return errorResponse(bookErr.message, 500);
@@ -185,6 +203,29 @@ serve(async (req) => {
     const contract = (book.visual_consistency_contract ?? null) as VisualConsistencyContract | null;
     const contractFragment = contractToPromptFragment(contract);
 
+    // #4 — fold parent's details_avoid into the page's must-not-include list
+    // so the illustrator sees a single combined ban list.
+    const parentAvoid = typeof book.details_avoid === "string" && book.details_avoid.trim()
+      ? book.details_avoid.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean)
+      : [];
+    const combinedAvoid = Array.from(new Set([...arr(visualMustNotInclude), ...parentAvoid]));
+
+    // #6 — when both twins are present on this page, surface the canonical
+    // differentiator (outfit/accessory difference) so they read as two
+    // distinct kids, not as duplicates.
+    let twinDifferentiator = "";
+    if (book.is_twins && contract && Array.isArray(contract.subjects) && contract.subjects.length >= 2) {
+      const named = arr(charactersPresent).map((s) => s.toLowerCase());
+      const twinsPresent = contract.subjects.filter(
+        (s) => named.length === 0 || named.some((n) => n.includes(String(s.display_name).toLowerCase())),
+      );
+      if (twinsPresent.length >= 2) {
+        twinDifferentiator = twinsPresent
+          .map((s) => `${s.display_name} = ${s.canonical_outfit ?? "canonical outfit"}${s.distinguishing_features ? ` (${s.distinguishing_features})` : ""}`)
+          .join("; ") + ". Each twin must be unambiguously identifiable by these cues — never render them as identical or with swapped cues.";
+      }
+    }
+
     const prompt = PROMPT_TEMPLATE({
       styleKey,
       sceneDescription: (correctiveNote && typeof correctiveNote === "string")
@@ -192,11 +233,12 @@ serve(async (req) => {
         : sceneDescription,
       charactersPresent: arr(charactersPresent),
       visualMustHaves: arr(visualMustHaves),
-      visualMustNotInclude: arr(visualMustNotInclude),
+      visualMustNotInclude: combinedAvoid,
       ageBand,
       contractFragment,
       hasCoverRef: !!coverUrl && !isCover,
       isTwins: !!book.is_twins,
+      twinDifferentiator,
     });
 
     // Inline reference as data URL so the gateway always has access.

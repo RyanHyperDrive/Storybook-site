@@ -113,6 +113,13 @@ serve(async (req) => {
           book.child_loves && `Loves: ${book.child_loves}`,
         ].filter(Boolean).join(". ");
 
+        // #5 — constrain the writer's cast to the contract's approved subjects
+        // so it can't invent a "best friend Emma" the illustrator has never seen.
+        const contract = (book.visual_consistency_contract ?? null) as any;
+        const cast = Array.isArray(contract?.subjects)
+          ? contract.subjects.map((s: any) => s.display_name).filter(Boolean)
+          : [book.child_name].filter(Boolean);
+
         const r = await callFn("write-story", authHeader, {
           theme: book.story_theme || book.story_prompt || "a gentle bedtime adventure",
           child_details: childDetails || `A child named ${book.child_name ?? "the hero"}.`,
@@ -120,6 +127,7 @@ serve(async (req) => {
           avoid: book.details_avoid ?? "",
           bookId,
           reading_level: book.reading_level ?? "ages_4_6",
+          cast,
         });
         if (r.status >= 400 || !r.json?.story) {
           await failJob(r.json?.error ?? "Story generation failed.");
