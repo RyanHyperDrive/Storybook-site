@@ -83,7 +83,7 @@ function Inner() {
       if (data?.book_id) {
         const [{ data: bk }, { data: pg }] = await Promise.all([
           supabase.from("books").select("id,title,status,cover_image_path,cover_validation,visual_consistency_contract,story_json,ebook_url,page_count").eq("id", data.book_id).maybeSingle(),
-          supabase.from("book_pages").select("id,page_number,status,regenerations,needs_review,quality_score,review_notes").eq("book_id", data.book_id).order("page_number", { ascending: true }),
+          supabase.from("book_pages").select("id,page_number,status,regenerations,needs_review,quality_score,review_notes,quality_metadata").eq("book_id", data.book_id).order("page_number", { ascending: true }),
         ]);
         if (!active) return;
         setBook(bk);
@@ -455,6 +455,68 @@ function PipelineDetails({ book, pages }: { book: any; pages: any[] }) {
           </div>
         </div>
       )}
+
+      <CorrectionsLog book={book} pages={pages} />
+    </div>
+  );
+}
+
+function CorrectionsLog({ book, pages }: { book: any; pages: any[] }) {
+  type Entry = { key: string; label: string; instruction: string; retries: number };
+  const entries: Entry[] = [];
+
+  const coverInstruction =
+    book?.cover_validation?.regeneration_instruction ||
+    (Array.isArray(book?.cover_validation?.banned_content_detected) && book.cover_validation.banned_content_detected.length
+      ? `Remove: ${book.cover_validation.banned_content_detected.join(", ")} (parent explicitly disallowed)`
+      : "");
+  if (coverInstruction) {
+    entries.push({ key: "cover", label: "Cover", instruction: coverInstruction, retries: 0 });
+  }
+
+  for (const p of pages) {
+    const instr: string =
+      p.quality_metadata?.regeneration_instruction ||
+      p.review_notes ||
+      "";
+    if (instr && (p.regenerations > 0 || p.needs_review)) {
+      entries.push({
+        key: `p${p.id}`,
+        label: `Page ${p.page_number}`,
+        instruction: instr,
+        retries: p.regenerations ?? 0,
+      });
+    }
+  }
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="mt-6 rounded-lg border border-ember/30 bg-ember/5 p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Corrections applied</h3>
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          {entries.length} item{entries.length === 1 ? "" : "s"}
+        </span>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Issues the quality checker flagged, and what the illustrator was asked to change.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {entries.map((e) => (
+          <li key={e.key} className="rounded-md border border-border bg-background p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold">{e.label}</span>
+              {e.retries > 0 && (
+                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {e.retries} retr{e.retries === 1 ? "y" : "ies"}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-foreground">{e.instruction}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
