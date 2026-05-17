@@ -50,6 +50,7 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
   "safety_ok": true,
   "speech_bubble_detected": false,
   "text_inside_image_detected": false,
+  "banned_content_detected": [],
   "missing_required_character_details": [],
   "wrong_character_details": [],
   "artifact_issues": [],
@@ -67,6 +68,7 @@ Scoring rules:
 - scene_match_score = how faithfully the image depicts the required scene; scene_accuracy_score may mirror this.
 - speech_bubble_detected = true if ANY speech bubble, thought bubble, word balloon, blank bubble, empty bubble, or caption box is visible — even decorative empty ones.
 - text_inside_image_detected = true if any readable text, letters, pseudo-text glyphs, signs, captions, or sound effect words (POW/BAM/WOW/ZAP) appear in the image.
+- banned_content_detected = list of items from the BANNED CONTENT list (provided in the user message) that are visibly present in the image. Be strict and literal — if the parent said "no balloons" and a balloon is visible, list "balloons". Match synonyms (e.g. parent avoids "snakes" → flag visible serpents). Return [] if none are present.
 - missing_required_character_details = list of contract attributes (e.g. "yellow rain jacket", "wheelchair", "freckles") that should appear but are missing.
 - wrong_character_details = list of attributes that are wrong (e.g. "hair is brown instead of red", "outfit color changed").
 - "age_appropriateness_score" judges BOTH the page text (if any is implied by the scene) and the image specifically against ages ${ageBand}, NOT a generic "kid safe" standard.
@@ -82,11 +84,12 @@ Scoring rules:
     scene_match_score < 0.85,
     age_appropriateness_score < 0.95,
     text_inside_image_detected = true,
+    banned_content_detected is non-empty,
     (style is "comic_book" AND speech_bubble_detected = true),
     correct_number_of_main_characters = false,
     twin_distinction_ok = false,
     safety_ok = false.
-- "regeneration_instruction" is a short, concrete fix the illustrator should apply (e.g. "Restore the red striped scarf and match hair length to the character sheet", "Remove the speech bubbles entirely; use motion lines and starbursts instead").
+- "regeneration_instruction" is a short, concrete fix the illustrator should apply (e.g. "Restore the red striped scarf and match hair length to the character sheet", "Remove the speech bubbles entirely; use motion lines and starbursts instead", "Remove the balloon — the parent explicitly disallowed balloons"). If banned_content_detected is non-empty, the instruction MUST start with "Remove: <list>".
 - "artifact_issues" lists visible defects (extra fingers, warped face, etc).
 - "missing_required_elements" lists items from the must-include list that are absent.`;
 }
