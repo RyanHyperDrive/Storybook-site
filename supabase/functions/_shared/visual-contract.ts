@@ -123,6 +123,20 @@ export function buildContract(input: {
   const subjects: ContractSubject[] = (childSubjects ?? []).map((s: any) => {
     const p = s.child_profile_id ? profilesById[s.child_profile_id] : null;
     const desc: string = s.description ?? "";
+    // Prefer vision-derived structured analysis (set by create-character-sheet
+    // after the sheet image is generated). Falls back to raw-photo analysis,
+    // then to brittle regex extraction over the freeform description.
+    const v = (s.photo_analysis?.sheet_vision ?? {}) as Record<string, any>;
+    const a = (s.photo_analysis ?? {}) as Record<string, any>;
+    const pick = (visionKey: string, analysisKey: string, descKeyword: string) =>
+      (typeof v[visionKey] === "string" && v[visionKey].trim())
+        ? v[visionKey].trim()
+        : (typeof a[analysisKey] === "string" && a[analysisKey].trim())
+          ? a[analysisKey].trim()
+          : extractTrait(desc, descKeyword);
+    const outfitColors = Array.isArray(v.outfit_colors) ? v.outfit_colors.filter(Boolean).join(", ") : "";
+    const distinguishing = Array.isArray(v.distinguishing_features) ? v.distinguishing_features.filter(Boolean).join(", ") : "";
+    const accessibility = Array.isArray(v.accessibility_devices) ? v.accessibility_devices.filter(Boolean).join(", ") : "";
     return {
       subject_id: s.id,
       display_name: p?.name ?? "the child",
@@ -130,15 +144,17 @@ export function buildContract(input: {
       age: p?.age ?? null,
       pronouns: p?.pronouns ?? null,
       art_style_key: book.art_style ?? "soft_cartoon",
-      face_shape: extractTrait(desc, "face") ?? null,
-      hair_color: extractTrait(desc, "hair color") ?? null,
-      hair_style: extractTrait(desc, "hair") ?? null,
-      eye_color: extractTrait(desc, "eye") ?? null,
-      skin_tone_description: extractTrait(desc, "skin") ?? null,
-      build_notes: extractTrait(desc, "build") ?? null,
-      accessibility_details: p?.accessibility_details ?? null,
-      distinguishing_features: p?.personality_traits ?? null,
-      canonical_outfit: extractTrait(desc, "outfit") ?? extractTrait(desc, "wearing") ?? null,
+      face_shape: pick("face_shape", "face_shape", "face") ?? null,
+      hair_color: pick("hair_color", "hair", "hair color") ?? null,
+      hair_style: pick("hair_style", "hair", "hair") ?? null,
+      eye_color: pick("eye_color", "eyes", "eye") ?? null,
+      skin_tone_description: pick("skin_tone", "skin", "skin") ?? null,
+      build_notes: (typeof v.build === "string" && v.build) ? v.build : (extractTrait(desc, "build") ?? null),
+      accessibility_details: [p?.accessibility_details, accessibility].filter(Boolean).join("; ") || null,
+      distinguishing_features: [p?.personality_traits, distinguishing].filter(Boolean).join("; ") || null,
+      canonical_outfit: (typeof v.canonical_outfit === "string" && v.canonical_outfit)
+        ? `${v.canonical_outfit}${outfitColors ? ` (colors: ${outfitColors})` : ""}`
+        : (extractTrait(desc, "outfit") ?? extractTrait(desc, "wearing") ?? null),
       approved_character_sheet_image_path: s.character_image_url ?? characterSheet?.image_url ?? null,
       approved_cover_image_path: book.cover_image_path ?? book.cover_url ?? null,
       parent_confirmed_notes: [
