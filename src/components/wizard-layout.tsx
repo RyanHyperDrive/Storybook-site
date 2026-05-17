@@ -6,6 +6,7 @@ const STEPS = [
   { to: "/create/photos", label: "Sign in + photo" },
   { to: "/create/profile", label: "About child" },
   { to: "/create/story", label: "Story" },
+  { to: "/create/avoid", label: "Avoid list" },
   { to: "/create/style", label: "Art style" },
   { to: "/create/character-sheet", label: "Character" },
 ] as const;
