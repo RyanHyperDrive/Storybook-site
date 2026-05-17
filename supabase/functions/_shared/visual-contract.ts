@@ -51,10 +51,13 @@ export function describeSubject(s: ContractSubject): string {
   const parts = [
     `${s.display_name}${s.age ? ` (age ${s.age})` : ""}${s.pronouns ? `, pronouns ${s.pronouns}` : ""}`,
     s.face_shape && `face: ${s.face_shape}`,
-    s.skin_tone_description && `skin tone: ${s.skin_tone_description}`,
-    (s.hair_color || s.hair_style) &&
-      `hair: ${[s.hair_color, s.hair_style].filter(Boolean).join(" ")}`,
-    s.eye_color && `eyes: ${s.eye_color}`,
+    s.skin_tone_description && `skin tone (match exactly, do not lighten): ${s.skin_tone_description}`,
+    s.skin_undertone && `skin undertone: ${s.skin_undertone}`,
+    (s.hair_color || s.hair_style || s.hair_texture) &&
+      `hair (preserve texture exactly): ${[s.hair_color, s.hair_texture, s.hair_style].filter(Boolean).join(" ")}`,
+    s.eye_color && `eyes: ${[s.eye_color, s.eye_shape].filter(Boolean).join(", ")}`,
+    s.nose_shape && `nose: ${s.nose_shape}`,
+    s.lip_shape && `lips: ${s.lip_shape}`,
     s.build_notes && `build: ${s.build_notes}`,
     s.accessibility_details && `accessibility: ${s.accessibility_details}`,
     s.distinguishing_features && `distinguishing: ${s.distinguishing_features}`,
