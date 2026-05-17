@@ -96,6 +96,8 @@ AGE-APPROPRIATENESS (HARD GATE — image is for ages ${input.ageBand}):
 ${visualSafetyFor(input.ageBand)}
 If the scene description would push the image past this safety rule, soften it visually (reframe, off-screen, friendly substitute) — never produce unsafe imagery.
 
+${compositionFor(input.ageBand)}
+${input.twinDifferentiator ? `\nTWIN DIFFERENTIATION (HARD GATE): ${input.twinDifferentiator}\n` : ""}
 Composition:
 - Full storybook page illustration.
 - No page text embedded in the image. All titles and page text are rendered by the app over the image.
