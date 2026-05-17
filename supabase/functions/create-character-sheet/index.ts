@@ -200,8 +200,8 @@ serve(async (req) => {
           .createSignedUrl(imagePath, 60 * 5);
         const sheetUrlForVision = sheetSigned?.signedUrl;
         if (sheetUrlForVision) {
-          const sys = `You are extracting the canonical visual identity of a children's storybook character from the APPROVED CHARACTER SHEET image. Return STRICT JSON only:
-{"face_shape":"","hair_color":"","hair_style":"","eye_color":"","skin_tone":"","build":"","canonical_outfit":"","outfit_colors":[],"distinguishing_features":[],"accessibility_devices":[]}
+          const sys = `You are extracting the canonical visual identity of a children's storybook character from the APPROVED CHARACTER SHEET image. Be faithful: record textured hair as textured, deep skin tones as deep, wide noses as wide. Do not soften, lighten, or anglicize what you see. Return STRICT JSON only:
+{"face_shape":"","hair_color":"","hair_style":"","hair_texture":"","eye_color":"","eye_shape":"","nose_shape":"","lip_shape":"","skin_tone":"","skin_undertone":"","build":"","canonical_outfit":"","outfit_colors":[],"distinguishing_features":[],"accessibility_devices":[]}
 Use short concrete phrases. Empty string / empty array when not visible. No commentary.`;
           const visionRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
             method: "POST",
