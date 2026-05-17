@@ -500,34 +500,60 @@ function AvoidListPanel({ book }: { book: any }) {
 }
 
 function CorrectionsLog({ book, pages }: { book: any; pages: any[] }) {
-  type Entry = { key: string; label: string; instruction: string; retries: number };
+  type Entry = {
+    key: string;
+    label: string;
+    instruction: string;
+    retries: number;
+    banned: string[];
+    reasons: string[];
+  };
   const entries: Entry[] = [];
 
+  const coverBanned: string[] = Array.isArray(book?.cover_validation?.banned_content_detected)
+    ? book.cover_validation.banned_content_detected
+    : [];
+  const coverReasons: string[] = Array.isArray(book?.cover_validation?.reasons)
+    ? book.cover_validation.reasons
+    : [];
   const coverInstruction =
     book?.cover_validation?.regeneration_instruction ||
-    (Array.isArray(book?.cover_validation?.banned_content_detected) && book.cover_validation.banned_content_detected.length
-      ? `Remove: ${book.cover_validation.banned_content_detected.join(", ")} (parent explicitly disallowed)`
+    (coverBanned.length
+      ? `Remove: ${coverBanned.join(", ")} (parent explicitly disallowed)`
       : "");
-  if (coverInstruction) {
-    entries.push({ key: "cover", label: "Cover", instruction: coverInstruction, retries: 0 });
+  if (coverInstruction || coverBanned.length) {
+    entries.push({
+      key: "cover",
+      label: "Cover",
+      instruction: coverInstruction,
+      retries: 0,
+      banned: coverBanned,
+      reasons: coverReasons,
+    });
   }
 
   for (const p of pages) {
-    const instr: string =
-      p.quality_metadata?.regeneration_instruction ||
-      p.review_notes ||
-      "";
-    if (instr && (p.regenerations > 0 || p.needs_review)) {
+    const meta = p.quality_metadata ?? {};
+    const banned: string[] = Array.isArray(meta.banned_content_detected)
+      ? meta.banned_content_detected
+      : [];
+    const reasons: string[] = Array.isArray(meta.reasons) ? meta.reasons : [];
+    const instr: string = meta.regeneration_instruction || p.review_notes || "";
+    if ((instr || banned.length) && (p.regenerations > 0 || p.needs_review)) {
       entries.push({
         key: `p${p.id}`,
         label: `Page ${p.page_number}`,
         instruction: instr,
         retries: p.regenerations ?? 0,
+        banned,
+        reasons,
       });
     }
   }
 
   if (entries.length === 0) return null;
+
+  const totalBanned = entries.reduce((n, e) => n + e.banned.length, 0);
 
   return (
     <div className="mt-6 rounded-lg border border-ember/30 bg-ember/5 p-4">
@@ -535,10 +561,12 @@ function CorrectionsLog({ book, pages }: { book: any; pages: any[] }) {
         <h3 className="text-sm font-semibold">Corrections applied</h3>
         <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
           {entries.length} item{entries.length === 1 ? "" : "s"}
+          {totalBanned > 0 ? ` · ${totalBanned} removed` : ""}
         </span>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Issues the quality checker flagged, and what the illustrator was asked to change.
+        What the quality checker flagged, what was removed from your avoid list, and the
+        correction the illustrator was asked to apply.
       </p>
       <ul className="mt-3 space-y-2">
         {entries.map((e) => (
@@ -551,7 +579,47 @@ function CorrectionsLog({ book, pages }: { book: any; pages: any[] }) {
                 </span>
               )}
             </div>
-            <p className="mt-1 text-xs leading-relaxed text-foreground">{e.instruction}</p>
+
+            {e.banned.length > 0 && (
+              <div className="mt-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-destructive">
+                  Removed from this {e.label === "Cover" ? "cover" : "page"}
+                </div>
+                <ul className="mt-1 flex flex-wrap gap-1.5">
+                  {e.banned.map((b) => (
+                    <li
+                      key={b}
+                      className="inline-flex items-center rounded-full border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-[11px] text-destructive"
+                      title="Matched an item on your avoid list"
+                    >
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {e.reasons.length > 0 && (
+              <div className="mt-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Why it was flagged
+                </div>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] leading-relaxed text-muted-foreground">
+                  {e.reasons.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {e.instruction && (
+              <div className="mt-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Correction sent to illustrator
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-foreground">{e.instruction}</p>
+              </div>
+            )}
           </li>
         ))}
       </ul>
