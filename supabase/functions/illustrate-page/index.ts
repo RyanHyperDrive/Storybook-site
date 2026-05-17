@@ -172,8 +172,36 @@ serve(async (req) => {
     if (bookErr) return errorResponse(bookErr.message, 500);
     if (!book || book.user_id !== user.id) return errorResponse("Book not found or forbidden", 403);
 
-    // Resolve character sheet reference image.
+    // Resolve character sheet reference image(s).
+    // For twins we ALWAYS pull both per-child sheets from child_subjects so
+    // the model has a canonical reference for each twin on every page (not
+    // just the primary sheet stored on character_sheets).
     let refUrl = characterSheetUrl as string | undefined;
+    const twinSheetUrls: { name: string; url: string }[] = [];
+    if (book.is_twins) {
+      const { data: profiles } = await admin
+        .from("child_profiles")
+        .select("id, name, slot")
+        .eq("book_id", bookId)
+        .order("slot");
+      const profileIds = (profiles ?? []).map((p: any) => p.id);
+      if (profileIds.length) {
+        const { data: subs } = await admin
+          .from("child_subjects")
+          .select("child_profile_id, character_image_url, approved")
+          .in("child_profile_id", profileIds);
+        for (const p of profiles ?? []) {
+          const s = (subs ?? []).find((x: any) => x.child_profile_id === p.id);
+          if (s?.character_image_url) {
+            const { data: sig } = await admin.storage
+              .from("character-sheets")
+              .createSignedUrl(s.character_image_url, 60 * 10);
+            if (sig?.signedUrl) twinSheetUrls.push({ name: p.name ?? "twin", url: sig.signedUrl });
+          }
+        }
+      }
+      if (!refUrl && twinSheetUrls[0]) refUrl = twinSheetUrls[0].url;
+    }
     if (!refUrl) {
       const { data: sheet } = await admin
         .from("character_sheets")
@@ -186,6 +214,25 @@ serve(async (req) => {
       refUrl = sheet?.image_url ?? undefined;
     }
     if (!refUrl) return errorResponse("No approved character sheet found for this book", 412);
+
+    // Optional "together" reference photo (raw upload), only used for twin scenes.
+    let togetherUrl: string | undefined;
+    if (book.is_twins) {
+      const { data: together } = await admin
+        .from("uploaded_photos")
+        .select("storage_path")
+        .eq("book_id", bookId)
+        .eq("slot", "together")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (together?.storage_path) {
+        const { data: sig } = await admin.storage
+          .from("raw-uploads")
+          .createSignedUrl(together.storage_path, 60 * 10);
+        togetherUrl = sig?.signedUrl ?? undefined;
+      }
+    }
 
     // Resolve cover reference (secondary canonical look). Optional — first
     // page generation may not have a cover yet.
