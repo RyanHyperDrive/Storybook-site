@@ -70,6 +70,7 @@ const PROMPT_TEMPLATE = (input: {
   contractFragment: string;
   hasCoverRef: boolean;
   isTwins: boolean;
+  twinDifferentiator?: string;
 }) => `Create a children's storybook illustration in the approved style: ${input.styleKey}.
 
 You are given reference images:
