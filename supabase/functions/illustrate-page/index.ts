@@ -122,10 +122,14 @@ serve(async (req) => {
       visualMustNotInclude,
       characterSheetUrl,
       readingLevel,
+      isCover,
+      correctiveNote,
     } = body ?? {};
 
     if (!bookId) return errorResponse("bookId is required");
-    if (!Number.isInteger(pageNumber) || pageNumber < 1) return errorResponse("pageNumber must be a positive integer");
+    if (!isCover && (!Number.isInteger(pageNumber) || pageNumber < 1)) {
+      return errorResponse("pageNumber must be a positive integer");
+    }
     if (typeof styleKey !== "string" || !styleKey.trim()) return errorResponse("styleKey is required");
     if (typeof sceneDescription !== "string" || !sceneDescription.trim()) {
       return errorResponse("sceneDescription is required");
