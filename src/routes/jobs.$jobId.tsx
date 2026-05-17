@@ -64,6 +64,8 @@ function Inner() {
   const { jobId } = Route.useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState<any>(null);
+  const [book, setBook] = useState<any>(null);
+  const [pages, setPages] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -78,6 +80,15 @@ function Inner() {
       setLoading(false);
       if (error) { setError(error.message); return; }
       setJob(data);
+      if (data?.book_id) {
+        const [{ data: bk }, { data: pg }] = await Promise.all([
+          supabase.from("books").select("id,title,status,cover_image_path,cover_validation,visual_consistency_contract,story_json,ebook_url,page_count").eq("id", data.book_id).maybeSingle(),
+          supabase.from("book_pages").select("id,page_number,status,regenerations,needs_review,quality_score,review_notes").eq("book_id", data.book_id).order("page_number", { ascending: true }),
+        ]);
+        if (!active) return;
+        setBook(bk);
+        setPages(pg ?? []);
+      }
       if (!data) return;
       if (data.status === "done" || data.status === "error") return;
       if (inFlight) return;
@@ -181,6 +192,10 @@ function Inner() {
         </div>
       ) : (
         <Timeline currentStep={currentStep} done={done} />
+      )}
+
+      {book && !failed && (
+        <PipelineDetails book={book} pages={pages} />
       )}
 
       {!done && !failed && (
@@ -296,6 +311,150 @@ function ErrorState({ title, message }: { title: string; message: string }) {
       <Link to="/library" className="mt-6 inline-block">
         <Button variant="outline" size="sm">Back to library</Button>
       </Link>
+    </div>
+  );
+}
+
+function StatusPill({ tone, children }: { tone: "done" | "active" | "pending" | "warn"; children: React.ReactNode }) {
+  const cls =
+    tone === "done"
+      ? "bg-sage/15 text-sage border-sage/30"
+      : tone === "active"
+        ? "bg-ember/10 text-ember border-ember/30"
+        : tone === "warn"
+          ? "bg-destructive/10 text-destructive border-destructive/30"
+          : "bg-muted text-muted-foreground border-border";
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${cls}`}>
+      {children}
+    </span>
+  );
+}
+
+function PipelineDetails({ book, pages }: { book: any; pages: any[] }) {
+  const contractReady = !!book.visual_consistency_contract;
+  const coverReady = !!book.cover_image_path;
+  const coverValidation = book.cover_validation as any;
+  const storyPages: any[] = book.story_json?.pages ?? [];
+  const storyReady = storyPages.length > 0;
+  const renderReady = !!book.ebook_url;
+
+  const expected = book.page_count ?? storyPages.length ?? pages.length;
+  const doneCount = pages.filter((p) => p.status === "ready" || p.status === "done").length;
+  const activeCount = pages.filter((p) => p.status === "rendering" || p.status === "validating" || p.status === "in_progress").length;
+  const reviewCount = pages.filter((p) => p.needs_review).length;
+  const totalRetries = pages.reduce((sum, p) => sum + (p.regenerations ?? 0), 0);
+
+  const Row = ({
+    label,
+    helper,
+    tone,
+    status,
+  }: {
+    label: string;
+    helper?: string;
+    tone: "done" | "active" | "pending" | "warn";
+    status: string;
+  }) => (
+    <div className="flex items-start justify-between gap-3 border-b border-border/60 py-3 last:border-b-0">
+      <div className="min-w-0">
+        <div className="text-sm font-semibold">{label}</div>
+        {helper && <p className="mt-0.5 text-xs text-muted-foreground">{helper}</p>}
+      </div>
+      <StatusPill tone={tone}>{status}</StatusPill>
+    </div>
+  );
+
+  return (
+    <div className="mt-8 rounded-lg border border-border bg-background p-5">
+      <h2 className="font-display text-lg font-semibold">Pipeline details</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Live status of each stage of your book generation.
+      </p>
+
+      <div className="mt-4">
+        <Row
+          label="Visual contract"
+          helper="Locks character look, palette, and style across pages."
+          tone={contractReady ? "done" : "pending"}
+          status={contractReady ? "Ready" : "Pending"}
+        />
+        <Row
+          label="Story"
+          helper={storyReady ? `${storyPages.length} pages written` : "Drafting narrative…"}
+          tone={storyReady ? "done" : "active"}
+          status={storyReady ? "Ready" : "Writing"}
+        />
+        <Row
+          label="Cover"
+          helper={
+            coverValidation?.needs_regeneration
+              ? "Cover flagged for regeneration"
+              : coverReady
+                ? "Cover illustrated and validated"
+                : "Awaiting illustration"
+          }
+          tone={coverValidation?.needs_regeneration ? "warn" : coverReady ? "done" : "pending"}
+          status={coverReady ? (coverValidation?.needs_regeneration ? "Retrying" : "Ready") : "Pending"}
+        />
+        <Row
+          label="Pages"
+          helper={`${doneCount}/${expected || "?"} ready${activeCount ? ` · ${activeCount} in progress` : ""}${reviewCount ? ` · ${reviewCount} need review` : ""}`}
+          tone={expected && doneCount >= expected ? "done" : activeCount ? "active" : "pending"}
+          status={expected && doneCount >= expected ? "Ready" : `${doneCount}/${expected || "?"}`}
+        />
+        <Row
+          label="Retries"
+          helper={
+            totalRetries === 0
+              ? "No regenerations needed so far."
+              : `${totalRetries} page regeneration${totalRetries === 1 ? "" : "s"} triggered by quality checks.`
+          }
+          tone={totalRetries > 0 ? "warn" : "done"}
+          status={String(totalRetries)}
+        />
+        <Row
+          label="Final render"
+          helper={renderReady ? "PDF assembled and ready to download." : "Waiting for all pages to be approved."}
+          tone={renderReady ? "done" : "pending"}
+          status={renderReady ? "Ready" : "Pending"}
+        />
+      </div>
+
+      {pages.length > 0 && (
+        <div className="mt-5">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Per-page status
+          </div>
+          <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-8">
+            {pages.map((p) => {
+              const isReady = p.status === "ready" || p.status === "done";
+              const isFlag = p.needs_review;
+              const tone: "done" | "active" | "warn" = isFlag ? "warn" : isReady ? "done" : "active";
+              const bg =
+                tone === "done"
+                  ? "bg-sage/20 text-sage border-sage/40"
+                  : tone === "warn"
+                    ? "bg-destructive/10 text-destructive border-destructive/30"
+                    : "bg-ember/10 text-ember border-ember/30";
+              return (
+                <div
+                  key={p.id}
+                  title={`Page ${p.page_number} · ${p.status}${p.regenerations ? ` · ${p.regenerations} retries` : ""}${p.review_notes ? ` · ${p.review_notes}` : ""}`}
+                  className={`relative grid h-10 place-items-center rounded border text-xs font-semibold ${bg}`}
+                >
+                  {p.page_number}
+                  {p.regenerations > 0 && (
+                    <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border border-border bg-background px-1 text-[9px] font-bold text-foreground">
+                      {p.regenerations}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
