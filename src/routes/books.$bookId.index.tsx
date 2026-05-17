@@ -195,26 +195,80 @@ function Inner() {
     });
   }
 
-  async function regenerateCurrent() {
-    const cur = spreads[idx];
-    if (!cur || cur.kind !== "story" || !cur.storyPage) return;
-    setRegenBusyKey(cur.key);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [storyEditorOpen, setStoryEditorOpen] = useState(false);
+  const [coverEditorOpen, setCoverEditorOpen] = useState(false);
+
+  async function saveTextInline(pageId: string, newText: string) {
+    const { error } = await supabase
+      .from("book_pages")
+      .update({ text_content: newText })
+      .eq("id", pageId);
+    if (error) {
+      toast.error(error.message);
+      return false;
+    }
+    if (book?.story_json?.pages) {
+      const pn = pages.find((p) => p.id === pageId)?.page_number;
+      if (pn != null) {
+        const next = {
+          ...book.story_json,
+          pages: book.story_json.pages.map((p: any) =>
+            Number(p.page_number) === Number(pn) ? { ...p, page_text: newText } : p,
+          ),
+        };
+        await supabase.from("books").update({ story_json: next }).eq("id", bookId);
+      }
+    }
+    toast.success("Saved");
+    await load();
+    return true;
+  }
+
+  async function regenImage(opts: { pageId: string; feedback?: string; sceneOverride?: string; textOverride?: string }) {
+    setRegenBusyKey(opts.pageId);
     try {
-      // Mark the page for regeneration. A worker picks up status='regenerating'.
-      const { error } = await supabase
-        .from("book_pages")
-        .update({
-          status: "regenerating",
-          regenerations: (await getRegenerations(cur.storyPage.id)) + 1,
-        })
-        .eq("id", cur.storyPage.id);
+      const { data, error } = await supabase.functions.invoke("regenerate-page", { body: opts });
       if (error) throw error;
-      toast.success("Regeneration queued", {
-        description: "We'll refresh this page when the new illustration is ready.",
-      });
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Page regenerated");
       await load();
     } catch (e: any) {
-      toast.error(e.message ?? "Could not queue regeneration");
+      toast.error(e.message ?? "Could not regenerate page");
+    } finally {
+      setRegenBusyKey(null);
+    }
+  }
+
+  async function regenCover(opts: { feedback?: string; sceneOverride?: string }) {
+    setRegenBusyKey("cover");
+    try {
+      const { data, error } = await supabase.functions.invoke("regenerate-cover", {
+        body: { bookId, ...opts },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Cover regenerated");
+      await load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not regenerate cover");
+    } finally {
+      setRegenBusyKey(null);
+    }
+  }
+
+  async function regenStory(opts: { themeOverride?: string; feedback?: string }) {
+    setRegenBusyKey("story");
+    try {
+      const { data, error } = await supabase.functions.invoke("regenerate-story", {
+        body: { bookId, ...opts },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Story rewritten — regenerate any page image you want refreshed.");
+      await load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not rewrite story");
     } finally {
       setRegenBusyKey(null);
     }
