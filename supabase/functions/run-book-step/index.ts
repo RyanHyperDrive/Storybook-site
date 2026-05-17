@@ -273,7 +273,7 @@ serve(async (req) => {
         // MAX_RETRIES (shipped with warnings).
         const { data: existing } = await admin
           .from("book_pages")
-          .select("page_number, status, regenerations, needs_review, quality_metadata")
+          .select("page_number, status, regenerations, needs_review, quality_metadata, image_storage_path")
           .eq("book_id", bookId);
         const isDone = (p: any) =>
           p.status === "ready" && (
@@ -306,8 +306,29 @@ serve(async (req) => {
           });
         }
 
-        // Pull corrective note from the prior failed validation (if any).
-        const correctiveNote: string = (currentRow?.quality_metadata?.regeneration_instruction as string) ?? "";
+        // Pull corrective note from the prior failed validation (if any) and
+        // enrich it with the specific wrong/missing details so the next
+        // attempt has concrete targets, not just a vague instruction.
+        const qm: any = currentRow?.quality_metadata ?? {};
+        const correctiveBits: string[] = [];
+        if (typeof qm?.regeneration_instruction === "string" && qm.regeneration_instruction.trim()) {
+          correctiveBits.push(qm.regeneration_instruction.trim());
+        }
+        const wrong = Array.isArray(qm?.wrong_character_details) ? qm.wrong_character_details : [];
+        const missingChar = Array.isArray(qm?.missing_required_character_details) ? qm.missing_required_character_details : [];
+        const missingEl = Array.isArray(qm?.missing_required_elements) ? qm.missing_required_elements : [];
+        const banned = Array.isArray(qm?.banned_content_detected) ? qm.banned_content_detected : [];
+        if (banned.length) correctiveBits.push(`Remove entirely: ${banned.join(", ")}`);
+        if (wrong.length) correctiveBits.push(`Fix wrong character details: ${wrong.join("; ")}`);
+        if (missingChar.length) correctiveBits.push(`Restore missing character details: ${missingChar.join("; ")}`);
+        if (missingEl.length) correctiveBits.push(`Add required scene elements: ${missingEl.join("; ")}`);
+        const correctiveNote: string = correctiveBits.join(". ");
+
+        // Rolling visual anchor: previous-page image (if any) tightens
+        // page-to-page consistency.
+        const prevRow = (existing ?? [])
+          .filter((p: any) => p.page_number < nextPage.page_number && p.status === "ready" && p.image_storage_path)
+          .sort((a: any, b: any) => b.page_number - a.page_number)[0];
 
         const r = await callFn("illustrate-page", authHeader, {
           bookId,
@@ -318,6 +339,7 @@ serve(async (req) => {
           visualMustHaves: nextPage.visual_must_haves ?? [],
           visualMustNotInclude: nextPage.visual_must_not_include ?? [],
           correctiveNote,
+          previousPageImagePath: prevRow?.image_storage_path,
         });
         if (r.status >= 400) {
           await failJob(r.json?.error ?? `Page ${nextPage.page_number} failed.`);

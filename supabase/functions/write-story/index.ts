@@ -139,10 +139,12 @@ schema exactly:
 Rules:
 - Exactly ${t.targetPages} entries in "pages", numbered 1 through ${t.targetPages}.
 - Each "page_text" is ${t.sentencesPerPage}, age-appropriate for ages ${t.ageBand}.
-- "scene_description" describes the illustration in concrete, visual terms (no embedded text — all titles and page text are rendered by the app over the image), and must itself be age-safe for ages ${t.ageBand}.
-- "visual_must_haves" lists key items/clothing/colors that must appear for continuity.
+- NARRATIVE ARC (mandatory): the pages MUST form a clear story arc — setup (first ~20%), inciting nudge, rising action with at least one small challenge or discovery, an emotional turning point, and a warm resolution on the final page. No filler pages, no random vignettes — every page advances the same single story.
+- CONTINUITY (mandatory): outfits, companions, props, time of day, and setting introduced on one page must remain consistent on the next unless the text explicitly changes them. Use "continuity_notes" to carry state forward.
+- "scene_description" MUST be richly visual and concrete (specific actions, poses, expressions, props, setting, time of day, weather, lighting) so the illustrator can render the page from this text alone. It must literally depict what "page_text" describes — the image and text must show the same moment. Do NOT embed any text in the image; all titles and page text are rendered by the app over the image. It must itself be age-safe for ages ${t.ageBand}.
+- "visual_must_haves" lists key items/clothing/colors that must appear for continuity (include the canonical outfit and any prop the text mentions).
 - "visual_must_not_include" MUST always include items that would violate the age band (e.g. for 2-3: "no scary creatures, no weapons, no darkness/peril"; for 4-6: "no weapons, no injury, no scary monsters, no romantic framing"; for 7-10: "no weapons used to harm, no blood/gore, no mature themes") in addition to anything else to keep out (brands, text in image, logos).
-- "continuity_notes" tracks anything the next page must respect (time of day, outfit, companions).
+- "continuity_notes" tracks anything the next page must respect (time of day, outfit, companions, location, prop in hand).
 - "style_notes" is a short note on the overall illustrative tone.
 - Do NOT include a cover image description in pages — pages are story pages only.`;
 }
@@ -263,7 +265,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-2.5-pro",
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
