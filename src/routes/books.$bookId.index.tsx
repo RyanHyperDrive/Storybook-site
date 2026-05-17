@@ -957,15 +957,6 @@ function ReaderError({ title, message }: { title: string; message: string }) {
 
 // ---------- helpers ----------
 
-async function getRegenerations(pageId: string): Promise<number> {
-  const { data } = await supabase
-    .from("book_pages")
-    .select("regenerations")
-    .eq("id", pageId)
-    .maybeSingle();
-  return data?.regenerations ?? 0;
-}
-
 /**
  * Resolve a stored value into a viewable URL.
  * Accepts either a fully-qualified URL or a "bucket/path" / bare storage path.
