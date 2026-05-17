@@ -220,7 +220,7 @@ serve(async (req) => {
   try {
     const { user, admin } = await requireUser(req);
     const body = await req.json();
-    const { theme, child_details, favorites, avoid, bookId, reading_level } = body ?? {};
+    const { theme, child_details, favorites, avoid, bookId, reading_level, cast } = body ?? {};
 
     if (typeof theme !== "string" || !theme.trim()) return errorResponse("theme is required");
     if (typeof child_details !== "string" || !child_details.trim()) {
