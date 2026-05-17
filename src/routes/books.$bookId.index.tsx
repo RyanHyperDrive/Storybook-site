@@ -3,6 +3,16 @@ import { useEffect, useMemo, useState } from "react";
 import { AuthGate } from "@/components/auth-gate";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,10 +21,13 @@ import {
   Heart,
   Loader2,
   Mail,
+  Pencil,
   Printer,
   RefreshCcw,
+  Save,
   Settings2,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import s1 from "@/assets/sample-1.jpg";
@@ -182,26 +195,80 @@ function Inner() {
     });
   }
 
-  async function regenerateCurrent() {
-    const cur = spreads[idx];
-    if (!cur || cur.kind !== "story" || !cur.storyPage) return;
-    setRegenBusyKey(cur.key);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [storyEditorOpen, setStoryEditorOpen] = useState(false);
+  const [coverEditorOpen, setCoverEditorOpen] = useState(false);
+
+  async function saveTextInline(pageId: string, newText: string) {
+    const { error } = await supabase
+      .from("book_pages")
+      .update({ text_content: newText })
+      .eq("id", pageId);
+    if (error) {
+      toast.error(error.message);
+      return false;
+    }
+    if (book?.story_json?.pages) {
+      const pn = pages.find((p) => p.id === pageId)?.page_number;
+      if (pn != null) {
+        const next = {
+          ...book.story_json,
+          pages: book.story_json.pages.map((p: any) =>
+            Number(p.page_number) === Number(pn) ? { ...p, page_text: newText } : p,
+          ),
+        };
+        await supabase.from("books").update({ story_json: next }).eq("id", bookId);
+      }
+    }
+    toast.success("Saved");
+    await load();
+    return true;
+  }
+
+  async function regenImage(opts: { pageId: string; feedback?: string; sceneOverride?: string; textOverride?: string }) {
+    setRegenBusyKey(opts.pageId);
     try {
-      // Mark the page for regeneration. A worker picks up status='regenerating'.
-      const { error } = await supabase
-        .from("book_pages")
-        .update({
-          status: "regenerating",
-          regenerations: (await getRegenerations(cur.storyPage.id)) + 1,
-        })
-        .eq("id", cur.storyPage.id);
+      const { data, error } = await supabase.functions.invoke("regenerate-page", { body: opts });
       if (error) throw error;
-      toast.success("Regeneration queued", {
-        description: "We'll refresh this page when the new illustration is ready.",
-      });
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Page regenerated");
       await load();
     } catch (e: any) {
-      toast.error(e.message ?? "Could not queue regeneration");
+      toast.error(e.message ?? "Could not regenerate page");
+    } finally {
+      setRegenBusyKey(null);
+    }
+  }
+
+  async function regenCover(opts: { feedback?: string; sceneOverride?: string }) {
+    setRegenBusyKey("cover");
+    try {
+      const { data, error } = await supabase.functions.invoke("regenerate-cover", {
+        body: { bookId, ...opts },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Cover regenerated");
+      await load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not regenerate cover");
+    } finally {
+      setRegenBusyKey(null);
+    }
+  }
+
+  async function regenStory(opts: { themeOverride?: string; feedback?: string }) {
+    setRegenBusyKey("story");
+    try {
+      const { data, error } = await supabase.functions.invoke("regenerate-story", {
+        body: { bookId, ...opts },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Story rewritten — regenerate any page image you want refreshed.");
+      await load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not rewrite story");
     } finally {
       setRegenBusyKey(null);
     }
@@ -247,6 +314,17 @@ function Inner() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setStoryEditorOpen(true)}
+            disabled={regenBusyKey === "story"}
+          >
+            {regenBusyKey === "story"
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <Wand2 className="h-4 w-4" />}
+            Rewrite story
+          </Button>
           <Button variant="outline" size="sm" onClick={downloadPdf}>
             <Download className="h-4 w-4" /> Download PDF
           </Button>
@@ -268,7 +346,15 @@ function Inner() {
       <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
         <div className="grid md:grid-cols-2">
           <IllustrationPane spread={cur} fallback={s1} />
-          <TextPane spread={cur} childName={book.child_name} />
+          <TextPane
+            spread={cur}
+            childName={book.child_name}
+            onSaveText={
+              cur.kind === "story" && cur.storyPage
+                ? (t) => saveTextInline(cur.storyPage!.id, t)
+                : undefined
+            }
+          />
         </div>
         <ReaderControls
           idx={idx}
@@ -276,8 +362,9 @@ function Inner() {
           spread={cur}
           onPrev={() => setIdx((i) => Math.max(0, i - 1))}
           onNext={() => setIdx((i) => Math.min(spreads.length - 1, i + 1))}
-          onRegenerate={cur.kind === "story" ? regenerateCurrent : undefined}
-          regenBusy={regenBusyKey === cur.key}
+          onOpenImageEditor={cur.kind === "story" ? () => setEditorOpen(true) : undefined}
+          onOpenCoverEditor={cur.kind === "cover" ? () => setCoverEditorOpen(true) : undefined}
+          regenBusy={regenBusyKey === cur.key || (cur.kind === "cover" && regenBusyKey === "cover")}
         />
       </div>
 
@@ -286,6 +373,32 @@ function Inner() {
 
       {/* Print actions */}
       <PrintActions bookId={bookId} childName={book.child_name} />
+
+      {/* Editors */}
+      {cur.kind === "story" && cur.storyPage && (
+        <PageImageEditor
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+          page={cur.storyPage}
+          storyJson={book.story_json}
+          busy={regenBusyKey === cur.key}
+          onRegenerate={(opts) => regenImage({ pageId: cur.storyPage!.id, ...opts })}
+        />
+      )}
+      <CoverEditor
+        open={coverEditorOpen}
+        onOpenChange={setCoverEditorOpen}
+        storyJson={book.story_json}
+        busy={regenBusyKey === "cover"}
+        onRegenerate={regenCover}
+      />
+      <StoryRewriteEditor
+        open={storyEditorOpen}
+        onOpenChange={setStoryEditorOpen}
+        currentTheme={book.story_theme ?? book.story_prompt ?? ""}
+        busy={regenBusyKey === "story"}
+        onRegenerate={regenStory}
+      />
     </div>
   );
 }
@@ -321,7 +434,25 @@ function IllustrationPane({ spread, fallback }: { spread: Spread; fallback: stri
   );
 }
 
-function TextPane({ spread, childName }: { spread: Spread; childName: string | null }) {
+function TextPane({
+  spread,
+  childName,
+  onSaveText,
+}: {
+  spread: Spread;
+  childName: string | null;
+  onSaveText?: (text: string) => Promise<boolean>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(spread.text ?? "");
+  const [saving, setSaving] = useState(false);
+
+  // Reset draft when navigating to a different spread.
+  useEffect(() => {
+    setEditing(false);
+    setDraft(spread.text ?? "");
+  }, [spread.key, spread.text]);
+
   if (spread.kind === "cover") {
     return (
       <div className="flex flex-col justify-between gap-6 p-8 md:p-12">
@@ -352,19 +483,64 @@ function TextPane({ spread, childName }: { spread: Spread; childName: string | n
       </div>
     );
   }
-  // Story page
+  // Story page — editable
   return (
     <div className="flex flex-col justify-between gap-6 p-8 md:p-12">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">{spread.label}</div>
-      <div className="font-display text-xl leading-relaxed">
-        {spread.text ? (
-          spread.text
-        ) : (
-          <span className="text-sm italic text-muted-foreground">
-            This page is still being illustrated. Check back in a moment.
-          </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">{spread.label}</div>
+        {onSaveText && !editing && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setDraft(spread.text ?? "");
+              setEditing(true);
+            }}
+          >
+            <Pencil className="h-3.5 w-3.5" /> Edit text
+          </Button>
         )}
       </div>
+      {editing ? (
+        <div className="space-y-3">
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={8}
+            className="font-display text-xl leading-relaxed"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setEditing(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="ember"
+              disabled={saving}
+              onClick={async () => {
+                if (!onSaveText) return;
+                setSaving(true);
+                const ok = await onSaveText(draft);
+                setSaving(false);
+                if (ok) setEditing(false);
+              }}
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Save text
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="font-display text-xl leading-relaxed">
+          {spread.text ? (
+            spread.text
+          ) : (
+            <span className="text-sm italic text-muted-foreground">
+              This page is still being illustrated. Check back in a moment.
+            </span>
+          )}
+        </div>
+      )}
       <div className="text-right text-xs tabular-nums text-muted-foreground">
         Page {spread.pageNumberLabel}
       </div>
@@ -378,7 +554,8 @@ function ReaderControls({
   spread,
   onPrev,
   onNext,
-  onRegenerate,
+  onOpenImageEditor,
+  onOpenCoverEditor,
   regenBusy,
 }: {
   idx: number;
@@ -386,7 +563,8 @@ function ReaderControls({
   spread: Spread;
   onPrev: () => void;
   onNext: () => void;
-  onRegenerate?: () => void;
+  onOpenImageEditor?: () => void;
+  onOpenCoverEditor?: () => void;
   regenBusy: boolean;
 }) {
   return (
@@ -398,14 +576,24 @@ function ReaderControls({
         <span className="tabular-nums">
           {idx + 1} / {total}
         </span>
-        {onRegenerate && (
-          <Button size="sm" variant="outline" onClick={onRegenerate} disabled={regenBusy}>
+        {onOpenImageEditor && (
+          <Button size="sm" variant="outline" onClick={onOpenImageEditor} disabled={regenBusy}>
             {regenBusy ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <RefreshCcw className="h-3.5 w-3.5" />
             )}
-            Regenerate this page
+            Regenerate image
+          </Button>
+        )}
+        {onOpenCoverEditor && (
+          <Button size="sm" variant="outline" onClick={onOpenCoverEditor} disabled={regenBusy}>
+            {regenBusy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCcw className="h-3.5 w-3.5" />
+            )}
+            Regenerate cover
           </Button>
         )}
       </div>
@@ -413,6 +601,234 @@ function ReaderControls({
         Next <ArrowRight className="h-4 w-4" />
       </Button>
     </div>
+  );
+}
+
+function PageImageEditor({
+  open,
+  onOpenChange,
+  page,
+  storyJson,
+  busy,
+  onRegenerate,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  page: BookPage;
+  storyJson: any;
+  busy: boolean;
+  onRegenerate: (opts: { feedback?: string; sceneOverride?: string }) => Promise<void>;
+}) {
+  const scenePage = (storyJson?.pages ?? []).find(
+    (p: any) => Number(p.page_number) === Number(page.page_number),
+  );
+  const [scene, setScene] = useState<string>(scenePage?.scene_description ?? "");
+  const [feedback, setFeedback] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setScene(scenePage?.scene_description ?? "");
+      setFeedback("");
+    }
+  }, [open, scenePage?.scene_description]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Regenerate page {page.page_number} image</DialogTitle>
+          <DialogDescription>
+            Tweak the scene description and add feedback. The illustrator will retry with your changes.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Scene description</label>
+            <Textarea rows={5} value={scene} onChange={(e) => setScene(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">
+              What should change? (optional)
+            </label>
+            <Textarea
+              rows={3}
+              placeholder="e.g. Make the dog brown and bigger, brighter lighting, no balloons."
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            variant="ember"
+            disabled={busy}
+            onClick={async () => {
+              await onRegenerate({
+                feedback: feedback.trim() || undefined,
+                sceneOverride: scene.trim() && scene !== scenePage?.scene_description ? scene : undefined,
+              });
+              onOpenChange(false);
+            }}
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            Regenerate
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CoverEditor({
+  open,
+  onOpenChange,
+  storyJson,
+  busy,
+  onRegenerate,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  storyJson: any;
+  busy: boolean;
+  onRegenerate: (opts: { feedback?: string; sceneOverride?: string }) => Promise<void>;
+}) {
+  const baseScene = storyJson?.cover?.scene_description ?? "";
+  const [scene, setScene] = useState(baseScene);
+  const [feedback, setFeedback] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setScene(baseScene);
+      setFeedback("");
+    }
+  }, [open, baseScene]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Regenerate cover</DialogTitle>
+          <DialogDescription>
+            Adjust the cover scene or tell us what to change. We'll redraw it.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Cover scene</label>
+            <Textarea rows={4} value={scene} onChange={(e) => setScene(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">
+              What should change? (optional)
+            </label>
+            <Textarea
+              rows={3}
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="mt-1"
+              placeholder="e.g. Warmer sunset, bigger title space at the top."
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            variant="ember"
+            disabled={busy}
+            onClick={async () => {
+              await onRegenerate({
+                feedback: feedback.trim() || undefined,
+                sceneOverride: scene.trim() && scene !== baseScene ? scene : undefined,
+              });
+              onOpenChange(false);
+            }}
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            Regenerate cover
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function StoryRewriteEditor({
+  open,
+  onOpenChange,
+  currentTheme,
+  busy,
+  onRegenerate,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  currentTheme: string;
+  busy: boolean;
+  onRegenerate: (opts: { themeOverride?: string; feedback?: string }) => Promise<void>;
+}) {
+  const [theme, setTheme] = useState(currentTheme);
+  const [feedback, setFeedback] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setTheme(currentTheme);
+      setFeedback("");
+    }
+  }, [open, currentTheme]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Rewrite the whole story</DialogTitle>
+          <DialogDescription>
+            This generates a brand-new story text. Existing illustrations stay — regenerate any page image you want refreshed after.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Story theme / prompt</label>
+            <Input value={theme} onChange={(e) => setTheme(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">
+              What should change? (optional)
+            </label>
+            <Textarea
+              rows={4}
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="mt-1"
+              placeholder="e.g. Make it funnier, fewer characters, focus on bedtime, more rhyming."
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            variant="ember"
+            disabled={busy}
+            onClick={async () => {
+              await onRegenerate({
+                themeOverride: theme.trim() && theme !== currentTheme ? theme : undefined,
+                feedback: feedback.trim() || undefined,
+              });
+              onOpenChange(false);
+            }}
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            Rewrite story
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -540,15 +956,6 @@ function ReaderError({ title, message }: { title: string; message: string }) {
 }
 
 // ---------- helpers ----------
-
-async function getRegenerations(pageId: string): Promise<number> {
-  const { data } = await supabase
-    .from("book_pages")
-    .select("regenerations")
-    .eq("id", pageId)
-    .maybeSingle();
-  return data?.regenerations ?? 0;
-}
 
 /**
  * Resolve a stored value into a viewable URL.
