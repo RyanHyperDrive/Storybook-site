@@ -122,10 +122,14 @@ serve(async (req) => {
       visualMustNotInclude,
       characterSheetUrl,
       readingLevel,
+      isCover,
+      correctiveNote,
     } = body ?? {};
 
     if (!bookId) return errorResponse("bookId is required");
-    if (!Number.isInteger(pageNumber) || pageNumber < 1) return errorResponse("pageNumber must be a positive integer");
+    if (!isCover && (!Number.isInteger(pageNumber) || pageNumber < 1)) {
+      return errorResponse("pageNumber must be a positive integer");
+    }
     if (typeof styleKey !== "string" || !styleKey.trim()) return errorResponse("styleKey is required");
     if (typeof sceneDescription !== "string" || !sceneDescription.trim()) {
       return errorResponse("sceneDescription is required");
@@ -183,13 +187,15 @@ serve(async (req) => {
 
     const prompt = PROMPT_TEMPLATE({
       styleKey,
-      sceneDescription,
+      sceneDescription: (correctiveNote && typeof correctiveNote === "string")
+        ? `${sceneDescription}\n\nCORRECTIVE FEEDBACK from previous attempt (must be applied): ${correctiveNote}`
+        : sceneDescription,
       charactersPresent: arr(charactersPresent),
       visualMustHaves: arr(visualMustHaves),
       visualMustNotInclude: arr(visualMustNotInclude),
       ageBand,
       contractFragment,
-      hasCoverRef: !!coverUrl,
+      hasCoverRef: !!coverUrl && !isCover,
       isTwins: !!book.is_twins,
     });
 
@@ -246,40 +252,49 @@ serve(async (req) => {
     const bin = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
 
     const ext = mime.includes("jpeg") || mime.includes("jpg") ? "jpg" : "png";
-    const storagePath = `${user.id}/${bookId}/page-${String(pageNumber).padStart(2, "0")}-${Date.now()}.${ext}`;
+    const pathSeg = isCover ? `cover-${Date.now()}` : `page-${String(pageNumber).padStart(2, "0")}-${Date.now()}`;
+    const storagePath = `${user.id}/${bookId}/${pathSeg}.${ext}`;
 
     const { error: upErr } = await admin.storage
       .from("generated-pages")
       .upload(storagePath, bin, { contentType: mime, upsert: false });
     if (upErr) return errorResponse(`Upload failed: ${upErr.message}`, 500);
 
-    // Upsert the book_pages row (one per page_number per book).
-    const { data: existing } = await admin
-      .from("book_pages")
-      .select("id, regenerations")
-      .eq("book_id", bookId)
-      .eq("page_number", pageNumber)
-      .maybeSingle();
-
-    if (existing) {
-      const { error: updErr } = await admin
+    if (isCover) {
+      // Cover lives on books, not book_pages.
+      await admin.from("books").update({
+        cover_image_path: storagePath,
+        cover_url: storagePath,
+      }).eq("id", bookId);
+    } else {
+      // Upsert the book_pages row (one per page_number per book).
+      const { data: existing } = await admin
         .from("book_pages")
-        .update({
+        .select("id, regenerations")
+        .eq("book_id", bookId)
+        .eq("page_number", pageNumber)
+        .maybeSingle();
+
+      if (existing) {
+        const { error: updErr } = await admin
+          .from("book_pages")
+          .update({
+            image_storage_path: storagePath,
+            status: "ready",
+            regenerations: (existing.regenerations ?? 0) + 1,
+          })
+          .eq("id", existing.id);
+        if (updErr) return errorResponse(`DB update failed: ${updErr.message}`, 500);
+      } else {
+        const { error: insErr } = await admin.from("book_pages").insert({
+          user_id: user.id,
+          book_id: bookId,
+          page_number: pageNumber,
           image_storage_path: storagePath,
           status: "ready",
-          regenerations: (existing.regenerations ?? 0) + 1,
-        })
-        .eq("id", existing.id);
-      if (updErr) return errorResponse(`DB update failed: ${updErr.message}`, 500);
-    } else {
-      const { error: insErr } = await admin.from("book_pages").insert({
-        user_id: user.id,
-        book_id: bookId,
-        page_number: pageNumber,
-        image_storage_path: storagePath,
-        status: "ready",
-      });
-      if (insErr) return errorResponse(`DB insert failed: ${insErr.message}`, 500);
+        });
+        if (insErr) return errorResponse(`DB insert failed: ${insErr.message}`, 500);
+      }
     }
 
     // Return a short-lived signed URL for immediate preview.
@@ -290,7 +305,8 @@ serve(async (req) => {
     return jsonResponse({
       ok: true,
       bookId,
-      pageNumber,
+      pageNumber: isCover ? 0 : pageNumber,
+      isCover: !!isCover,
       storagePath,
       previewUrl: signed?.signedUrl ?? null,
     });

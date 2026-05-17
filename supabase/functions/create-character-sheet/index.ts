@@ -165,12 +165,63 @@ serve(async (req) => {
     const image_url = imagePath;
     const description = buildDescription(child, analysis);
 
+    // ── Vision-derived structured analysis of the generated sheet itself ──
+    // Replaces brittle regex extraction in buildContract. We re-read the image
+    // we just produced and ask Gemini for a strict JSON breakdown of the
+    // canonical look. Stored on child_subjects.photo_analysis (merged with
+    // any existing analysis from the raw photo). Best-effort: failures here
+    // never block sheet creation.
+    let mergedAnalysis: any = analysis ?? {};
+    try {
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (LOVABLE_API_KEY) {
+        const { data: sheetSigned } = await admin.storage
+          .from(CHARACTER_BUCKET)
+          .createSignedUrl(imagePath, 60 * 5);
+        const sheetUrlForVision = sheetSigned?.signedUrl;
+        if (sheetUrlForVision) {
+          const sys = `You are extracting the canonical visual identity of a children's storybook character from the APPROVED CHARACTER SHEET image. Return STRICT JSON only:
+{"face_shape":"","hair_color":"","hair_style":"","eye_color":"","skin_tone":"","build":"","canonical_outfit":"","outfit_colors":[],"distinguishing_features":[],"accessibility_devices":[]}
+Use short concrete phrases. Empty string / empty array when not visible. No commentary.`;
+          const visionRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash",
+              response_format: { type: "json_object" },
+              messages: [
+                { role: "system", content: sys },
+                { role: "user", content: [
+                  { type: "text", text: "Extract canonical visual traits from this character sheet." },
+                  { type: "image_url", image_url: { url: sheetUrlForVision } },
+                ]},
+              ],
+            }),
+          });
+          if (visionRes.ok) {
+            const vp = await visionRes.json();
+            const raw = vp?.choices?.[0]?.message?.content ?? "{}";
+            const parsed = JSON.parse(raw);
+            mergedAnalysis = {
+              ...mergedAnalysis,
+              sheet_vision: parsed,
+              sheet_vision_at: new Date().toISOString(),
+            };
+          }
+        }
+      }
+    } catch (visionErr) {
+      console.warn("character-sheet vision extraction failed (non-fatal)", visionErr);
+    }
+
     await admin
       .from("child_subjects")
       .update({
         status: "ready",
         character_image_url: image_url,
         description,
+        photo_analysis: mergedAnalysis,
+        photo_analyzed_at: new Date().toISOString(),
         regenerations: (subject.regenerations ?? 0) + 1,
         approved: false,
         error_message: null,

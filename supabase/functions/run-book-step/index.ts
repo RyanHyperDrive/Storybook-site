@@ -12,12 +12,14 @@ import { requireUser } from "../_shared/auth.ts";
  * so the browser can poll without hitting edge-function timeouts. Steps:
  *
  *   photo_check → character_profile → character_sheet → story_writing
- *   → page_illustrations (one page per call, 10 calls)
+ *   → cover_illustration (validate + retry up to MAX_RETRIES)
+ *   → page_illustrations (one page per call, validate + retry up to MAX_RETRIES)
  *   → quality_checks → pdf_assembly → ready
  */
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const TOTAL_PAGES = 10;
+const MAX_RETRIES = 3; // max regen attempts per page/cover before marking needs_review
 
 async function callFn(fn: string, auth: string, body: unknown) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
@@ -101,7 +103,7 @@ serve(async (req) => {
       if (step === "story_writing") {
         // Already written?
         if (book.story_json && Array.isArray((book.story_json as any).pages)) {
-          await updateJob({ current_step: "page_illustrations", progress: 45, message: "Story ready." });
+          await updateJob({ current_step: "cover_illustration", progress: 40, message: "Story ready." });
           return jsonResponse({ ok: true, skipped: true });
         }
         const childDetails = [
@@ -123,41 +125,122 @@ serve(async (req) => {
           await failJob(r.json?.error ?? "Story generation failed.");
           return jsonResponse({ ok: false });
         }
-        // Persist (write-story may have failed best-effort on story_json column).
         await admin.from("books").update({
           story_json: r.json.story,
           title: r.json.story.title ?? book.title,
           dedication: book.dedication ?? r.json.story.dedication ?? null,
         }).eq("id", bookId);
 
-        await updateJob({ current_step: "page_illustrations", progress: 45, message: "Story written." });
+        await updateJob({ current_step: "cover_illustration", progress: 40, message: "Story written." });
         return jsonResponse({ ok: true });
+      }
+
+      if (step === "cover_illustration") {
+        // Dedicated cover step: generate (or regenerate) the cover, then
+        // validate against the approved character sheet. Track attempts in
+        // cover_validation.attempts so we can cap retries at MAX_RETRIES.
+        const story = book.story_json as any;
+        const title: string = story?.title ?? book.title ?? "An adventure";
+        const protagonists: string[] = Array.isArray(story?.pages?.[0]?.characters_present)
+          ? story.pages[0].characters_present
+          : [book.child_name ?? "the main character"].filter(Boolean);
+
+        const coverValidation = (book.cover_validation ?? null) as any;
+        const attempts = Number(coverValidation?.attempts ?? 0);
+        const lastPasses = coverValidation?.passes === true;
+        const hasCoverImage = !!book.cover_image_path;
+
+        // Already passed → advance.
+        if (hasCoverImage && lastPasses) {
+          await updateJob({ current_step: "page_illustrations", progress: 50, message: "Cover approved." });
+          return jsonResponse({ ok: true, skipped: true });
+        }
+
+        // Out of retries → accept and continue with needs_review on the book.
+        if (hasCoverImage && attempts >= MAX_RETRIES) {
+          await admin.from("books").update({
+            cover_validation: { ...(coverValidation ?? {}), accepted_with_warnings: true },
+          }).eq("id", bookId);
+          await updateJob({ current_step: "page_illustrations", progress: 50, message: "Cover finalized (best effort)." });
+          return jsonResponse({ ok: true, exhausted: true });
+        }
+
+        // Generate (or regenerate) the cover.
+        const correctiveNote = coverValidation?.regeneration_instruction ?? "";
+        const coverScene = `Book cover for "${title}". Hero portrait composition: ${protagonists.join(", ")} centered, confident friendly pose, evocative of the story's mood. Leave clean negative space at the top for the title (the title text is rendered by the app, NOT in the image).`;
+        const coverRes = await callFn("illustrate-page", authHeader, {
+          bookId,
+          isCover: true,
+          pageNumber: 0,
+          styleKey: book.art_style ?? "soft_cartoon",
+          sceneDescription: coverScene,
+          charactersPresent: protagonists,
+          visualMustHaves: ["clear hero portrait", "iconic memorable composition"],
+          visualMustNotInclude: ["no title text in image", "no readable lettering"],
+          correctiveNote,
+        });
+        if (coverRes.status >= 400) {
+          await failJob(coverRes.json?.error ?? "Cover generation failed.");
+          return jsonResponse({ ok: false });
+        }
+
+        // Validate immediately.
+        const valRes = await callFn("validate-cover", authHeader, { bookId });
+        const v = valRes.json?.validation ?? {};
+        const nextAttempts = attempts + 1;
+        await admin.from("books").update({
+          cover_validation: { ...v, attempts: nextAttempts },
+        }).eq("id", bookId);
+
+        const passed = v.passes === true;
+        if (passed) {
+          await updateJob({ current_step: "page_illustrations", progress: 50, message: "Cover approved." });
+          return jsonResponse({ ok: true, coverPassed: true });
+        }
+        if (nextAttempts >= MAX_RETRIES) {
+          // Will be accepted on next poll via the exhausted branch above.
+          await updateJob({ progress: 48, message: `Cover attempt ${nextAttempts}: finalizing.` });
+          return jsonResponse({ ok: true, coverExhausted: true });
+        }
+        await updateJob({ progress: 46, message: `Cover attempt ${nextAttempts}: refining…` });
+        return jsonResponse({ ok: true, coverRetry: nextAttempts });
       }
 
       if (step === "page_illustrations") {
         const story = book.story_json as any;
         if (!story?.pages) { await failJob("Story missing."); return jsonResponse({ ok: false }); }
 
-        // Find next page that isn't ready yet.
+        // A page is "done" when status='ready' AND either it has been validated
+        // and passed (needs_review=false with regens>=1) OR it has exhausted
+        // MAX_RETRIES (shipped with warnings).
         const { data: existing } = await admin
-          .from("book_pages").select("page_number, status")
+          .from("book_pages")
+          .select("page_number, status, regenerations, needs_review, quality_metadata")
           .eq("book_id", bookId);
-        const readyNumbers = new Set((existing ?? []).filter(p => p.status === "ready").map(p => p.page_number));
-        const nextPage = story.pages.find((p: any) => !readyNumbers.has(p.page_number));
+        const isDone = (p: any) =>
+          p.status === "ready" && (
+            (p.needs_review === false && (p.regenerations ?? 0) > 0) ||
+            (p.regenerations ?? 0) >= MAX_RETRIES
+          );
+        const completedNumbers = new Set(
+          (existing ?? []).filter(isDone).map((p: any) => p.page_number),
+        );
+        const nextPage = story.pages.find((p: any) => !completedNumbers.has(p.page_number));
 
         if (!nextPage) {
           await updateJob({ current_step: "quality_checks", progress: 88, message: "All pages illustrated." });
           return jsonResponse({ ok: true });
         }
 
-        // Pre-write text so reader has copy even mid-illustration.
-        const { data: existingRow } = await admin
-          .from("book_pages").select("id")
-          .eq("book_id", bookId).eq("page_number", nextPage.page_number).maybeSingle();
-        if (existingRow) {
+        // Current state for THIS page (if any).
+        const currentRow = (existing ?? []).find((p: any) => p.page_number === nextPage.page_number);
+        const currentRegens = currentRow?.regenerations ?? 0;
+
+        // Pre-write text so the reader has copy even mid-illustration.
+        if (currentRow) {
           await admin.from("book_pages").update({
             text_content: nextPage.page_text, status: "generating",
-          }).eq("id", existingRow.id);
+          }).eq("book_id", bookId).eq("page_number", nextPage.page_number);
         } else {
           await admin.from("book_pages").insert({
             user_id: user.id, book_id: bookId, page_number: nextPage.page_number,
@@ -165,14 +248,18 @@ serve(async (req) => {
           });
         }
 
+        // Pull corrective note from the prior failed validation (if any).
+        const correctiveNote: string = (currentRow?.quality_metadata?.regeneration_instruction as string) ?? "";
+
         const r = await callFn("illustrate-page", authHeader, {
           bookId,
           pageNumber: nextPage.page_number,
-          styleKey: book.art_style ?? "watercolor_classic",
+          styleKey: book.art_style ?? "soft_cartoon",
           sceneDescription: nextPage.scene_description,
           charactersPresent: nextPage.characters_present ?? [],
           visualMustHaves: nextPage.visual_must_haves ?? [],
           visualMustNotInclude: nextPage.visual_must_not_include ?? [],
+          correctiveNote,
         });
         if (r.status >= 400) {
           await failJob(r.json?.error ?? `Page ${nextPage.page_number} failed.`);
@@ -184,21 +271,53 @@ serve(async (req) => {
           text_content: nextPage.page_text,
         }).eq("book_id", bookId).eq("page_number", nextPage.page_number);
 
-        // Use page 1 as cover image.
-        if (nextPage.page_number === 1 && r.json?.storagePath) {
-          await admin.from("books").update({
-            cover_image_path: r.json.storagePath,
-            cover_url: r.json.storagePath,
-          }).eq("id", bookId);
+        // ── Validator loop (#10) ──
+        // After illustrate-page succeeds, run validate-page. If it fails and
+        // we still have retries left, flip status back to 'regenerating' so
+        // the next orchestrator tick re-picks this same page. If retries are
+        // exhausted, leave status='ready' but needs_review=true so the page
+        // ships and is flagged in admin.
+        const valRes = await callFn("validate-page", authHeader, {
+          bookId,
+          pageNumber: nextPage.page_number,
+          sceneDescription: nextPage.scene_description,
+          charactersPresent: nextPage.characters_present ?? [],
+          visualMustHaves: nextPage.visual_must_haves ?? [],
+          visualMustNotInclude: nextPage.visual_must_not_include ?? [],
+          isTwins: !!book.is_twins,
+        });
+        const report = valRes.json?.report ?? null;
+        const newRegens = currentRegens + 1; // illustrate-page just incremented
+        const failed = report?.needs_regeneration === true || report?.regeneration_recommended === true;
+
+        if (failed && newRegens < MAX_RETRIES) {
+          // Flip back so this page isn't considered done; orchestrator retries.
+          await admin.from("book_pages").update({
+            status: "regenerating",
+            needs_review: true,
+          }).eq("book_id", bookId).eq("page_number", nextPage.page_number);
+          await updateJob({
+            message: `Page ${nextPage.page_number}: refining (attempt ${newRegens + 1}/${MAX_RETRIES + 1})…`,
+          });
+          return jsonResponse({ ok: true, pageRetry: nextPage.page_number, attempt: newRegens });
         }
 
-        const doneCount = readyNumbers.size + 1;
-        const pct = 45 + Math.round((doneCount / TOTAL_PAGES) * 40); // 45..85
+        // Either passed, or out of retries. Mark as final.
+        await admin.from("book_pages").update({
+          status: "ready",
+          needs_review: failed, // flag for admin if shipped with warnings
+        }).eq("book_id", bookId).eq("page_number", nextPage.page_number);
+
+        // Compute progress over story pages.
+        const doneCount = (Array.from(completedNumbers) as number[]).length + 1;
+        const pct = 50 + Math.round((doneCount / TOTAL_PAGES) * 38); // 50..88
         await updateJob({
-          progress: Math.min(85, pct),
-          message: `Illustrated page ${nextPage.page_number} of ${TOTAL_PAGES}.`,
+          progress: Math.min(88, pct),
+          message: failed
+            ? `Page ${nextPage.page_number} shipped with warnings.`
+            : `Illustrated page ${nextPage.page_number} of ${TOTAL_PAGES}.`,
         });
-        return jsonResponse({ ok: true, pageDone: nextPage.page_number });
+        return jsonResponse({ ok: true, pageDone: nextPage.page_number, failed });
       }
 
       if (step === "quality_checks") {
