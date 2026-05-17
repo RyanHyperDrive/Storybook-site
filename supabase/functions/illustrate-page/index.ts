@@ -187,13 +187,15 @@ serve(async (req) => {
 
     const prompt = PROMPT_TEMPLATE({
       styleKey,
-      sceneDescription,
+      sceneDescription: (correctiveNote && typeof correctiveNote === "string")
+        ? `${sceneDescription}\n\nCORRECTIVE FEEDBACK from previous attempt (must be applied): ${correctiveNote}`
+        : sceneDescription,
       charactersPresent: arr(charactersPresent),
       visualMustHaves: arr(visualMustHaves),
       visualMustNotInclude: arr(visualMustNotInclude),
       ageBand,
       contractFragment,
-      hasCoverRef: !!coverUrl,
+      hasCoverRef: !!coverUrl && !isCover,
       isTwins: !!book.is_twins,
     });
 
