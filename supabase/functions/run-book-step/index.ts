@@ -306,8 +306,28 @@ serve(async (req) => {
           });
         }
 
-        // Pull corrective note from the prior failed validation (if any).
-        const correctiveNote: string = (currentRow?.quality_metadata?.regeneration_instruction as string) ?? "";
+        // Pull corrective note from the prior failed validation (if any) and
+        // enrich it with the specific wrong/missing details so the next
+        // attempt has concrete targets, not just a vague instruction.
+        const qm: any = currentRow?.quality_metadata ?? {};
+        const lastReport: any = qm?.last_report ?? qm; // backward compatible
+        const correctiveBits: string[] = [];
+        if (typeof qm?.regeneration_instruction === "string" && qm.regeneration_instruction.trim()) {
+          correctiveBits.push(qm.regeneration_instruction.trim());
+        }
+        const wrong = Array.isArray(lastReport?.wrong_character_details) ? lastReport.wrong_character_details : [];
+        const missingChar = Array.isArray(lastReport?.missing_required_character_details) ? lastReport.missing_required_character_details : [];
+        const missingEl = Array.isArray(qm?.missing_required_elements) ? qm.missing_required_elements : [];
+        if (wrong.length) correctiveBits.push(`Fix wrong character details: ${wrong.join("; ")}`);
+        if (missingChar.length) correctiveBits.push(`Restore missing character details: ${missingChar.join("; ")}`);
+        if (missingEl.length) correctiveBits.push(`Add required scene elements: ${missingEl.join("; ")}`);
+        const correctiveNote: string = correctiveBits.join(". ");
+
+        // Rolling visual anchor: previous-page image (if any) tightens
+        // page-to-page consistency.
+        const prevRow = (existing ?? [])
+          .filter((p: any) => p.page_number < nextPage.page_number && p.status === "ready" && p.image_storage_path)
+          .sort((a: any, b: any) => b.page_number - a.page_number)[0];
 
         const r = await callFn("illustrate-page", authHeader, {
           bookId,
@@ -318,6 +338,7 @@ serve(async (req) => {
           visualMustHaves: nextPage.visual_must_haves ?? [],
           visualMustNotInclude: nextPage.visual_must_not_include ?? [],
           correctiveNote,
+          previousPageImagePath: prevRow?.image_storage_path,
         });
         if (r.status >= 400) {
           await failJob(r.json?.error ?? `Page ${nextPage.page_number} failed.`);
