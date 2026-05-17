@@ -197,15 +197,20 @@ function buildUserPrompt(input: {
   child_details: string;
   favorites?: string;
   avoid?: string;
+  cast?: string[];
 }): string {
+  const cast = (input.cast ?? []).filter(Boolean);
   return [
     `Theme: ${input.theme}`,
     `Main character(s): ${input.child_details}`,
+    cast.length
+      ? `Approved cast (ONLY these named human characters may appear; "characters_present" on every page MUST be a subset of this list — do NOT invent siblings, friends, classmates, or other named humans not on this list): ${cast.join(", ")}. Animal companions and incidental background figures are fine but must remain unnamed.`
+      : "",
     `Favorite details to include: ${input.favorites?.trim() || "(none provided)"}`,
     `Details to avoid: ${input.avoid?.trim() || "(none provided)"}`,
     "",
     "Write the storybook now. Return strict JSON only.",
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 serve(async (req) => {
