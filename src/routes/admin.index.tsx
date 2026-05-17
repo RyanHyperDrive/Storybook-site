@@ -274,6 +274,9 @@ function Inner() {
                     <th className="p-3">Step</th>
                     <th className="p-3">Status</th>
                     <th className="p-3">Progress</th>
+                    <th className="p-3">Validations</th>
+                    <th className="p-3">Retries</th>
+                    <th className="p-3">Failures</th>
                     <th className="p-3"></th>
                   </tr>
                 </thead>
@@ -285,6 +288,9 @@ function Inner() {
                       <td className="p-3 text-muted-foreground">{j.current_step ?? "—"}</td>
                       <td className="p-3"><StatusBadge status={j.status} /></td>
                       <td className="p-3">{j.progress ?? 0}%</td>
+                      <td className="p-3 text-muted-foreground">{j.total_validations ?? 0}</td>
+                      <td className="p-3">{j.total_retries ?? 0}</td>
+                      <td className={`p-3 ${(j.total_failures ?? 0) > 0 ? "text-destructive font-medium" : "text-muted-foreground"}`}>{j.total_failures ?? 0}</td>
                       <td className="p-3 text-right">
                         <Link
                           to="/jobs/$jobId"
@@ -297,7 +303,7 @@ function Inner() {
                     </tr>
                   ))}
                   {jobs.length === 0 && (
-                    <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No jobs yet.</td></tr>
+                    <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">No jobs yet.</td></tr>
                   )}
                 </tbody>
               </table>

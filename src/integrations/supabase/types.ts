@@ -380,6 +380,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          audit: Json
           book_id: string
           created_at: string
           current_step: string
@@ -388,10 +389,14 @@ export type Database = {
           message: string | null
           progress: number
           status: string
+          total_failures: number
+          total_retries: number
+          total_validations: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          audit?: Json
           book_id: string
           created_at?: string
           current_step?: string
@@ -400,10 +405,14 @@ export type Database = {
           message?: string | null
           progress?: number
           status?: string
+          total_failures?: number
+          total_retries?: number
+          total_validations?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          audit?: Json
           book_id?: string
           created_at?: string
           current_step?: string
@@ -412,6 +421,9 @@ export type Database = {
           message?: string | null
           progress?: number
           status?: string
+          total_failures?: number
+          total_retries?: number
+          total_validations?: number
           updated_at?: string
           user_id?: string
         }
