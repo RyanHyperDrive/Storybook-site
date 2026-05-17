@@ -322,6 +322,7 @@ serve(async (req) => {
       }
     }
 
+    const useTwinSheets = !!book.is_twins && twinSheetUrls.length >= 2;
     const prompt = PROMPT_TEMPLATE({
       styleKey,
       sceneDescription: (correctiveNote && typeof correctiveNote === "string")
@@ -336,27 +337,36 @@ serve(async (req) => {
       hasPrevPageRef: !!prevPageUrl,
       isTwins: !!book.is_twins,
       twinDifferentiator,
+      twinSheetNames: useTwinSheets ? twinSheetUrls.map((t) => t.name) : undefined,
+      hasTogetherRef: !!togetherUrl,
     });
 
-    // Inline reference as data URL so the gateway always has access.
-    const refDataUrl = refUrl.startsWith("data:") ? refUrl : await fetchAsDataUrl(refUrl);
+    // Inline references as data URLs so the gateway always has access.
+    const twinSheetDataUrls: string[] = useTwinSheets
+      ? await Promise.all(twinSheetUrls.map((t) => fetchAsDataUrl(t.url)))
+      : [];
+    const primaryRefDataUrl = useTwinSheets
+      ? null
+      : (refUrl.startsWith("data:") ? refUrl : await fetchAsDataUrl(refUrl));
     const coverDataUrl = coverUrl
       ? (coverUrl.startsWith("data:") ? coverUrl : await fetchAsDataUrl(coverUrl))
       : null;
     const prevPageDataUrl = prevPageUrl
       ? (prevPageUrl.startsWith("data:") ? prevPageUrl : await fetchAsDataUrl(prevPageUrl))
       : null;
+    const togetherDataUrl = togetherUrl
+      ? (togetherUrl.startsWith("data:") ? togetherUrl : await fetchAsDataUrl(togetherUrl))
+      : null;
 
-    const userContent: any[] = [
-      { type: "text", text: prompt },
-      { type: "image_url", image_url: { url: refDataUrl } },
-    ];
-    if (coverDataUrl) {
-      userContent.push({ type: "image_url", image_url: { url: coverDataUrl } });
+    const userContent: any[] = [{ type: "text", text: prompt }];
+    if (useTwinSheets) {
+      for (const u of twinSheetDataUrls) userContent.push({ type: "image_url", image_url: { url: u } });
+    } else if (primaryRefDataUrl) {
+      userContent.push({ type: "image_url", image_url: { url: primaryRefDataUrl } });
     }
-    if (prevPageDataUrl) {
-      userContent.push({ type: "image_url", image_url: { url: prevPageDataUrl } });
-    }
+    if (coverDataUrl) userContent.push({ type: "image_url", image_url: { url: coverDataUrl } });
+    if (prevPageDataUrl) userContent.push({ type: "image_url", image_url: { url: prevPageDataUrl } });
+    if (togetherDataUrl) userContent.push({ type: "image_url", image_url: { url: togetherDataUrl } });
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
