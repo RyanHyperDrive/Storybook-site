@@ -27,8 +27,17 @@ function buildDescription(child: any, analysis: any) {
   return [
     child?.personality_traits,
     child?.favorite_color ? `favorite color: ${child.favorite_color}` : null,
-    analysis?.hair ? `hair: ${analysis.hair}` : null,
-    analysis?.eyes ? `eyes: ${analysis.eyes}` : null,
+    analysis?.skin_tone_for_illustration ? `skin: ${analysis.skin_tone_for_illustration}` : null,
+    analysis?.skin_undertone ? `skin undertone: ${analysis.skin_undertone}` : null,
+    analysis?.hair_color || analysis?.hair_texture || analysis?.hair_length_and_style
+      ? `hair: ${[analysis.hair_color, analysis.hair_texture, analysis.hair_length_and_style].filter(Boolean).join(", ")}`
+      : null,
+    analysis?.eye_color || analysis?.eye_shape
+      ? `eyes: ${[analysis.eye_color, analysis.eye_shape].filter(Boolean).join(", ")}`
+      : null,
+    analysis?.nose_shape ? `nose: ${analysis.nose_shape}` : null,
+    analysis?.lip_shape ? `lips: ${analysis.lip_shape}` : null,
+    analysis?.face_shape ? `face: ${analysis.face_shape}` : null,
     analysis?.visible_accessories?.length ? `accessories: ${analysis.visible_accessories.join(", ")}` : null,
     analysis?.distinctive_visual_details?.length
       ? `visual details: ${analysis.distinctive_visual_details.join(", ")}`
@@ -95,12 +104,23 @@ serve(async (req) => {
     const styleKey = book?.art_style ?? "soft_cartoon";
     const styleAnchor = STYLE_ANCHORS[styleKey] ?? STYLE_ANCHORS.soft_cartoon;
     const analysis = subject.photo_analysis ?? {};
+    const hairDesc = [analysis?.hair_color, analysis?.hair_texture, analysis?.hair_length_and_style]
+      .filter(Boolean).join(", ");
+    const eyeDesc = [analysis?.eye_color, analysis?.eye_shape].filter(Boolean).join(", ");
+    const distinct = Array.isArray(analysis?.distinctive_visual_details)
+      ? analysis.distinctive_visual_details.filter(Boolean).join(", ") : "";
     const prompt = [
       `Create a polished illustrated character sheet for ${child?.name ?? "the child"}.`,
       styleAnchor,
-      "Use the reference photo only for visible appearance details; do not infer sensitive traits.",
-      analysis?.hair ? `Visible hair: ${analysis.hair}.` : "",
-      analysis?.eyes ? `Visible eyes: ${analysis.eyes}.` : "",
+      "FIDELITY TO THE REFERENCE PHOTO (HARD GATE): the illustrated child must visually resemble the real child in the photo. Match skin tone and undertone EXACTLY — do not lighten, brighten, desaturate, or shift the skin toward beige/peach defaults. Preserve hair texture exactly (coily hair stays coily, curly stays curly, straight stays straight — never straighten or loosen textured hair). Preserve nose, lip, eye shape and facial proportions. Preserve any visible accessibility devices (glasses, hearing aids, cochlear implants). Do not Westernize or anglicize features. Do not infer race or ethnicity, but DO render what the photo literally shows.",
+      analysis?.skin_tone_for_illustration ? `Skin tone (match exactly): ${analysis.skin_tone_for_illustration}${analysis?.skin_undertone ? `, ${analysis.skin_undertone} undertone` : ""}.` : "",
+      hairDesc ? `Hair (match exactly): ${hairDesc}.` : "",
+      eyeDesc ? `Eyes: ${eyeDesc}.` : "",
+      analysis?.nose_shape ? `Nose shape: ${analysis.nose_shape}.` : "",
+      analysis?.lip_shape ? `Lip shape: ${analysis.lip_shape}.` : "",
+      analysis?.face_shape ? `Face shape: ${analysis.face_shape}.` : "",
+      analysis?.eyebrows ? `Eyebrows: ${analysis.eyebrows}.` : "",
+      distinct ? `Preserve these distinctive details: ${distinct}.` : "",
       analysis?.outfit ? `Reference outfit: ${analysis.outfit}.` : "",
       child?.favorite_color ? `Include a tasteful outfit accent in ${child.favorite_color}.` : "",
       child?.accessibility_details ? `Include these parent-provided details: ${child.accessibility_details}.` : "",
@@ -180,14 +200,14 @@ serve(async (req) => {
           .createSignedUrl(imagePath, 60 * 5);
         const sheetUrlForVision = sheetSigned?.signedUrl;
         if (sheetUrlForVision) {
-          const sys = `You are extracting the canonical visual identity of a children's storybook character from the APPROVED CHARACTER SHEET image. Return STRICT JSON only:
-{"face_shape":"","hair_color":"","hair_style":"","eye_color":"","skin_tone":"","build":"","canonical_outfit":"","outfit_colors":[],"distinguishing_features":[],"accessibility_devices":[]}
+          const sys = `You are extracting the canonical visual identity of a children's storybook character from the APPROVED CHARACTER SHEET image. Be faithful: record textured hair as textured, deep skin tones as deep, wide noses as wide. Do not soften, lighten, or anglicize what you see. Return STRICT JSON only:
+{"face_shape":"","hair_color":"","hair_style":"","hair_texture":"","eye_color":"","eye_shape":"","nose_shape":"","lip_shape":"","skin_tone":"","skin_undertone":"","build":"","canonical_outfit":"","outfit_colors":[],"distinguishing_features":[],"accessibility_devices":[]}
 Use short concrete phrases. Empty string / empty array when not visible. No commentary.`;
           const visionRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
             method: "POST",
             headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
             body: JSON.stringify({
-              model: "google/gemini-2.5-flash",
+              model: "google/gemini-2.5-pro",
               response_format: { type: "json_object" },
               messages: [
                 { role: "system", content: sys },

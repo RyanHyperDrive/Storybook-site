@@ -17,16 +17,23 @@ import { assertOwnership, requireUser } from "../_shared/auth.ts";
  * use by the character-sheet and page-illustration prompts.
  */
 
-const SYSTEM_PROMPT = `You are helping create a safe, parent-approved illustrated storybook character from a child photo.
+const SYSTEM_PROMPT = `You are helping create a safe, parent-approved illustrated storybook character from a child photo. The character must visually resemble THIS specific child — so a child with dark brown skin, tight coily hair, and a wide nose stays that way in the illustration, and a child with pale skin, freckles, and straight blonde hair stays that way. Faithful representation IS the safety requirement here; whitewashing, lightening skin, straightening textured hair, or shrinking ethnic facial features is a failure.
 
-Analyze only visible, non-sensitive appearance details needed for illustration consistency. Do not infer race, ethnicity, health conditions, personality, gender, or background from the photo.
+Analyze only visible, illustration-relevant appearance details. Do not name race, ethnicity, nationality, or health conditions. Do not guess personality, gender identity, or background. DO describe what you literally see in concrete visual terms an illustrator can match.
 
 Return strict JSON:
 
 {
-  "hair": "",
-  "eyes": "",
   "skin_tone_for_illustration": "",
+  "skin_undertone": "",
+  "hair_color": "",
+  "hair_texture": "",
+  "hair_length_and_style": "",
+  "eye_color": "",
+  "eye_shape": "",
+  "eyebrows": "",
+  "nose_shape": "",
+  "lip_shape": "",
   "face_shape": "",
   "visible_accessories": [],
   "expression": "",
@@ -35,12 +42,30 @@ Return strict JSON:
   "uncertain_details": [],
   "photo_quality_notes": "",
   "do_not_infer": []
-}`;
+}
+
+Guidance for each field:
+- skin_tone_for_illustration: concrete illustrator-ready description (e.g., "deep cool brown", "warm medium tan", "fair with pink undertone", "rich dark brown with red highlights"). Never default to "light" or "tan" if the photo shows otherwise.
+- skin_undertone: warm / cool / neutral / olive / golden / red — whichever the photo actually shows.
+- hair_texture: literal pattern — "tight coils (4b/4c)", "springy curls (3b)", "loose waves (2a)", "pin-straight", "wavy with frizz", "locs", "braids", "twists", "buzzed", etc. Be specific. Textured hair MUST be recorded as textured, never softened to "wavy" when it is coily.
+- hair_length_and_style: e.g., "shoulder-length two-strand twists", "short afro", "chin-length bob", "long ponytail".
+- eye_shape / nose_shape / lip_shape: short literal shape descriptors only (e.g., "almond", "round", "wide", "narrow bridge", "full", "thin"). Do NOT use racialized or stereotyping language.
+- distinctive_visual_details: freckles, dimples, glasses, hearing aid, cochlear implant, gap teeth, beauty mark, scar — anything an illustrator should preserve.
+- uncertain_details: list anything you could not confidently read from the photo.
+
+Empty string or empty array for fields you cannot safely answer.`;
 
 const REQUIRED_KEYS = [
-  "hair",
-  "eyes",
   "skin_tone_for_illustration",
+  "skin_undertone",
+  "hair_color",
+  "hair_texture",
+  "hair_length_and_style",
+  "eye_color",
+  "eye_shape",
+  "eyebrows",
+  "nose_shape",
+  "lip_shape",
   "face_shape",
   "visible_accessories",
   "expression",
@@ -96,7 +121,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },

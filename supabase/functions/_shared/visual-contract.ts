@@ -20,6 +20,11 @@ export type ContractSubject = {
   hair_style: string | null;
   eye_color: string | null;
   skin_tone_description: string | null;
+  skin_undertone: string | null;
+  hair_texture: string | null;
+  nose_shape: string | null;
+  lip_shape: string | null;
+  eye_shape: string | null;
   build_notes: string | null;
   accessibility_details: string | null;
   distinguishing_features: string | null;
@@ -46,10 +51,13 @@ export function describeSubject(s: ContractSubject): string {
   const parts = [
     `${s.display_name}${s.age ? ` (age ${s.age})` : ""}${s.pronouns ? `, pronouns ${s.pronouns}` : ""}`,
     s.face_shape && `face: ${s.face_shape}`,
-    s.skin_tone_description && `skin tone: ${s.skin_tone_description}`,
-    (s.hair_color || s.hair_style) &&
-      `hair: ${[s.hair_color, s.hair_style].filter(Boolean).join(" ")}`,
-    s.eye_color && `eyes: ${s.eye_color}`,
+    s.skin_tone_description && `skin tone (match exactly, do not lighten): ${s.skin_tone_description}`,
+    s.skin_undertone && `skin undertone: ${s.skin_undertone}`,
+    (s.hair_color || s.hair_style || s.hair_texture) &&
+      `hair (preserve texture exactly): ${[s.hair_color, s.hair_texture, s.hair_style].filter(Boolean).join(" ")}`,
+    s.eye_color && `eyes: ${[s.eye_color, s.eye_shape].filter(Boolean).join(", ")}`,
+    s.nose_shape && `nose: ${s.nose_shape}`,
+    s.lip_shape && `lips: ${s.lip_shape}`,
     s.build_notes && `build: ${s.build_notes}`,
     s.accessibility_details && `accessibility: ${s.accessibility_details}`,
     s.distinguishing_features && `distinguishing: ${s.distinguishing_features}`,
@@ -83,7 +91,7 @@ export function styleNegatives(styleKey: string): string {
 
 /** Fixed consistency clause appended to every page prompt. */
 export const CHARACTER_CONSISTENCY_CLAUSE =
-  "The child character must look like the approved character sheet and cover character. Preserve the same facial structure, hair, skin tone, outfit cues, distinguishing features, and accessibility details. Do not redesign the character. Do not age the character up or down. Do not change hair style/color, skin tone, face shape, or outfit color palette.";
+  "The child character must look like the same real child shown in the approved character sheet and cover. Preserve facial structure, hair texture and color, skin tone AND undertone, eye/nose/lip shape, outfit cues, distinguishing features, and accessibility details. Do NOT lighten or desaturate skin. Do NOT straighten, loosen, or thin out textured/coily/curly hair. Do NOT narrow a wide nose, thin full lips, or anglicize features. Do not redesign the character. Do not age the character up or down. Do not change hair style/color, skin tone, face shape, or outfit color palette. If you are unsure, copy the reference image rendering exactly.";
 
 /** Render the contract as a prompt fragment. */
 export function contractToPromptFragment(
@@ -145,10 +153,15 @@ export function buildContract(input: {
       pronouns: p?.pronouns ?? null,
       art_style_key: book.art_style ?? "soft_cartoon",
       face_shape: pick("face_shape", "face_shape", "face") ?? null,
-      hair_color: pick("hair_color", "hair", "hair color") ?? null,
-      hair_style: pick("hair_style", "hair", "hair") ?? null,
-      eye_color: pick("eye_color", "eyes", "eye") ?? null,
-      skin_tone_description: pick("skin_tone", "skin", "skin") ?? null,
+      hair_color: pick("hair_color", "hair_color", "hair color") ?? null,
+      hair_style: pick("hair_style", "hair_length_and_style", "hair") ?? null,
+      eye_color: pick("eye_color", "eye_color", "eye") ?? null,
+      skin_tone_description: pick("skin_tone", "skin_tone_for_illustration", "skin") ?? null,
+      skin_undertone: pick("skin_undertone", "skin_undertone", "undertone") ?? null,
+      hair_texture: pick("hair_texture", "hair_texture", "texture") ?? null,
+      nose_shape: pick("nose_shape", "nose_shape", "nose") ?? null,
+      lip_shape: pick("lip_shape", "lip_shape", "lip") ?? null,
+      eye_shape: pick("eye_shape", "eye_shape", "eye shape") ?? null,
       build_notes: (typeof v.build === "string" && v.build) ? v.build : (extractTrait(desc, "build") ?? null),
       accessibility_details: [p?.accessibility_details, accessibility].filter(Boolean).join("; ") || null,
       distinguishing_features: [p?.personality_traits, distinguishing].filter(Boolean).join("; ") || null,
