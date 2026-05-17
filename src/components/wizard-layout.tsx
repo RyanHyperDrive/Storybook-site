@@ -17,7 +17,7 @@ export function WizardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10" data-testid="wizard-layout">
-      <ol className="mb-10 grid grid-cols-5 gap-2" data-testid="wizard-stepper">
+      <ol className="mb-10 grid grid-cols-6 gap-2" data-testid="wizard-stepper">
         {STEPS.map((s, i) => {
           const done = i < idx;
           const active = i === idx;
