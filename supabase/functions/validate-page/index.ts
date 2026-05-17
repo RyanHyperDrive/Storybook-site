@@ -519,6 +519,9 @@ serve(async (req) => {
       age_appropriateness_issues: report.age_appropriateness_issues,
       artifact_issues: report.artifact_issues,
       missing_required_elements: report.missing_required_elements,
+      wrong_character_details: report.wrong_character_details,
+      missing_required_character_details: report.missing_required_character_details,
+      banned_content_detected: report.banned_content_detected,
       regeneration_instruction: report.regeneration_instruction,
       validated_at: new Date().toISOString(),
     };
