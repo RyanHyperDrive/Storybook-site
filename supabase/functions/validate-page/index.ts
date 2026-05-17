@@ -384,6 +384,16 @@ serve(async (req) => {
       }
     }
 
+    // Map any synonym/variant the model reported back to the canonical
+    // banned term the parent originally wrote. This keeps regeneration
+    // instructions and persisted notes aligned with the user-facing wording.
+    if (Array.isArray(parsed?.banned_content_detected)) {
+      parsed.banned_content_detected = normalizeDetectedBanned(
+        parsed.banned_content_detected,
+        bannedGroups,
+      );
+    }
+
     const check = validate(parsed, { styleKey });
     if (!check.ok) return errorResponse(`Validator schema check failed: ${check.error}`, 502);
     const report = check.data;
