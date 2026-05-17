@@ -207,7 +207,7 @@ Use short concrete phrases. Empty string / empty array when not visible. No comm
             method: "POST",
             headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
             body: JSON.stringify({
-              model: "google/gemini-2.5-flash",
+              model: "google/gemini-2.5-pro",
               response_format: { type: "json_object" },
               messages: [
                 { role: "system", content: sys },
