@@ -268,7 +268,7 @@ serve(async (req) => {
     const prompt = PROMPT_TEMPLATE({
       styleKey,
       sceneDescription: (correctiveNote && typeof correctiveNote === "string")
-        ? `${sceneDescription}\n\nCORRECTIVE FEEDBACK from previous attempt (must be applied): ${correctiveNote}`
+        ? `${sceneDescription}\n\nCORRECTIVE FEEDBACK from previous attempt (must be applied — the previous attempt was rejected for these exact reasons): ${correctiveNote}`
         : sceneDescription,
       charactersPresent: arr(charactersPresent),
       visualMustHaves: arr(visualMustHaves),
@@ -276,6 +276,7 @@ serve(async (req) => {
       ageBand,
       contractFragment,
       hasCoverRef: !!coverUrl && !isCover,
+      hasPrevPageRef: !!prevPageUrl,
       isTwins: !!book.is_twins,
       twinDifferentiator,
     });
@@ -285,6 +286,9 @@ serve(async (req) => {
     const coverDataUrl = coverUrl
       ? (coverUrl.startsWith("data:") ? coverUrl : await fetchAsDataUrl(coverUrl))
       : null;
+    const prevPageDataUrl = prevPageUrl
+      ? (prevPageUrl.startsWith("data:") ? prevPageUrl : await fetchAsDataUrl(prevPageUrl))
+      : null;
 
     const userContent: any[] = [
       { type: "text", text: prompt },
@@ -292,6 +296,9 @@ serve(async (req) => {
     ];
     if (coverDataUrl) {
       userContent.push({ type: "image_url", image_url: { url: coverDataUrl } });
+    }
+    if (prevPageDataUrl) {
+      userContent.push({ type: "image_url", image_url: { url: prevPageDataUrl } });
     }
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -301,7 +308,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
+        model: "google/gemini-3.1-flash-image-preview",
         modalities: ["image", "text"],
         messages: [
           { role: "user", content: userContent },
