@@ -104,12 +104,23 @@ serve(async (req) => {
     const styleKey = book?.art_style ?? "soft_cartoon";
     const styleAnchor = STYLE_ANCHORS[styleKey] ?? STYLE_ANCHORS.soft_cartoon;
     const analysis = subject.photo_analysis ?? {};
+    const hairDesc = [analysis?.hair_color, analysis?.hair_texture, analysis?.hair_length_and_style]
+      .filter(Boolean).join(", ");
+    const eyeDesc = [analysis?.eye_color, analysis?.eye_shape].filter(Boolean).join(", ");
+    const distinct = Array.isArray(analysis?.distinctive_visual_details)
+      ? analysis.distinctive_visual_details.filter(Boolean).join(", ") : "";
     const prompt = [
       `Create a polished illustrated character sheet for ${child?.name ?? "the child"}.`,
       styleAnchor,
-      "Use the reference photo only for visible appearance details; do not infer sensitive traits.",
-      analysis?.hair ? `Visible hair: ${analysis.hair}.` : "",
-      analysis?.eyes ? `Visible eyes: ${analysis.eyes}.` : "",
+      "FIDELITY TO THE REFERENCE PHOTO (HARD GATE): the illustrated child must visually resemble the real child in the photo. Match skin tone and undertone EXACTLY — do not lighten, brighten, desaturate, or shift the skin toward beige/peach defaults. Preserve hair texture exactly (coily hair stays coily, curly stays curly, straight stays straight — never straighten or loosen textured hair). Preserve nose, lip, eye shape and facial proportions. Preserve any visible accessibility devices (glasses, hearing aids, cochlear implants). Do not Westernize or anglicize features. Do not infer race or ethnicity, but DO render what the photo literally shows.",
+      analysis?.skin_tone_for_illustration ? `Skin tone (match exactly): ${analysis.skin_tone_for_illustration}${analysis?.skin_undertone ? `, ${analysis.skin_undertone} undertone` : ""}.` : "",
+      hairDesc ? `Hair (match exactly): ${hairDesc}.` : "",
+      eyeDesc ? `Eyes: ${eyeDesc}.` : "",
+      analysis?.nose_shape ? `Nose shape: ${analysis.nose_shape}.` : "",
+      analysis?.lip_shape ? `Lip shape: ${analysis.lip_shape}.` : "",
+      analysis?.face_shape ? `Face shape: ${analysis.face_shape}.` : "",
+      analysis?.eyebrows ? `Eyebrows: ${analysis.eyebrows}.` : "",
+      distinct ? `Preserve these distinctive details: ${distinct}.` : "",
       analysis?.outfit ? `Reference outfit: ${analysis.outfit}.` : "",
       child?.favorite_color ? `Include a tasteful outfit accent in ${child.favorite_color}.` : "",
       child?.accessibility_details ? `Include these parent-provided details: ${child.accessibility_details}.` : "",
