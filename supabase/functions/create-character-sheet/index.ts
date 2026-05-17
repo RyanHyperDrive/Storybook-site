@@ -184,10 +184,41 @@ serve(async (req) => {
     const eyeDesc = [analysis?.eye_color, analysis?.eye_shape].filter(Boolean).join(", ");
     const distinct = Array.isArray(analysis?.distinctive_visual_details)
       ? analysis.distinctive_visual_details.filter(Boolean).join(", ") : "";
+    // Build distinguishability cues from the sibling's analysis so the two twins
+    // never end up identical. We point to literal differences (hair length/
+    // texture, outfit colors, accessories) the model can lock onto.
+    const sibV = (siblingAnalysis?.sheet_vision ?? siblingAnalysis ?? {}) as Record<string, any>;
+    const myV = (analysis?.sheet_vision ?? analysis ?? {}) as Record<string, any>;
+    const pickStr = (o: any, k: string) => (typeof o?.[k] === "string" ? o[k] : "");
+    const sibCues: string[] = [];
+    const sibHair = [pickStr(sibV, "hair_color"), pickStr(sibV, "hair_texture"), pickStr(sibV, "hair_length_and_style") || pickStr(sibV, "hair_style")].filter(Boolean).join(" ");
+    const myHair = [pickStr(myV, "hair_color"), pickStr(myV, "hair_texture"), pickStr(myV, "hair_length_and_style") || pickStr(myV, "hair_style")].filter(Boolean).join(" ");
+    if (sibHair) sibCues.push(`sibling hair: ${sibHair}`);
+    if (myHair) sibCues.push(`THIS child's hair: ${myHair}`);
+    const sibOutfit = pickStr(sibV, "outfit") || pickStr(sibV, "canonical_outfit");
+    if (sibOutfit) sibCues.push(`sibling outfit (do NOT reuse): ${sibOutfit}`);
+    const sibSkin = pickStr(sibV, "skin_tone_for_illustration") || pickStr(sibV, "skin_tone");
+    const mySkin = pickStr(myV, "skin_tone_for_illustration") || pickStr(myV, "skin_tone");
+    if (sibSkin && mySkin && sibSkin !== mySkin) sibCues.push(`sibling skin: ${sibSkin} / THIS child's skin: ${mySkin}`);
+
+    const isTwins = !!book?.is_twins;
+    let refIdx = 1;
+    const refLegend: string[] = [`- Image ${refIdx++}: photo of THIS child — match likeness exactly.`];
+    if (siblingSheetDataUrl) refLegend.push(`- Image ${refIdx++}: APPROVED illustrated sheet of the sibling${siblingName ? ` (${siblingName})` : ""} — match its art style, lineweight, palette, shading, and rendering technique EXACTLY so both twins read as drawn by the same illustrator. Do NOT copy the sibling's face, hair, or outfit.`);
+    if (togetherPhotoDataUrl) refLegend.push(`- Image ${refIdx++}: photo of BOTH twins together — use it to understand their relative size, posture, and how they actually differ in real life. THIS sheet is for ${child?.name ?? "this child"} only (do not draw the sibling).`);
+
     const prompt = [
-      `Create a polished illustrated character sheet for ${child?.name ?? "the child"}.`,
+      `Create a polished illustrated character sheet for ${child?.name ?? "the child"}${isTwins && siblingName ? ` (twin of ${siblingName})` : ""}.`,
+      "Reference images:",
+      refLegend.join("\n"),
       styleAnchor,
       "FIDELITY TO THE REFERENCE PHOTO (HARD GATE): the illustrated child must visually resemble the real child in the photo. Match skin tone and undertone EXACTLY — do not lighten, brighten, desaturate, or shift the skin toward beige/peach defaults. Preserve hair texture exactly (coily hair stays coily, curly stays curly, straight stays straight — never straighten or loosen textured hair). Preserve nose, lip, eye shape and facial proportions. Preserve any visible accessibility devices (glasses, hearing aids, cochlear implants). Do not Westernize or anglicize features. Do not infer race or ethnicity, but DO render what the photo literally shows.",
+      isTwins && siblingSheetDataUrl
+        ? `TWIN DISTINGUISHABILITY (HARD GATE): this child and the sibling are twins and MUST be unambiguously distinguishable in every illustration. Use clearly different outfit colors from the sibling's sheet, and emphasize each child's real hair length/style/texture and skin tone as captured in their own reference photo. Never duplicate the sibling's outfit, hairstyle, or accessories.${sibCues.length ? ` Concrete differentiation cues: ${sibCues.join("; ")}.` : ""}`
+        : "",
+      isTwins && !siblingSheetDataUrl
+        ? "TWIN PRIMING: this is one of two twins. Choose a distinctive outfit color palette and hairstyle treatment that the sibling can be clearly contrasted against in the second sheet. Lock in a unique canonical outfit for this child."
+        : "",
       analysis?.skin_tone_for_illustration ? `Skin tone (match exactly): ${analysis.skin_tone_for_illustration}${analysis?.skin_undertone ? `, ${analysis.skin_undertone} undertone` : ""}.` : "",
       hairDesc ? `Hair (match exactly): ${hairDesc}.` : "",
       eyeDesc ? `Eyes: ${eyeDesc}.` : "",
@@ -210,6 +241,10 @@ serve(async (req) => {
     const KIE_API_KEY = Deno.env.get("KIE_API_KEY");
     if (!KIE_API_KEY) return errorResponse("KIE_API_KEY is not configured", 500);
 
+    const input_urls: string[] = [signed.signedUrl];
+    if (siblingSheetDataUrl) input_urls.push(siblingSheetDataUrl);
+    if (togetherPhotoDataUrl) input_urls.push(togetherPhotoDataUrl);
+
     const createRes = await fetch(KIE_CREATE_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${KIE_API_KEY}`, "Content-Type": "application/json" },
@@ -217,7 +252,7 @@ serve(async (req) => {
         model: KIE_MODEL,
         input: {
           prompt,
-          input_urls: [signed.signedUrl],
+          input_urls,
           aspect_ratio: "3:4",
           resolution: "1K",
         },
