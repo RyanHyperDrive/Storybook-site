@@ -210,29 +210,21 @@ serve(async (req) => {
         const story = book.story_json as any;
         if (!story?.pages) { await failJob("Story missing."); return jsonResponse({ ok: false }); }
 
-        // A page is "complete" when status === 'ready' AND either it has
-        // passed validation OR it has exhausted MAX_RETRIES (needs_review).
+        // A page is "done" when status='ready' AND either it has been validated
+        // and passed (needs_review=false with regens>=1) OR it has exhausted
+        // MAX_RETRIES (shipped with warnings).
         const { data: existing } = await admin
-          .from("book_pages").select("page_number, status, regenerations, needs_review")
+          .from("book_pages")
+          .select("page_number, status, regenerations, needs_review, quality_metadata")
           .eq("book_id", bookId);
-        const completed = new Set(
-          (existing ?? [])
-            .filter((p: any) => p.status === "ready" && (p.needs_review || (p.quality_score ?? null) !== null || (p.regenerations ?? 0) >= MAX_RETRIES)),
-        );
-        // Simpler: a page completes when it has been validated at least once
-        // and either passed or exhausted retries. We track this via needs_review
-        // being set + status==='ready'. Initial state has neither, so it's not done.
         const isDone = (p: any) =>
           p.status === "ready" && (
-            // passed validator (needs_review=false but quality_score set means validated)
             (p.needs_review === false && (p.regenerations ?? 0) > 0) ||
-            // exhausted retries
             (p.regenerations ?? 0) >= MAX_RETRIES
           );
         const completedNumbers = new Set(
           (existing ?? []).filter(isDone).map((p: any) => p.page_number),
         );
-        completed.clear();
         const nextPage = story.pages.find((p: any) => !completedNumbers.has(p.page_number));
 
         if (!nextPage) {
