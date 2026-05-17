@@ -99,11 +99,86 @@ serve(async (req) => {
       ? await admin.from("child_profiles").select("*").eq("id", subject.child_profile_id).maybeSingle()
       : { data: null } as any;
     const { data: book } = child?.book_id
-      ? await admin.from("books").select("art_style, is_twins").eq("id", child.book_id).maybeSingle()
+      ? await admin.from("books").select("id, art_style, is_twins").eq("id", child.book_id).maybeSingle()
       : { data: null } as any;
     const styleKey = book?.art_style ?? "soft_cartoon";
     const styleAnchor = STYLE_ANCHORS[styleKey] ?? STYLE_ANCHORS.soft_cartoon;
     const analysis = subject.photo_analysis ?? {};
+
+    // ── Twin mode: pull sibling subject (if any) + together photo (if any) ──
+    // These become extra reference images for the model so:
+    //   (a) the second twin's sheet inherits the EXACT art style/palette/
+    //       lineweight of the first twin's already-approved sheet (no style
+    //       drift between siblings), and
+    //   (b) the model has explicit cues to keep the two twins visually
+    //       distinguishable (different hair, outfit colors, accessories).
+    let siblingSheetDataUrl: string | null = null;
+    let togetherPhotoDataUrl: string | null = null;
+    let siblingAnalysis: any = null;
+    let siblingName: string | null = null;
+    if (book?.is_twins && book?.id && child?.id) {
+      const { data: siblings } = await admin
+        .from("child_profiles")
+        .select("id, name")
+        .eq("book_id", book.id)
+        .neq("id", child.id)
+        .limit(1);
+      const sibProfile = siblings?.[0];
+      if (sibProfile?.id) {
+        siblingName = sibProfile.name ?? null;
+        const { data: sibSubj } = await admin
+          .from("child_subjects")
+          .select("character_image_url, photo_analysis")
+          .eq("child_profile_id", sibProfile.id)
+          .maybeSingle();
+        siblingAnalysis = sibSubj?.photo_analysis ?? null;
+        if (sibSubj?.character_image_url) {
+          try {
+            const { data: sigSib } = await admin.storage
+              .from(CHARACTER_BUCKET)
+              .createSignedUrl(sibSubj.character_image_url, 60 * 10);
+            if (sigSib?.signedUrl) {
+              const r = await fetch(sigSib.signedUrl);
+              if (r.ok) {
+                const buf = new Uint8Array(await r.arrayBuffer());
+                let bin = "";
+                for (let i = 0; i < buf.length; i += 0x8000) {
+                  bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+                }
+                siblingSheetDataUrl = `data:${r.headers.get("content-type") ?? "image/png"};base64,${btoa(bin)}`;
+              }
+            }
+          } catch (_) { /* non-fatal */ }
+        }
+      }
+      // Optional "both together" photo from the photo-upload step.
+      const { data: together } = await admin
+        .from("uploaded_photos")
+        .select("storage_path")
+        .eq("book_id", book.id)
+        .eq("slot", "together")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (together?.storage_path) {
+        try {
+          const { data: sigTog } = await admin.storage
+            .from(RAW_BUCKET)
+            .createSignedUrl(together.storage_path, 60 * 10);
+          if (sigTog?.signedUrl) {
+            const r = await fetch(sigTog.signedUrl);
+            if (r.ok) {
+              const buf = new Uint8Array(await r.arrayBuffer());
+              let bin = "";
+              for (let i = 0; i < buf.length; i += 0x8000) {
+                bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+              }
+              togetherPhotoDataUrl = `data:${r.headers.get("content-type") ?? "image/jpeg"};base64,${btoa(bin)}`;
+            }
+          }
+        } catch (_) { /* non-fatal */ }
+      }
+    }
     const hairDesc = [analysis?.hair_color, analysis?.hair_texture, analysis?.hair_length_and_style]
       .filter(Boolean).join(", ");
     const eyeDesc = [analysis?.eye_color, analysis?.eye_shape].filter(Boolean).join(", ");
