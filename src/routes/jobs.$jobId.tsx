@@ -462,6 +462,43 @@ function PipelineDetails({ book, pages }: { book: any; pages: any[] }) {
   );
 }
 
+function AvoidListPanel({ book }: { book: any }) {
+  const raw: string = book?.details_avoid ?? "";
+  const items = Array.from(
+    new Set(
+      raw
+        .split(/[\n,]+/)
+        .map((s: string) => s.trim())
+        .filter(Boolean),
+    ),
+  );
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-6 rounded-lg border border-sage/30 bg-sage/5 p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Avoid list applied</h3>
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          {items.length} item{items.length === 1 ? "" : "s"}
+        </span>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Every page is checked against these. Anything that slips through triggers an automatic
+        regeneration with a specific correction.
+      </p>
+      <ul className="mt-3 flex flex-wrap gap-2">
+        {items.map((it) => (
+          <li
+            key={it}
+            className="inline-flex items-center rounded-full border border-sage/40 bg-background px-3 py-1 text-xs text-foreground"
+          >
+            {it}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function CorrectionsLog({ book, pages }: { book: any; pages: any[] }) {
   type Entry = { key: string; label: string; instruction: string; retries: number };
   const entries: Entry[] = [];
