@@ -456,6 +456,7 @@ function PipelineDetails({ book, pages }: { book: any; pages: any[] }) {
         </div>
       )}
 
+      <AvoidListPanel book={book} />
       <CorrectionsLog book={book} pages={pages} />
     </div>
   );
