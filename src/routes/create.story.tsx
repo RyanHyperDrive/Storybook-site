@@ -180,7 +180,7 @@ function StoryStep() {
       .eq("id", id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    navigate({ to: "/create/style" });
+    navigate({ to: "/create/avoid" });
   }
 
   if (redirecting) {
