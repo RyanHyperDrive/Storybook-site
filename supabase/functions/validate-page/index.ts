@@ -197,6 +197,93 @@ async function signed(admin: any, bucket: string, path: string): Promise<string 
   return data?.signedUrl ?? null;
 }
 
+/**
+ * Synonym / compound-form expansion for parent-banned terms. The goal is to
+ * reduce false negatives where the model sees "balloon animals" but the
+ * parent only wrote "balloons". Keys are lowercased canonical roots; values
+ * are extra surface forms to surface to the vision model.
+ *
+ * This is intentionally conservative — only well-known compound/plural/visual
+ * variants of the same underlying object. We do NOT add unrelated items
+ * (a lantern is not a balloon) to avoid false positives.
+ */
+const BANNED_SYNONYM_MAP: Record<string, string[]> = {
+  balloon: ["balloons", "balloon animal", "balloon animals", "water balloon", "water balloons", "hot air balloon", "hot-air balloon", "balloon arch", "party balloon", "party balloons", "helium balloon"],
+  snake: ["snakes", "serpent", "serpents", "python", "boa", "cobra", "viper"],
+  spider: ["spiders", "tarantula", "tarantulas", "arachnid", "arachnids", "spider web", "cobweb"],
+  clown: ["clowns", "jester", "harlequin"],
+  gun: ["guns", "pistol", "rifle", "handgun", "firearm", "firearms", "shotgun", "toy gun", "water gun"],
+  knife: ["knives", "blade", "dagger", "switchblade"],
+  sword: ["swords", "saber", "katana", "cutlass"],
+  blood: ["bleeding", "bloody", "gore"],
+  fire: ["fires", "flame", "flames", "bonfire", "campfire"],
+  smoking: ["cigarette", "cigarettes", "cigar", "vape", "vaping", "pipe smoking"],
+  alcohol: ["beer", "wine", "liquor", "cocktail", "drinking glass with alcohol"],
+  monster: ["monsters", "creature", "beast", "demon"],
+  ghost: ["ghosts", "specter", "phantom", "spirit"],
+  witch: ["witches", "warlock", "sorceress"],
+  skull: ["skulls", "skeleton", "skeletons", "bones"],
+  bee: ["bees", "wasp", "wasps", "hornet", "hornets"],
+  dog: ["dogs", "puppy", "puppies"],
+  cat: ["cats", "kitten", "kittens"],
+};
+
+function singularize(s: string): string {
+  const lower = s.toLowerCase();
+  if (lower.endsWith("ies") && lower.length > 4) return lower.slice(0, -3) + "y";
+  if (lower.endsWith("ses") || lower.endsWith("xes") || lower.endsWith("zes")) return lower.slice(0, -2);
+  if (lower.endsWith("s") && !lower.endsWith("ss") && lower.length > 3) return lower.slice(0, -1);
+  return lower;
+}
+
+function expandBannedTerm(term: string): string[] {
+  const out = new Set<string>();
+  const original = term.trim();
+  if (!original) return [];
+  out.add(original);
+  const lower = original.toLowerCase();
+  out.add(lower);
+  const root = singularize(lower);
+  if (BANNED_SYNONYM_MAP[root]) {
+    for (const v of BANNED_SYNONYM_MAP[root]) out.add(v);
+  }
+  // Also include keyed compound entries where the root appears as a token
+  // (e.g. parent typed "balloon animals" → root "balloon animal" → fall back
+  // to the "balloon" group).
+  for (const key of Object.keys(BANNED_SYNONYM_MAP)) {
+    if (lower.split(/\s+/).includes(key) || lower.split(/\s+/).includes(key + "s")) {
+      for (const v of BANNED_SYNONYM_MAP[key]) out.add(v);
+    }
+  }
+  return Array.from(out);
+}
+
+/**
+ * Map each detected item back to the canonical banned term the parent wrote,
+ * when the model returned a synonym/variant instead. Falls back to the raw
+ * detected string if no group matches.
+ */
+function normalizeDetectedBanned(
+  detected: unknown[],
+  groups: { canonical: string; variants: string[] }[],
+): string[] {
+  const out = new Set<string>();
+  for (const item of detected) {
+    if (typeof item !== "string") continue;
+    const lower = item.trim().toLowerCase();
+    if (!lower) continue;
+    let mapped: string | null = null;
+    for (const g of groups) {
+      if (g.variants.some((v) => v.toLowerCase() === lower || lower.includes(v.toLowerCase()))) {
+        mapped = g.canonical;
+        break;
+      }
+    }
+    out.add(mapped ?? item.trim());
+  }
+  return Array.from(out);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return errorResponse("Method not allowed", 405);
@@ -305,6 +392,23 @@ serve(async (req) => {
       : [];
     const sceneAvoid = arr(visualMustNotInclude);
     const bannedList = Array.from(new Set([...parentAvoid, ...sceneAvoid]));
+    // Expand each banned term with common synonyms / compound variants so the
+    // vision model catches things like "balloon animals" when parent said
+    // "balloons". The canonical term stays first; the model is asked to
+    // report whichever variant is visible.
+    const bannedGroups = bannedList.map((term) => ({
+      canonical: term,
+      variants: expandBannedTerm(term),
+    }));
+    const bannedListText = bannedGroups.length
+      ? bannedGroups
+          .map((g) =>
+            g.variants.length > 1
+              ? `- ${g.canonical} (also flag: ${g.variants.slice(1).join(", ")})`
+              : `- ${g.canonical}`,
+          )
+          .join("\n")
+      : "- (none)";
 
     const userText = [
       `Required scene: ${sceneDescription}`,
@@ -312,7 +416,7 @@ serve(async (req) => {
       `Target age band: ${ageBand} (score age_appropriateness against this band specifically, NOT a generic "kid safe" standard)`,
       `Characters that should be present: ${arr(charactersPresent).join(", ") || "(main character only)"}`,
       `Must include: ${arr(visualMustHaves).join(", ") || "(none)"}`,
-      `BANNED CONTENT (parent-disallowed + scene-disallowed; flag each visibly present item by name in "banned_content_detected"):\n${bannedList.length ? bannedList.map((b) => `- ${b}`).join("\n") : "- (none)"}`,
+      `BANNED CONTENT (parent-disallowed + scene-disallowed). Flag each visibly present item by its CANONICAL name in "banned_content_detected", even if you see only a synonym, compound form, plural/singular, or close visual variant. Examples: "balloons" covers "balloon animals", "water balloons", "balloon arch", "hot-air balloon"; "snakes" covers "serpents", "boa", "python"; "guns" covers "pistol", "rifle", "toy gun". Do NOT flag items that are only thematically similar (e.g. a round lantern is not a balloon).\n${bannedListText}`,
       `Twins book: ${(isTwins ?? book.is_twins) ? "yes — twins must remain visually distinguishable" : "no"}`,
       `Parent-provided child details:\n${childSummary || "(none)"}`,
       `Visual consistency contract (JSON): ${contractJson}`,
@@ -365,6 +469,16 @@ serve(async (req) => {
       } catch (e) {
         return errorResponse(`Validator did not return valid JSON: ${(e as Error).message}`, 502);
       }
+    }
+
+    // Map any synonym/variant the model reported back to the canonical
+    // banned term the parent originally wrote. This keeps regeneration
+    // instructions and persisted notes aligned with the user-facing wording.
+    if (Array.isArray(parsed?.banned_content_detected)) {
+      parsed.banned_content_detected = normalizeDetectedBanned(
+        parsed.banned_content_detected,
+        bannedGroups,
+      );
     }
 
     const check = validate(parsed, { styleKey });
