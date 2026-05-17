@@ -305,6 +305,23 @@ serve(async (req) => {
       : [];
     const sceneAvoid = arr(visualMustNotInclude);
     const bannedList = Array.from(new Set([...parentAvoid, ...sceneAvoid]));
+    // Expand each banned term with common synonyms / compound variants so the
+    // vision model catches things like "balloon animals" when parent said
+    // "balloons". The canonical term stays first; the model is asked to
+    // report whichever variant is visible.
+    const bannedGroups = bannedList.map((term) => ({
+      canonical: term,
+      variants: expandBannedTerm(term),
+    }));
+    const bannedListText = bannedGroups.length
+      ? bannedGroups
+          .map((g) =>
+            g.variants.length > 1
+              ? `- ${g.canonical} (also flag: ${g.variants.slice(1).join(", ")})`
+              : `- ${g.canonical}`,
+          )
+          .join("\n")
+      : "- (none)";
 
     const userText = [
       `Required scene: ${sceneDescription}`,
@@ -312,7 +329,7 @@ serve(async (req) => {
       `Target age band: ${ageBand} (score age_appropriateness against this band specifically, NOT a generic "kid safe" standard)`,
       `Characters that should be present: ${arr(charactersPresent).join(", ") || "(main character only)"}`,
       `Must include: ${arr(visualMustHaves).join(", ") || "(none)"}`,
-      `BANNED CONTENT (parent-disallowed + scene-disallowed; flag each visibly present item by name in "banned_content_detected"):\n${bannedList.length ? bannedList.map((b) => `- ${b}`).join("\n") : "- (none)"}`,
+      `BANNED CONTENT (parent-disallowed + scene-disallowed). Flag each visibly present item by its CANONICAL name in "banned_content_detected", even if you see only a synonym, compound form, plural/singular, or close visual variant. Examples: "balloons" covers "balloon animals", "water balloons", "balloon arch", "hot-air balloon"; "snakes" covers "serpents", "boa", "python"; "guns" covers "pistol", "rifle", "toy gun". Do NOT flag items that are only thematically similar (e.g. a round lantern is not a balloon).\n${bannedListText}`,
       `Twins book: ${(isTwins ?? book.is_twins) ? "yes — twins must remain visually distinguishable" : "no"}`,
       `Parent-provided child details:\n${childSummary || "(none)"}`,
       `Visual consistency contract (JSON): ${contractJson}`,
