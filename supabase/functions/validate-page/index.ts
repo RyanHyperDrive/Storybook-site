@@ -149,6 +149,7 @@ export function validate(
     safety_ok: Boolean(obj.safety_ok),
     speech_bubble_detected: Boolean(obj.speech_bubble_detected),
     text_inside_image_detected: Boolean(obj.text_inside_image_detected),
+    banned_content_detected: arr(obj.banned_content_detected),
     missing_required_character_details: arr(obj.missing_required_character_details),
     wrong_character_details: arr(obj.wrong_character_details),
     artifact_issues: arr(obj.artifact_issues),
@@ -160,7 +161,8 @@ export function validate(
 
   // Server-side regeneration policy. Bad/conflicting model output cannot
   // slip a low-quality page through. Character consistency, cover match,
-  // age fitness, and (for comics) speech bubbles are hard gates.
+  // age fitness, parent-banned content, and (for comics) speech bubbles
+  // are hard gates.
   const lowScore =
     cleaned.character_consistency_score < 0.88 ||
     cleaned.cover_match_score < 0.85 ||
@@ -172,10 +174,19 @@ export function validate(
     !cleaned.twin_distinction_ok ||
     !cleaned.safety_ok ||
     cleaned.text_inside_image_detected ||
+    cleaned.banned_content_detected.length > 0 ||
     (styleKey === "comic_book" && cleaned.speech_bubble_detected);
   if (lowScore || failedFlags) {
     cleaned.regeneration_recommended = true;
     cleaned.needs_regeneration = true;
+    // Make sure the illustrator's corrective note names the banned items
+    // explicitly so the next attempt can actually remove them.
+    if (cleaned.banned_content_detected.length > 0) {
+      const removeClause = `Remove: ${cleaned.banned_content_detected.join(", ")} (parent explicitly disallowed)`;
+      cleaned.regeneration_instruction = cleaned.regeneration_instruction
+        ? `${removeClause}. ${cleaned.regeneration_instruction}`
+        : removeClause;
+    }
   }
 
   return { ok: true, data: cleaned };
