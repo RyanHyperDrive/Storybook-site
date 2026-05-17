@@ -238,11 +238,24 @@ serve(async (req) => {
         }).eq("id", bookId);
 
         const passed = v.passes === true;
+        const exhausted = !passed && nextAttempts >= MAX_RETRIES;
+        await appendAudit({
+          target: "cover",
+          attempt: nextAttempts,
+          passed,
+          will_retry: !passed && !exhausted,
+          shipped_with_warnings: exhausted,
+          scores: v.scores ?? undefined,
+          reasons: Array.isArray(v.reasons) ? v.reasons : undefined,
+          banned_content_detected: Array.isArray(v.banned_content_detected) ? v.banned_content_detected : undefined,
+          regeneration_instruction: typeof v.regeneration_instruction === "string" ? v.regeneration_instruction : undefined,
+        });
+
         if (passed) {
           await updateJob({ current_step: "page_illustrations", progress: 50, message: "Cover approved." });
           return jsonResponse({ ok: true, coverPassed: true });
         }
-        if (nextAttempts >= MAX_RETRIES) {
+        if (exhausted) {
           // Will be accepted on next poll via the exhausted branch above.
           await updateJob({ progress: 48, message: `Cover attempt ${nextAttempts}: finalizing.` });
           return jsonResponse({ ok: true, coverExhausted: true });
