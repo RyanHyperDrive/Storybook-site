@@ -70,7 +70,7 @@ Scoring rules:
 - text_inside_image_detected = true if any readable text, letters, pseudo-text glyphs, signs, captions, or sound effect words (POW/BAM/WOW/ZAP) appear in the image.
 - banned_content_detected = list of items from the BANNED CONTENT list (provided in the user message) that are visibly present in the image. Be strict and literal — if the parent said "no balloons" and a balloon is visible, list "balloons". Match synonyms (e.g. parent avoids "snakes" → flag visible serpents). Return [] if none are present.
 - missing_required_character_details = list of contract attributes (e.g. "yellow rain jacket", "wheelchair", "freckles") that should appear but are missing.
-- wrong_character_details = list of attributes that are wrong (e.g. "hair is brown instead of red", "outfit color changed").
+- wrong_character_details = list of attributes that are wrong (e.g. "hair is brown instead of red", "outfit color changed"). Lightening the child's skin, desaturating skin tone, straightening or loosening textured/coily hair, narrowing a wide nose, thinning full lips, or otherwise softening ethnic features compared to the character sheet MUST be flagged here (e.g. "skin lightened from deep brown to tan", "coily hair rendered as loose waves") and must drop character_consistency_score to 0.4 or lower.
 - "age_appropriateness_score" judges BOTH the page text (if any is implied by the scene) and the image specifically against ages ${ageBand}, NOT a generic "kid safe" standard.
   - Ages 2-3: any peril, scary creatures, darkness, weapons, or injury -> max 0.5.
   - Ages 4-6: weapons, injury, scary monsters, romantic framing, shame/punishment imagery -> max 0.6.
