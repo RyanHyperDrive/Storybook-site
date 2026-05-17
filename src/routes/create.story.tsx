@@ -160,7 +160,7 @@ function StoryStep() {
     if (!user || !id) {
       // Anonymous — keep going to the style step. We'll sync to the
       // database after sign-in on the photo step.
-      navigate({ to: "/create/style" });
+      navigate({ to: "/create/avoid" });
       return;
     }
 
