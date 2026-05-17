@@ -347,6 +347,15 @@ function Inner() {
         <EmptyChildren />
       ) : (
         <div className="mt-8 space-y-6">
+          {isTwins && (
+            <div className="rounded-md border border-ember/30 bg-ember/5 p-3 text-xs text-foreground">
+              <strong className="font-semibold">Twin mode:</strong> generate Child 1's character
+              first, then Child 2 — the second sheet uses the first as a style anchor so both twins
+              are drawn in the exact same art style while staying clearly distinguishable. If you
+              uploaded a "both together" photo, we feed it in so their relative size and look match
+              real life.
+            </div>
+          )}
           <div className={isTwins ? "grid gap-6 md:grid-cols-2" : ""}>
             {children.map((child, i) => (
               <CharacterCard
