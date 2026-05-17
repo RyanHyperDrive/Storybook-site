@@ -121,7 +121,7 @@ function StyleStep() {
       </div>
 
       <div className="mt-10 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Link to="/create/story" className="w-full sm:w-auto">
+        <Link to="/create/avoid" className="w-full sm:w-auto">
           <Button variant="ghost" className="w-full sm:w-auto">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
