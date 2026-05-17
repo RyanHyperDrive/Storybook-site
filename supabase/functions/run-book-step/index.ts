@@ -347,6 +347,31 @@ serve(async (req) => {
         const report = valRes.json?.report ?? null;
         const newRegens = currentRegens + 1; // illustrate-page just incremented
         const failed = report?.needs_regeneration === true || report?.regeneration_recommended === true;
+        const willRetry = failed && newRegens < MAX_RETRIES;
+        await appendAudit({
+          target: "page",
+          page_number: nextPage.page_number,
+          attempt: newRegens,
+          passed: !failed,
+          will_retry: willRetry,
+          shipped_with_warnings: failed && !willRetry,
+          scores: report ? {
+            character_consistency: report.character_consistency_score,
+            cover_match: report.cover_match_score,
+            style_consistency: report.style_consistency_score,
+            scene_match: report.scene_match_score,
+            age_appropriateness: report.age_appropriateness_score,
+          } : undefined,
+          reasons: report ? [
+            ...(report.age_appropriateness_issues ?? []),
+            ...(report.wrong_character_details ?? []),
+            ...(report.missing_required_character_details ?? []),
+            ...(report.artifact_issues ?? []),
+            ...(report.missing_required_elements ?? []),
+          ].filter(Boolean) : undefined,
+          banned_content_detected: Array.isArray(report?.banned_content_detected) ? report.banned_content_detected : undefined,
+          regeneration_instruction: typeof report?.regeneration_instruction === "string" ? report.regeneration_instruction : undefined,
+        });
 
         if (failed && newRegens < MAX_RETRIES) {
           // Flip back so this page isn't considered done; orchestrator retries.
