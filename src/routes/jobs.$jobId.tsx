@@ -82,7 +82,7 @@ function Inner() {
       setJob(data);
       if (data?.book_id) {
         const [{ data: bk }, { data: pg }] = await Promise.all([
-          supabase.from("books").select("id,title,status,cover_image_path,cover_validation,visual_consistency_contract,story_json,ebook_url,page_count").eq("id", data.book_id).maybeSingle(),
+          supabase.from("books").select("id,title,status,cover_image_path,cover_validation,visual_consistency_contract,story_json,ebook_url,page_count,details_avoid").eq("id", data.book_id).maybeSingle(),
           supabase.from("book_pages").select("id,page_number,status,regenerations,needs_review,quality_score,review_notes,quality_metadata").eq("book_id", data.book_id).order("page_number", { ascending: true }),
         ]);
         if (!active) return;
