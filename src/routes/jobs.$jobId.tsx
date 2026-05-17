@@ -64,6 +64,8 @@ function Inner() {
   const { jobId } = Route.useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState<any>(null);
+  const [book, setBook] = useState<any>(null);
+  const [pages, setPages] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -78,6 +80,15 @@ function Inner() {
       setLoading(false);
       if (error) { setError(error.message); return; }
       setJob(data);
+      if (data?.book_id) {
+        const [{ data: bk }, { data: pg }] = await Promise.all([
+          supabase.from("books").select("id,title,status,cover_image_path,cover_validation,visual_consistency_contract,story_json,ebook_url,page_count").eq("id", data.book_id).maybeSingle(),
+          supabase.from("book_pages").select("id,page_number,status,regenerations,needs_review,quality_score,review_notes").eq("book_id", data.book_id).order("page_number", { ascending: true }),
+        ]);
+        if (!active) return;
+        setBook(bk);
+        setPages(pg ?? []);
+      }
       if (!data) return;
       if (data.status === "done" || data.status === "error") return;
       if (inFlight) return;
