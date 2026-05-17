@@ -191,6 +191,36 @@ serve(async (req) => {
       coverUrl = book.cover_url;
     }
 
+    // Rolling visual anchor: pull the most recently approved page image (the
+    // caller passes it, or we auto-pick the highest-numbered ready page below
+    // the current one). Feeding the previous frame as an extra reference is
+    // the single biggest lever against character/style drift across pages.
+    let prevPageUrl: string | undefined;
+    if (!isCover) {
+      let prevPath: string | undefined = typeof previousPageImagePath === "string" && previousPageImagePath.trim()
+        ? previousPageImagePath
+        : undefined;
+      if (!prevPath && Number.isInteger(pageNumber) && pageNumber > 1) {
+        const { data: prev } = await admin
+          .from("book_pages")
+          .select("page_number, image_storage_path, status, needs_review")
+          .eq("book_id", bookId)
+          .lt("page_number", pageNumber)
+          .eq("status", "ready")
+          .not("image_storage_path", "is", null)
+          .order("page_number", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        prevPath = prev?.image_storage_path ?? undefined;
+      }
+      if (prevPath) {
+        const { data: signedPrev } = await admin.storage
+          .from("generated-pages")
+          .createSignedUrl(prevPath, 60 * 10);
+        prevPageUrl = signedPrev?.signedUrl ?? undefined;
+      }
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
