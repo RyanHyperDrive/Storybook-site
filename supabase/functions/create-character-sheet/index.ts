@@ -27,8 +27,17 @@ function buildDescription(child: any, analysis: any) {
   return [
     child?.personality_traits,
     child?.favorite_color ? `favorite color: ${child.favorite_color}` : null,
-    analysis?.hair ? `hair: ${analysis.hair}` : null,
-    analysis?.eyes ? `eyes: ${analysis.eyes}` : null,
+    analysis?.skin_tone_for_illustration ? `skin: ${analysis.skin_tone_for_illustration}` : null,
+    analysis?.skin_undertone ? `skin undertone: ${analysis.skin_undertone}` : null,
+    analysis?.hair_color || analysis?.hair_texture || analysis?.hair_length_and_style
+      ? `hair: ${[analysis.hair_color, analysis.hair_texture, analysis.hair_length_and_style].filter(Boolean).join(", ")}`
+      : null,
+    analysis?.eye_color || analysis?.eye_shape
+      ? `eyes: ${[analysis.eye_color, analysis.eye_shape].filter(Boolean).join(", ")}`
+      : null,
+    analysis?.nose_shape ? `nose: ${analysis.nose_shape}` : null,
+    analysis?.lip_shape ? `lips: ${analysis.lip_shape}` : null,
+    analysis?.face_shape ? `face: ${analysis.face_shape}` : null,
     analysis?.visible_accessories?.length ? `accessories: ${analysis.visible_accessories.join(", ")}` : null,
     analysis?.distinctive_visual_details?.length
       ? `visual details: ${analysis.distinctive_visual_details.join(", ")}`
