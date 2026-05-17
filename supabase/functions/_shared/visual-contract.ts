@@ -20,6 +20,11 @@ export type ContractSubject = {
   hair_style: string | null;
   eye_color: string | null;
   skin_tone_description: string | null;
+  skin_undertone: string | null;
+  hair_texture: string | null;
+  nose_shape: string | null;
+  lip_shape: string | null;
+  eye_shape: string | null;
   build_notes: string | null;
   accessibility_details: string | null;
   distinguishing_features: string | null;
