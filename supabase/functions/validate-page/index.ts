@@ -50,6 +50,7 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
   "safety_ok": true,
   "speech_bubble_detected": false,
   "text_inside_image_detected": false,
+  "banned_content_detected": [],
   "missing_required_character_details": [],
   "wrong_character_details": [],
   "artifact_issues": [],
@@ -67,6 +68,7 @@ Scoring rules:
 - scene_match_score = how faithfully the image depicts the required scene; scene_accuracy_score may mirror this.
 - speech_bubble_detected = true if ANY speech bubble, thought bubble, word balloon, blank bubble, empty bubble, or caption box is visible — even decorative empty ones.
 - text_inside_image_detected = true if any readable text, letters, pseudo-text glyphs, signs, captions, or sound effect words (POW/BAM/WOW/ZAP) appear in the image.
+- banned_content_detected = list of items from the BANNED CONTENT list (provided in the user message) that are visibly present in the image. Be strict and literal — if the parent said "no balloons" and a balloon is visible, list "balloons". Match synonyms (e.g. parent avoids "snakes" → flag visible serpents). Return [] if none are present.
 - missing_required_character_details = list of contract attributes (e.g. "yellow rain jacket", "wheelchair", "freckles") that should appear but are missing.
 - wrong_character_details = list of attributes that are wrong (e.g. "hair is brown instead of red", "outfit color changed").
 - "age_appropriateness_score" judges BOTH the page text (if any is implied by the scene) and the image specifically against ages ${ageBand}, NOT a generic "kid safe" standard.
@@ -82,11 +84,12 @@ Scoring rules:
     scene_match_score < 0.85,
     age_appropriateness_score < 0.95,
     text_inside_image_detected = true,
+    banned_content_detected is non-empty,
     (style is "comic_book" AND speech_bubble_detected = true),
     correct_number_of_main_characters = false,
     twin_distinction_ok = false,
     safety_ok = false.
-- "regeneration_instruction" is a short, concrete fix the illustrator should apply (e.g. "Restore the red striped scarf and match hair length to the character sheet", "Remove the speech bubbles entirely; use motion lines and starbursts instead").
+- "regeneration_instruction" is a short, concrete fix the illustrator should apply (e.g. "Restore the red striped scarf and match hair length to the character sheet", "Remove the speech bubbles entirely; use motion lines and starbursts instead", "Remove the balloon — the parent explicitly disallowed balloons"). If banned_content_detected is non-empty, the instruction MUST start with "Remove: <list>".
 - "artifact_issues" lists visible defects (extra fingers, warped face, etc).
 - "missing_required_elements" lists items from the must-include list that are absent.`;
 }
@@ -146,6 +149,7 @@ export function validate(
     safety_ok: Boolean(obj.safety_ok),
     speech_bubble_detected: Boolean(obj.speech_bubble_detected),
     text_inside_image_detected: Boolean(obj.text_inside_image_detected),
+    banned_content_detected: arr(obj.banned_content_detected),
     missing_required_character_details: arr(obj.missing_required_character_details),
     wrong_character_details: arr(obj.wrong_character_details),
     artifact_issues: arr(obj.artifact_issues),
@@ -157,7 +161,8 @@ export function validate(
 
   // Server-side regeneration policy. Bad/conflicting model output cannot
   // slip a low-quality page through. Character consistency, cover match,
-  // age fitness, and (for comics) speech bubbles are hard gates.
+  // age fitness, parent-banned content, and (for comics) speech bubbles
+  // are hard gates.
   const lowScore =
     cleaned.character_consistency_score < 0.88 ||
     cleaned.cover_match_score < 0.85 ||
@@ -169,10 +174,19 @@ export function validate(
     !cleaned.twin_distinction_ok ||
     !cleaned.safety_ok ||
     cleaned.text_inside_image_detected ||
+    cleaned.banned_content_detected.length > 0 ||
     (styleKey === "comic_book" && cleaned.speech_bubble_detected);
   if (lowScore || failedFlags) {
     cleaned.regeneration_recommended = true;
     cleaned.needs_regeneration = true;
+    // Make sure the illustrator's corrective note names the banned items
+    // explicitly so the next attempt can actually remove them.
+    if (cleaned.banned_content_detected.length > 0) {
+      const removeClause = `Remove: ${cleaned.banned_content_detected.join(", ")} (parent explicitly disallowed)`;
+      cleaned.regeneration_instruction = cleaned.regeneration_instruction
+        ? `${removeClause}. ${cleaned.regeneration_instruction}`
+        : removeClause;
+    }
   }
 
   return { ok: true, data: cleaned };
@@ -283,13 +297,22 @@ serve(async (req) => {
       ? JSON.stringify(book.visual_consistency_contract)
       : "(none)";
 
+    // Explicit BANNED CONTENT list = parent's details_avoid + the page's
+    // per-scene must-not-include. The vision model is asked to flag each
+    // visibly present item by name so the orchestrator can regenerate.
+    const parentAvoid = typeof book.details_avoid === "string" && book.details_avoid.trim()
+      ? book.details_avoid.split(/[,;\n]+/).map((s: string) => s.trim()).filter(Boolean)
+      : [];
+    const sceneAvoid = arr(visualMustNotInclude);
+    const bannedList = Array.from(new Set([...parentAvoid, ...sceneAvoid]));
+
     const userText = [
       `Required scene: ${sceneDescription}`,
       `Art style key: ${styleKey}`,
       `Target age band: ${ageBand} (score age_appropriateness against this band specifically, NOT a generic "kid safe" standard)`,
       `Characters that should be present: ${arr(charactersPresent).join(", ") || "(main character only)"}`,
       `Must include: ${arr(visualMustHaves).join(", ") || "(none)"}`,
-      `Must NOT include: ${arr(visualMustNotInclude).join(", ") || "(none)"}`,
+      `BANNED CONTENT (parent-disallowed + scene-disallowed; flag each visibly present item by name in "banned_content_detected"):\n${bannedList.length ? bannedList.map((b) => `- ${b}`).join("\n") : "- (none)"}`,
       `Twins book: ${(isTwins ?? book.is_twins) ? "yes — twins must remain visually distinguishable" : "no"}`,
       `Parent-provided child details:\n${childSummary || "(none)"}`,
       `Visual consistency contract (JSON): ${contractJson}`,
@@ -297,7 +320,7 @@ serve(async (req) => {
       coverUrl
         ? "Image 1 = approved character sheet. Image 2 = approved cover. Image 3 = generated page image."
         : "Image 1 = approved character sheet. Image 2 = generated page image.",
-      "Score the page against the sheet, the cover, the contract, the scene, the parent details, the style, and the age band. Return strict JSON only.",
+      "Score the page against the sheet, the cover, the contract, the scene, the parent details, the style, the age band, and the BANNED CONTENT list. Return strict JSON only.",
     ].join("\n");
 
     const validatorContent: any[] = [
