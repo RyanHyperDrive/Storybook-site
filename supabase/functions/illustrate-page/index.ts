@@ -72,12 +72,22 @@ const PROMPT_TEMPLATE = (input: {
   hasPrevPageRef: boolean;
   isTwins: boolean;
   twinDifferentiator?: string;
+  twinSheetNames?: string[]; // names corresponding to the per-twin sheets, in order
+  hasTogetherRef?: boolean;
 }) => {
   const refs: string[] = [];
-  refs.push(`- Image 1: the approved character sheet (canonical look of the main character${input.isTwins ? "s — twins must remain visually distinguishable" : ""}).`);
-  let n = 2;
+  const twinNames = input.twinSheetNames ?? [];
+  if (input.isTwins && twinNames.length >= 2) {
+    twinNames.forEach((name, i) => {
+      refs.push(`- Image ${i + 1}: APPROVED character sheet for ${name} — canonical look for this twin. Match face, hair, skin tone, and outfit exactly when ${name} appears on the page.`);
+    });
+  } else {
+    refs.push(`- Image 1: the approved character sheet (canonical look of the main character${input.isTwins ? "s — twins must remain visually distinguishable" : ""}).`);
+  }
+  let n = refs.length + 1;
   if (input.hasCoverRef) { refs.push(`- Image ${n}: the approved book cover (secondary canonical look — match its character rendering exactly).`); n++; }
   if (input.hasPrevPageRef) { refs.push(`- Image ${n}: the most recently approved page from THIS book (tertiary canonical look — match its character rendering, line weight, palette, and style exactly so the book reads as one continuous illustrated work).`); n++; }
+  if (input.hasTogetherRef) { refs.push(`- Image ${n}: photo of the two real twins together — use it to ground their relative size, posture, and how they actually differ in real life when both appear in the scene.`); n++; }
   return `Create a children's storybook illustration in the approved style: ${input.styleKey}.
 
 You are given reference images:
