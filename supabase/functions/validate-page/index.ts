@@ -297,13 +297,22 @@ serve(async (req) => {
       ? JSON.stringify(book.visual_consistency_contract)
       : "(none)";
 
+    // Explicit BANNED CONTENT list = parent's details_avoid + the page's
+    // per-scene must-not-include. The vision model is asked to flag each
+    // visibly present item by name so the orchestrator can regenerate.
+    const parentAvoid = typeof book.details_avoid === "string" && book.details_avoid.trim()
+      ? book.details_avoid.split(/[,;\n]+/).map((s: string) => s.trim()).filter(Boolean)
+      : [];
+    const sceneAvoid = arr(visualMustNotInclude);
+    const bannedList = Array.from(new Set([...parentAvoid, ...sceneAvoid]));
+
     const userText = [
       `Required scene: ${sceneDescription}`,
       `Art style key: ${styleKey}`,
       `Target age band: ${ageBand} (score age_appropriateness against this band specifically, NOT a generic "kid safe" standard)`,
       `Characters that should be present: ${arr(charactersPresent).join(", ") || "(main character only)"}`,
       `Must include: ${arr(visualMustHaves).join(", ") || "(none)"}`,
-      `Must NOT include: ${arr(visualMustNotInclude).join(", ") || "(none)"}`,
+      `BANNED CONTENT (parent-disallowed + scene-disallowed; flag each visibly present item by name in "banned_content_detected"):\n${bannedList.length ? bannedList.map((b) => `- ${b}`).join("\n") : "- (none)"}`,
       `Twins book: ${(isTwins ?? book.is_twins) ? "yes — twins must remain visually distinguishable" : "no"}`,
       `Parent-provided child details:\n${childSummary || "(none)"}`,
       `Visual consistency contract (JSON): ${contractJson}`,
@@ -311,7 +320,7 @@ serve(async (req) => {
       coverUrl
         ? "Image 1 = approved character sheet. Image 2 = approved cover. Image 3 = generated page image."
         : "Image 1 = approved character sheet. Image 2 = generated page image.",
-      "Score the page against the sheet, the cover, the contract, the scene, the parent details, the style, and the age band. Return strict JSON only.",
+      "Score the page against the sheet, the cover, the contract, the scene, the parent details, the style, the age band, and the BANNED CONTENT list. Return strict JSON only.",
     ].join("\n");
 
     const validatorContent: any[] = [
