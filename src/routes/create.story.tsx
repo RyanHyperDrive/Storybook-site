@@ -160,7 +160,7 @@ function StoryStep() {
     if (!user || !id) {
       // Anonymous — keep going to the style step. We'll sync to the
       // database after sign-in on the photo step.
-      navigate({ to: "/create/style" });
+      navigate({ to: "/create/avoid" });
       return;
     }
 
@@ -180,7 +180,7 @@ function StoryStep() {
       .eq("id", id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    navigate({ to: "/create/style" });
+    navigate({ to: "/create/avoid" });
   }
 
   if (redirecting) {
@@ -264,29 +264,19 @@ function StoryStep() {
           />
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="include">Details to include</Label>
-            <Textarea
-              id="include"
-              rows={3}
-              maxLength={400}
-              value={detailsInclude}
-              onChange={(e) => { setDetailsInclude(e.target.value); persistLocal({ detailsInclude: e.target.value }); }}
-              placeholder="Grandma Rose, our cabin by the lake, the red rain boots."
-            />
-          </div>
-          <div>
-            <Label htmlFor="avoid">Details to avoid</Label>
-            <Textarea
-              id="avoid"
-              rows={3}
-              maxLength={400}
-              value={detailsAvoid}
-              onChange={(e) => { setDetailsAvoid(e.target.value); persistLocal({ detailsAvoid: e.target.value }); }}
-              placeholder="No scary monsters, no thunderstorms."
-            />
-          </div>
+        <div>
+          <Label htmlFor="include">Details to include</Label>
+          <Textarea
+            id="include"
+            rows={3}
+            maxLength={400}
+            value={detailsInclude}
+            onChange={(e) => { setDetailsInclude(e.target.value); persistLocal({ detailsInclude: e.target.value }); }}
+            placeholder="Grandma Rose, our cabin by the lake, the red rain boots."
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            You'll manage the list of things to avoid in the next step.
+          </p>
         </div>
 
         <div>

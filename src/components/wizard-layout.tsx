@@ -6,6 +6,7 @@ const STEPS = [
   { to: "/create/photos", label: "Sign in + photo" },
   { to: "/create/profile", label: "About child" },
   { to: "/create/story", label: "Story" },
+  { to: "/create/avoid", label: "Avoid list" },
   { to: "/create/style", label: "Art style" },
   { to: "/create/character-sheet", label: "Character" },
 ] as const;
@@ -16,7 +17,7 @@ export function WizardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10" data-testid="wizard-layout">
-      <ol className="mb-10 grid grid-cols-5 gap-2" data-testid="wizard-stepper">
+      <ol className="mb-10 grid grid-cols-6 gap-2" data-testid="wizard-stepper">
         {STEPS.map((s, i) => {
           const done = i < idx;
           const active = i === idx;

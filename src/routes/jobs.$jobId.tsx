@@ -82,7 +82,7 @@ function Inner() {
       setJob(data);
       if (data?.book_id) {
         const [{ data: bk }, { data: pg }] = await Promise.all([
-          supabase.from("books").select("id,title,status,cover_image_path,cover_validation,visual_consistency_contract,story_json,ebook_url,page_count").eq("id", data.book_id).maybeSingle(),
+          supabase.from("books").select("id,title,status,cover_image_path,cover_validation,visual_consistency_contract,story_json,ebook_url,page_count,details_avoid").eq("id", data.book_id).maybeSingle(),
           supabase.from("book_pages").select("id,page_number,status,regenerations,needs_review,quality_score,review_notes,quality_metadata").eq("book_id", data.book_id).order("page_number", { ascending: true }),
         ]);
         if (!active) return;
@@ -456,7 +456,45 @@ function PipelineDetails({ book, pages }: { book: any; pages: any[] }) {
         </div>
       )}
 
+      <AvoidListPanel book={book} />
       <CorrectionsLog book={book} pages={pages} />
+    </div>
+  );
+}
+
+function AvoidListPanel({ book }: { book: any }) {
+  const raw: string = book?.details_avoid ?? "";
+  const items = Array.from(
+    new Set(
+      raw
+        .split(/[\n,]+/)
+        .map((s: string) => s.trim())
+        .filter(Boolean),
+    ),
+  );
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-6 rounded-lg border border-sage/30 bg-sage/5 p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Avoid list applied</h3>
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          {items.length} item{items.length === 1 ? "" : "s"}
+        </span>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Every page is checked against these. Anything that slips through triggers an automatic
+        regeneration with a specific correction.
+      </p>
+      <ul className="mt-3 flex flex-wrap gap-2">
+        {items.map((it) => (
+          <li
+            key={it}
+            className="inline-flex items-center rounded-full border border-sage/40 bg-background px-3 py-1 text-xs text-foreground"
+          >
+            {it}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

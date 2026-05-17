@@ -25,6 +25,7 @@ import { Route as CreateStoryRouteImport } from './routes/create.story'
 import { Route as CreateProfileRouteImport } from './routes/create.profile'
 import { Route as CreatePhotosRouteImport } from './routes/create.photos'
 import { Route as CreateCharacterSheetRouteImport } from './routes/create.character-sheet'
+import { Route as CreateAvoidRouteImport } from './routes/create.avoid'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as CheckoutBookIdRouteImport } from './routes/checkout.$bookId'
@@ -113,6 +114,11 @@ const CreateCharacterSheetRoute = CreateCharacterSheetRouteImport.update({
   path: '/create/character-sheet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreateAvoidRoute = CreateAvoidRouteImport.update({
+  id: '/create/avoid',
+  path: '/create/avoid',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   id: '/checkout/success',
   path: '/checkout/success',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/checkout/$bookId': typeof CheckoutBookIdRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/create/avoid': typeof CreateAvoidRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
   '/create/photos': typeof CreatePhotosRoute
   '/create/profile': typeof CreateProfileRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/checkout/$bookId': typeof CheckoutBookIdRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/create/avoid': typeof CreateAvoidRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
   '/create/photos': typeof CreatePhotosRoute
   '/create/profile': typeof CreateProfileRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/checkout/$bookId': typeof CheckoutBookIdRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/create/avoid': typeof CreateAvoidRoute
   '/create/character-sheet': typeof CreateCharacterSheetRoute
   '/create/photos': typeof CreatePhotosRoute
   '/create/profile': typeof CreateProfileRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/checkout/$bookId'
     | '/checkout/cancel'
     | '/checkout/success'
+    | '/create/avoid'
     | '/create/character-sheet'
     | '/create/photos'
     | '/create/profile'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/checkout/$bookId'
     | '/checkout/cancel'
     | '/checkout/success'
+    | '/create/avoid'
     | '/create/character-sheet'
     | '/create/photos'
     | '/create/profile'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/checkout/$bookId'
     | '/checkout/cancel'
     | '/checkout/success'
+    | '/create/avoid'
     | '/create/character-sheet'
     | '/create/photos'
     | '/create/profile'
@@ -313,6 +325,7 @@ export interface RootRouteChildren {
   CheckoutBookIdRoute: typeof CheckoutBookIdRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+  CreateAvoidRoute: typeof CreateAvoidRoute
   CreateCharacterSheetRoute: typeof CreateCharacterSheetRoute
   CreatePhotosRoute: typeof CreatePhotosRoute
   CreateProfileRoute: typeof CreateProfileRoute
@@ -438,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreateCharacterSheetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/create/avoid': {
+      id: '/create/avoid'
+      path: '/create/avoid'
+      fullPath: '/create/avoid'
+      preLoaderRoute: typeof CreateAvoidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/checkout/success': {
       id: '/checkout/success'
       path: '/checkout/success'
@@ -516,6 +536,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutBookIdRoute: CheckoutBookIdRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
+  CreateAvoidRoute: CreateAvoidRoute,
   CreateCharacterSheetRoute: CreateCharacterSheetRoute,
   CreatePhotosRoute: CreatePhotosRoute,
   CreateProfileRoute: CreateProfileRoute,
