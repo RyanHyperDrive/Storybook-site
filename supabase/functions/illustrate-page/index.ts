@@ -69,13 +69,20 @@ const PROMPT_TEMPLATE = (input: {
   ageBand: string;
   contractFragment: string;
   hasCoverRef: boolean;
+  hasPrevPageRef: boolean;
   isTwins: boolean;
   twinDifferentiator?: string;
-}) => `Create a children's storybook illustration in the approved style: ${input.styleKey}.
+}) => {
+  const refs: string[] = [];
+  refs.push(`- Image 1: the approved character sheet (canonical look of the main character${input.isTwins ? "s — twins must remain visually distinguishable" : ""}).`);
+  let n = 2;
+  if (input.hasCoverRef) { refs.push(`- Image ${n}: the approved book cover (secondary canonical look — match its character rendering exactly).`); n++; }
+  if (input.hasPrevPageRef) { refs.push(`- Image ${n}: the most recently approved page from THIS book (tertiary canonical look — match its character rendering, line weight, palette, and style exactly so the book reads as one continuous illustrated work).`); n++; }
+  return `Create a children's storybook illustration in the approved style: ${input.styleKey}.
 
 You are given reference images:
-- Image 1: the approved character sheet (canonical look of the main character${input.isTwins ? "s — twins must remain visually distinguishable" : ""}).
-${input.hasCoverRef ? "- Image 2: the approved book cover (secondary canonical look — match its character rendering exactly).\n" : ""}
+${refs.join("\n")}
+
 ${input.contractFragment ? input.contractFragment + "\n" : ""}
 ${CHARACTER_CONSISTENCY_CLAUSE}
 
@@ -102,9 +109,10 @@ ${input.twinDifferentiator ? `\nTWIN DIFFERENTIATION (HARD GATE): ${input.twinDi
 Composition:
 - Full storybook page illustration.
 - No page text embedded in the image. All titles and page text are rendered by the app over the image.
-- Keep the character clearly visible and on-model with the character sheet${input.hasCoverRef ? " and cover" : ""}.
+- Keep the character clearly visible and on-model with the character sheet${input.hasCoverRef ? ", cover" : ""}${input.hasPrevPageRef ? ", and previous page" : ""}.
 - Warm, safe, age-appropriate mood for ages ${input.ageBand}.
-- Consistent color palette and line quality with the character sheet.`;
+- Consistent color palette, line weight, shading, and rendering quality with the reference images. Do not change art technique between pages.`;
+};
 
 function arr(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x) => typeof x === "string" && x.trim()).map(String) : [];
