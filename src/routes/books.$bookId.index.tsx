@@ -434,7 +434,25 @@ function IllustrationPane({ spread, fallback }: { spread: Spread; fallback: stri
   );
 }
 
-function TextPane({ spread, childName }: { spread: Spread; childName: string | null }) {
+function TextPane({
+  spread,
+  childName,
+  onSaveText,
+}: {
+  spread: Spread;
+  childName: string | null;
+  onSaveText?: (text: string) => Promise<boolean>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(spread.text ?? "");
+  const [saving, setSaving] = useState(false);
+
+  // Reset draft when navigating to a different spread.
+  useEffect(() => {
+    setEditing(false);
+    setDraft(spread.text ?? "");
+  }, [spread.key, spread.text]);
+
   if (spread.kind === "cover") {
     return (
       <div className="flex flex-col justify-between gap-6 p-8 md:p-12">
@@ -465,19 +483,64 @@ function TextPane({ spread, childName }: { spread: Spread; childName: string | n
       </div>
     );
   }
-  // Story page
+  // Story page — editable
   return (
     <div className="flex flex-col justify-between gap-6 p-8 md:p-12">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">{spread.label}</div>
-      <div className="font-display text-xl leading-relaxed">
-        {spread.text ? (
-          spread.text
-        ) : (
-          <span className="text-sm italic text-muted-foreground">
-            This page is still being illustrated. Check back in a moment.
-          </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">{spread.label}</div>
+        {onSaveText && !editing && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setDraft(spread.text ?? "");
+              setEditing(true);
+            }}
+          >
+            <Pencil className="h-3.5 w-3.5" /> Edit text
+          </Button>
         )}
       </div>
+      {editing ? (
+        <div className="space-y-3">
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={8}
+            className="font-display text-xl leading-relaxed"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setEditing(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="ember"
+              disabled={saving}
+              onClick={async () => {
+                if (!onSaveText) return;
+                setSaving(true);
+                const ok = await onSaveText(draft);
+                setSaving(false);
+                if (ok) setEditing(false);
+              }}
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Save text
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="font-display text-xl leading-relaxed">
+          {spread.text ? (
+            spread.text
+          ) : (
+            <span className="text-sm italic text-muted-foreground">
+              This page is still being illustrated. Check back in a moment.
+            </span>
+          )}
+        </div>
+      )}
       <div className="text-right text-xs tabular-nums text-muted-foreground">
         Page {spread.pageNumberLabel}
       </div>
@@ -491,7 +554,8 @@ function ReaderControls({
   spread,
   onPrev,
   onNext,
-  onRegenerate,
+  onOpenImageEditor,
+  onOpenCoverEditor,
   regenBusy,
 }: {
   idx: number;
@@ -499,7 +563,8 @@ function ReaderControls({
   spread: Spread;
   onPrev: () => void;
   onNext: () => void;
-  onRegenerate?: () => void;
+  onOpenImageEditor?: () => void;
+  onOpenCoverEditor?: () => void;
   regenBusy: boolean;
 }) {
   return (
@@ -511,14 +576,24 @@ function ReaderControls({
         <span className="tabular-nums">
           {idx + 1} / {total}
         </span>
-        {onRegenerate && (
-          <Button size="sm" variant="outline" onClick={onRegenerate} disabled={regenBusy}>
+        {onOpenImageEditor && (
+          <Button size="sm" variant="outline" onClick={onOpenImageEditor} disabled={regenBusy}>
             {regenBusy ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <RefreshCcw className="h-3.5 w-3.5" />
             )}
-            Regenerate this page
+            Regenerate image
+          </Button>
+        )}
+        {onOpenCoverEditor && (
+          <Button size="sm" variant="outline" onClick={onOpenCoverEditor} disabled={regenBusy}>
+            {regenBusy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCcw className="h-3.5 w-3.5" />
+            )}
+            Regenerate cover
           </Button>
         )}
       </div>
@@ -526,6 +601,234 @@ function ReaderControls({
         Next <ArrowRight className="h-4 w-4" />
       </Button>
     </div>
+  );
+}
+
+function PageImageEditor({
+  open,
+  onOpenChange,
+  page,
+  storyJson,
+  busy,
+  onRegenerate,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  page: BookPage;
+  storyJson: any;
+  busy: boolean;
+  onRegenerate: (opts: { feedback?: string; sceneOverride?: string }) => Promise<void>;
+}) {
+  const scenePage = (storyJson?.pages ?? []).find(
+    (p: any) => Number(p.page_number) === Number(page.page_number),
+  );
+  const [scene, setScene] = useState<string>(scenePage?.scene_description ?? "");
+  const [feedback, setFeedback] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setScene(scenePage?.scene_description ?? "");
+      setFeedback("");
+    }
+  }, [open, scenePage?.scene_description]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Regenerate page {page.page_number} image</DialogTitle>
+          <DialogDescription>
+            Tweak the scene description and add feedback. The illustrator will retry with your changes.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Scene description</label>
+            <Textarea rows={5} value={scene} onChange={(e) => setScene(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">
+              What should change? (optional)
+            </label>
+            <Textarea
+              rows={3}
+              placeholder="e.g. Make the dog brown and bigger, brighter lighting, no balloons."
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            variant="ember"
+            disabled={busy}
+            onClick={async () => {
+              await onRegenerate({
+                feedback: feedback.trim() || undefined,
+                sceneOverride: scene.trim() && scene !== scenePage?.scene_description ? scene : undefined,
+              });
+              onOpenChange(false);
+            }}
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            Regenerate
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CoverEditor({
+  open,
+  onOpenChange,
+  storyJson,
+  busy,
+  onRegenerate,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  storyJson: any;
+  busy: boolean;
+  onRegenerate: (opts: { feedback?: string; sceneOverride?: string }) => Promise<void>;
+}) {
+  const baseScene = storyJson?.cover?.scene_description ?? "";
+  const [scene, setScene] = useState(baseScene);
+  const [feedback, setFeedback] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setScene(baseScene);
+      setFeedback("");
+    }
+  }, [open, baseScene]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Regenerate cover</DialogTitle>
+          <DialogDescription>
+            Adjust the cover scene or tell us what to change. We'll redraw it.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Cover scene</label>
+            <Textarea rows={4} value={scene} onChange={(e) => setScene(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">
+              What should change? (optional)
+            </label>
+            <Textarea
+              rows={3}
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="mt-1"
+              placeholder="e.g. Warmer sunset, bigger title space at the top."
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            variant="ember"
+            disabled={busy}
+            onClick={async () => {
+              await onRegenerate({
+                feedback: feedback.trim() || undefined,
+                sceneOverride: scene.trim() && scene !== baseScene ? scene : undefined,
+              });
+              onOpenChange(false);
+            }}
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            Regenerate cover
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function StoryRewriteEditor({
+  open,
+  onOpenChange,
+  currentTheme,
+  busy,
+  onRegenerate,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  currentTheme: string;
+  busy: boolean;
+  onRegenerate: (opts: { themeOverride?: string; feedback?: string }) => Promise<void>;
+}) {
+  const [theme, setTheme] = useState(currentTheme);
+  const [feedback, setFeedback] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setTheme(currentTheme);
+      setFeedback("");
+    }
+  }, [open, currentTheme]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Rewrite the whole story</DialogTitle>
+          <DialogDescription>
+            This generates a brand-new story text. Existing illustrations stay — regenerate any page image you want refreshed after.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Story theme / prompt</label>
+            <Input value={theme} onChange={(e) => setTheme(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">
+              What should change? (optional)
+            </label>
+            <Textarea
+              rows={4}
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="mt-1"
+              placeholder="e.g. Make it funnier, fewer characters, focus on bedtime, more rhyming."
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            variant="ember"
+            disabled={busy}
+            onClick={async () => {
+              await onRegenerate({
+                themeOverride: theme.trim() && theme !== currentTheme ? theme : undefined,
+                feedback: feedback.trim() || undefined,
+              });
+              onOpenChange(false);
+            }}
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            Rewrite story
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
