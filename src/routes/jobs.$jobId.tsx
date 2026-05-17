@@ -194,6 +194,10 @@ function Inner() {
         <Timeline currentStep={currentStep} done={done} />
       )}
 
+      {book && !failed && (
+        <PipelineDetails book={book} pages={pages} />
+      )}
+
       {!done && !failed && (
         <div className="mt-8 flex items-start gap-3 rounded-md border border-border bg-background p-4 text-sm">
           <Mail className="mt-0.5 h-4 w-4 shrink-0 text-ember" />
