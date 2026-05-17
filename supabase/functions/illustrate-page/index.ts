@@ -45,6 +45,21 @@ function visualSafetyFor(ageBand: string | undefined): string {
   return VISUAL_SAFETY[String(ageBand ?? "4-6")] ?? VISUAL_SAFETY["4-6"];
 }
 
+// Age-band composition guidance. Drives camera, character size, background
+// density, and emotional pacing so a 2-3 board-book page doesn't get the same
+// composition as a 7-10 adventure page. Used in every illustrate-page prompt.
+const COMPOSITION_GUIDANCE: Record<string, string> = {
+  "2-3":
+    "Composition (ages 2-3): one big, friendly subject filling 50-70% of the frame, eye-level, centered. Simple uncluttered background, 1-2 supporting props max. Bright, high-contrast, rounded shapes. Calm pose, soft smile. No tiny details requiring close inspection.",
+  "4-6":
+    "Composition (ages 4-6): classic picture-book staging. Character clearly readable at 30-50% of the frame, mid-shot or environmental. Background tells the scene with 3-5 supporting elements. Dynamic but stable pose. Clear focal point and gentle leading lines.",
+  "7-10":
+    "Composition (ages 7-10): richer cinematic framing allowed — wide environmental shots, over-the-shoulder, low/high angles when it serves the scene. Character can be 15-40% of the frame. Detailed background with depth layers, supporting cast in poses. Expressive but age-appropriate emotion.",
+};
+function compositionFor(ageBand: string | undefined): string {
+  return COMPOSITION_GUIDANCE[String(ageBand ?? "4-6")] ?? COMPOSITION_GUIDANCE["4-6"];
+}
+
 const PROMPT_TEMPLATE = (input: {
   styleKey: string;
   sceneDescription: string;
