@@ -115,6 +115,11 @@ function CreateLanding() {
         </div>
       </section>
 
+      {/* SAVED CHARACTERS — only visible if signed-in parent has any */}
+      <section className="mx-auto max-w-6xl px-4 pb-4">
+        <SavedCharactersPicker redirectTo="/create/style" />
+      </section>
+
       {/* STEP CARDS */}
       <section className="border-t border-border/60 bg-background/60 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-12 lg:py-16">
