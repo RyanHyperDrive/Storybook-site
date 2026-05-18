@@ -144,7 +144,6 @@ export function ExitIntentCapture() {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
-          showCloseButton={false}
           className="max-w-[480px] rounded-2xl border-border bg-paper p-0 sm:rounded-2xl"
         >
           <CaptureForm onClose={() => setOpen(false)} compact={false} />
