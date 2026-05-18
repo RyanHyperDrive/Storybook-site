@@ -13,6 +13,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as GiftRouteImport } from './routes/gift'
 import { Route as ExamplesRouteImport } from './routes/examples'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
@@ -52,6 +53,11 @@ const PricingRoute = PricingRouteImport.update({
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GiftRoute = GiftRouteImport.update({
+  id: '/gift',
+  path: '/gift',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExamplesRoute = ExamplesRouteImport.update({
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/examples': typeof ExamplesRoute
+  '/gift': typeof GiftRoute
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/examples': typeof ExamplesRoute
+  '/gift': typeof GiftRoute
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/examples': typeof ExamplesRoute
+  '/gift': typeof GiftRoute
   '/library': typeof LibraryRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/examples'
+    | '/gift'
     | '/library'
     | '/pricing'
     | '/privacy'
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/examples'
+    | '/gift'
     | '/library'
     | '/pricing'
     | '/privacy'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/examples'
+    | '/gift'
     | '/library'
     | '/pricing'
     | '/privacy'
@@ -318,6 +330,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRouteWithChildren
   ExamplesRoute: typeof ExamplesRoute
+  GiftRoute: typeof GiftRoute
   LibraryRoute: typeof LibraryRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -365,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gift': {
+      id: '/gift'
+      path: '/gift'
+      fullPath: '/gift'
+      preLoaderRoute: typeof GiftRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/examples': {
@@ -529,6 +549,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AdminRoute: AdminRouteWithChildren,
   ExamplesRoute: ExamplesRoute,
+  GiftRoute: GiftRoute,
   LibraryRoute: LibraryRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
