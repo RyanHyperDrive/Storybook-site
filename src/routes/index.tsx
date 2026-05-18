@@ -40,6 +40,7 @@ import {
 import { StyleArtwork } from "@/components/style-artwork";
 import { SampleBookModal } from "@/components/sample-book-modal";
 import { WaitlistModal } from "@/components/waitlist-modal";
+import { ExitIntentCapture } from "@/components/exit-intent-capture";
 import { useSampleAssets, SAMPLE_KEY_BY_STYLE } from "@/hooks/use-sample-assets";
 
 const SAMPLE_COVER_FALLBACK: Record<ArtStyleKey, string> = {
@@ -103,6 +104,7 @@ function Home() {
   const { assets } = useSampleAssets();
   return (
     <div className="overflow-x-hidden">
+      <ExitIntentCapture />
       <SampleBookModal
         styleKey={openKey}
         open={openKey !== null}
