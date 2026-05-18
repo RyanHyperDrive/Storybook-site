@@ -247,10 +247,7 @@ serve(async (req) => {
         .limit(1)
         .maybeSingle();
       if (together?.storage_path) {
-        const { data: sig } = await admin.storage
-          .from("raw-uploads")
-          .createSignedUrl(together.storage_path, 60 * 10);
-        togetherUrl = sig?.signedUrl ?? undefined;
+        togetherUrl = await resolveImageRef(admin, "raw-uploads", together.storage_path);
       }
     }
 
@@ -258,12 +255,9 @@ serve(async (req) => {
     // page generation may not have a cover yet.
     let coverUrl: string | undefined;
     if (book.cover_image_path) {
-      const { data: signed } = await admin.storage
-        .from("generated-pages")
-        .createSignedUrl(book.cover_image_path, 60 * 10);
-      coverUrl = signed?.signedUrl ?? undefined;
+      coverUrl = await resolveImageRef(admin, "generated-pages", book.cover_image_path);
     } else if (book.cover_url) {
-      coverUrl = book.cover_url;
+      coverUrl = await resolveImageRef(admin, "generated-pages", book.cover_url);
     }
 
     // Rolling visual anchor: pull the most recently approved page image (the
@@ -289,10 +283,7 @@ serve(async (req) => {
         prevPath = prev?.image_storage_path ?? undefined;
       }
       if (prevPath) {
-        const { data: signedPrev } = await admin.storage
-          .from("generated-pages")
-          .createSignedUrl(prevPath, 60 * 10);
-        prevPageUrl = signedPrev?.signedUrl ?? undefined;
+        prevPageUrl = await resolveImageRef(admin, "generated-pages", prevPath);
       }
     }
 
