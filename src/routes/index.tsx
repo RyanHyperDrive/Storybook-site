@@ -478,34 +478,98 @@ function Home() {
         </p>
       </section>
 
-      {/* PRICING + PROMISE */}
+      {/* PRICING TIERS + PROMISE */}
       <section className="bg-paper/60">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:py-16 md:grid-cols-2">
-          <div className="rounded-lg border border-border bg-background p-6 sm:p-8">
-            <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">One custom book</div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <div className="font-display text-4xl font-semibold sm:text-5xl">$29.99</div>
-              <div className="text-sm text-muted-foreground">one-time</div>
-            </div>
-            <ul className="mt-6 space-y-2 text-sm text-foreground">
-              <li>✓ Custom cover + dedication + 10 story pages</li>
-              <li>✓ Personalized for ages 4–7</li>
-              <li>✓ Parent-approved illustrated character</li>
-              <li>✓ Free regeneration if something looks off</li>
-              <li>✓ Web reader + downloadable PDF</li>
-              <li>✓ Ready in about 10–20 minutes — we email you</li>
-            </ul>
-            <Link to="/create" className="mt-7 inline-block w-full sm:w-auto">
-              <Button variant="ember" size="lg" className="w-full sm:w-auto">See your child as a storybook hero — free</Button>
-            </Link>
-            <p className="mt-3 flex items-center gap-2 text-xs font-medium text-sage">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
+          <div className="text-center">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+              Three ways to give it
+            </h2>
+            <p className="mt-3 inline-flex items-center justify-center gap-2 text-sm font-medium text-sage">
               <ShieldCheck className="h-4 w-4 shrink-0" />
-              No payment until you approve the illustrated character.
+              No payment until you approve their illustrated character.
             </p>
           </div>
-          <div className="min-w-0">
-            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Our promise to parents</h2>
-            <div className="mt-6 grid gap-4">
+
+          <div className="mt-10 grid items-start gap-6 md:grid-cols-3 md:gap-5">
+            {/* CARD 1 — Digital */}
+            <PricingCard
+              label="Digital"
+              price="$29.99"
+              subline="one-time"
+              features={[
+                "Custom cover + dedication + 10 story pages",
+                "Web reader on any device",
+                "Print-ready PDF download",
+                "Stored privately in your library",
+                "Free regeneration if something looks off",
+              ]}
+              cta={
+                <Link to="/create" className="block w-full">
+                  <Button variant="ember" size="lg" className="w-full">
+                    Start free character preview
+                  </Button>
+                </Link>
+              }
+            />
+
+            {/* CARD 2 — MOST POPULAR */}
+            <PricingCard
+              label="Digital + Hardcover"
+              price="$49.99"
+              subline="one-time"
+              comingSoon
+              highlight
+              features={[
+                "Everything in Digital, plus:",
+                "Premium 8×8\" hardcover, professionally printed",
+                "Full-color pages, archival binding",
+                "Ships in 7–10 days",
+              ]}
+              cta={
+                <Button
+                  variant="ember"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => setWaitlistOpen("hardcover")}
+                >
+                  Join hardcover waitlist
+                </Button>
+              }
+            />
+
+            {/* CARD 3 — Gift Edition */}
+            <PricingCard
+              label="Gift Edition"
+              price="$79.99"
+              subline="one-time"
+              comingSoon
+              features={[
+                "Everything in Digital + Hardcover, plus:",
+                "Custom dedication card, handwritten-style",
+                "Premium gift box with ribbon",
+                "Ships directly to recipient with no pricing inside",
+                "Upload invite sent to recipient's parent",
+              ]}
+              cta={
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => setWaitlistOpen("gift_edition")}
+                >
+                  Join gift edition waitlist
+                </Button>
+              }
+            />
+          </div>
+
+          {/* Promise pillars (unchanged) */}
+          <div className="mt-16">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+              Our promise to parents
+            </h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <Promise title="Privacy first" body="Your photos are private to your account. We never sell them and never use them to train models." icon={ShieldCheck} />
               <Promise title="Parent-approved character" body="You always review the illustrated character before the story is generated. Free regeneration if it doesn't feel right." icon={RefreshCcw} />
               <Promise title="Real children's-book quality" body="Warm illustrations and thoughtful pacing, designed for ages 4–7." icon={BookOpen} />
@@ -514,6 +578,22 @@ function Home() {
           </div>
         </div>
       </section>
+
+      <WaitlistModal
+        open={waitlistOpen !== null}
+        onOpenChange={(v) => !v && setWaitlistOpen(null)}
+        source={waitlistOpen ?? "hardcover"}
+        title={
+          waitlistOpen === "gift_edition"
+            ? "Join the Gift Edition waitlist"
+            : "Join the Hardcover waitlist"
+        }
+        description={
+          waitlistOpen === "gift_edition"
+            ? "Be first to know when our boxed Gift Edition is available."
+            : "Be first to know when our premium hardcover is available."
+        }
+      />
 
       {/* FAQ */}
       <section id="faq" className="mx-auto max-w-3xl scroll-mt-20 px-4 py-14 sm:py-16">
