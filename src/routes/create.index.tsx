@@ -18,6 +18,7 @@ import howitworksPhotos from "@/assets/howitworks-photos.jpg";
 import howitworksCharacters from "@/assets/howitworks-characters.jpg";
 import sampleCover from "@/assets/sample-watercolor-pip.jpg";
 import sampleSpread from "@/assets/sample-watercolor-pip-page1.jpg";
+import { SavedCharactersPicker } from "@/components/saved-characters-picker";
 
 export const Route = createFileRoute("/create/")({
   component: CreateLanding,
