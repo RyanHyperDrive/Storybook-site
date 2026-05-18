@@ -356,7 +356,14 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      sheetUrl = sheet?.image_url ?? undefined;
+      const sheetVal = sheet?.image_url ?? undefined;
+      if (sheetVal) {
+        if (/^https?:\/\//i.test(sheetVal) || sheetVal.startsWith("data:")) {
+          sheetUrl = sheetVal;
+        } else {
+          sheetUrl = (await signed(admin, "character-sheets", sheetVal)) ?? undefined;
+        }
+      }
     }
     if (!sheetUrl) return errorResponse("No approved character sheet found for this book", 412);
 
