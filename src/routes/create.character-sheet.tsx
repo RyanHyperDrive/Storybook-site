@@ -40,7 +40,10 @@ type Child = {
   age: number | null;
   pronouns: string | null;
   favorite_color: string | null;
+  favorite_activities: string | null;
+  loves: string | null;
   personality_traits: string | null;
+  accessibility_details: string | null;
 };
 
 export const Route = createFileRoute("/create/character-sheet")({
