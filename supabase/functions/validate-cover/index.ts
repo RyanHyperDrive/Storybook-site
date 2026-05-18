@@ -89,7 +89,7 @@ Visual consistency contract (JSON): ${contractJson}`;
             role: "user",
             content: [
               { type: "text", text: userText },
-              { type: "image_url", image_url: { url: sheet.image_url } },
+              { type: "image_url", image_url: { url: sheetUrl } },
               { type: "image_url", image_url: { url: coverUrl } },
             ],
           },
