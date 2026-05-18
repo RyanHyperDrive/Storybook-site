@@ -586,10 +586,12 @@ function CharacterCard({
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="outline" onClick={onGenerate} disabled={busy}>
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
-          {subject?.character_image_url ? "Regenerate" : "Generate character"}
-        </Button>
+        {hasCharacter && (
+          <Button size="sm" variant="outline" onClick={onGenerate} disabled={busy}>
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
+            Regenerate
+          </Button>
+        )}
         <Link to="/create/profile">
           <Button size="sm" variant="ghost">
             <PencilLine className="h-3.5 w-3.5" /> Edit details
