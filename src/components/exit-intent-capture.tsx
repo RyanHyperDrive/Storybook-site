@@ -143,9 +143,7 @@ export function ExitIntentCapture() {
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          className="max-w-[480px] rounded-2xl border-border bg-paper p-0 sm:rounded-2xl"
-        >
+        <DialogContent className="max-w-[480px] rounded-2xl border-border bg-paper p-0 sm:rounded-2xl">
           <DialogTitle className="sr-only">Wait — see a sample first.</DialogTitle>
           <DialogDescription className="sr-only">
             Get a free 3-page sample book preview by email. No signup required.
@@ -163,13 +161,7 @@ export function ExitIntentCapture() {
   );
 }
 
-function CaptureForm({
-  onClose,
-  compact,
-}: {
-  onClose: () => void;
-  compact: boolean;
-}) {
+function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boolean }) {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -190,9 +182,9 @@ function CaptureForm({
       });
       if (invokeErr) throw invokeErr;
       setDone(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message ?? "Something went wrong. Try again?");
+      setError(err instanceof Error ? err.message : "Something went wrong. Try again?");
     } finally {
       setSubmitting(false);
     }
