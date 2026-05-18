@@ -203,12 +203,22 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
           </button>
         )}
         <div className={compact ? "flex items-center gap-3" : "text-center"}>
-          <CheckCircle2 className={compact ? "h-5 w-5 text-ember" : "mx-auto h-10 w-10 text-ember"} />
+          <CheckCircle2
+            className={compact ? "h-5 w-5 text-ember" : "mx-auto h-10 w-10 text-ember"}
+          />
           <div>
-            <p className={compact ? "text-sm font-medium" : "mt-3 font-display text-xl font-semibold"}>
+            <p
+              className={
+                compact ? "text-sm font-medium" : "mt-3 font-display text-xl font-semibold"
+              }
+            >
               On its way.
             </p>
-            <p className={compact ? "text-xs text-muted-foreground" : "mt-1 text-sm text-muted-foreground"}>
+            <p
+              className={
+                compact ? "text-xs text-muted-foreground" : "mt-1 text-sm text-muted-foreground"
+              }
+            >
               Check your inbox in about a minute.
             </p>
           </div>
@@ -229,9 +239,7 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
         </button>
         <div className="pr-8">
           <p className="font-display text-base font-semibold">See a sample first.</p>
-          <p className="text-xs text-muted-foreground">
-            Free 3-page preview by email. No signup.
-          </p>
+          <p className="text-xs text-muted-foreground">Free 3-page preview by email. No signup.</p>
           <form onSubmit={submit} className="mt-2 flex gap-2">
             <Input
               type="email"
@@ -269,7 +277,9 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
         />
         <Button type="submit" variant="ember" size="lg" className="w-full" disabled={submitting}>
           {submitting ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending…</>
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending…
+            </>
           ) : (
             "Send me the sample"
           )}
