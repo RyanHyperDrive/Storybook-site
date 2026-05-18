@@ -95,7 +95,7 @@ export function ExitIntentCapture() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (alreadyShown()) return;
+    if (alreadyShown() || hasSessionFailureBackoff()) return;
 
     const mobile = window.innerWidth < 768;
     setIsMobile(mobile);
@@ -119,7 +119,7 @@ export function ExitIntentCapture() {
 
     const trigger = () => {
       if (triggered.current) return;
-      if (alreadyShown() || ctaClickedThisSession()) return;
+      if (alreadyShown() || hasSessionFailureBackoff() || ctaClickedThisSession()) return;
       triggered.current = true;
       markShown();
       if (mobile) setStickyVisible(true);
