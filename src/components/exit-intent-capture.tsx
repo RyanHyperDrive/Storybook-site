@@ -255,13 +255,6 @@ function CaptureForm({
 
   return (
     <div className="relative p-8">
-      <button
-        onClick={onClose}
-        aria-label="Close"
-        className="absolute right-3 top-3 rounded-full p-1.5 text-muted-foreground hover:bg-muted"
-      >
-        <X className="h-4 w-4" />
-      </button>
       <h2 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">
         Wait — see a sample first.
       </h2>
