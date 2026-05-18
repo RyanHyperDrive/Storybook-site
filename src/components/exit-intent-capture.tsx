@@ -3,7 +3,7 @@ import { z } from "zod";
 import { X, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "exit_intent_shown";
@@ -143,9 +143,11 @@ export function ExitIntentCapture() {
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          className="max-w-[480px] rounded-2xl border-border bg-paper p-0 sm:rounded-2xl"
-        >
+        <DialogContent className="max-w-[480px] rounded-2xl border-border bg-paper p-0 sm:rounded-2xl">
+          <DialogTitle className="sr-only">Wait — see a sample first.</DialogTitle>
+          <DialogDescription className="sr-only">
+            Get a free 3-page sample book preview by email. No signup required.
+          </DialogDescription>
           <CaptureForm onClose={() => setOpen(false)} compact={false} />
         </DialogContent>
       </Dialog>
@@ -159,13 +161,7 @@ export function ExitIntentCapture() {
   );
 }
 
-function CaptureForm({
-  onClose,
-  compact,
-}: {
-  onClose: () => void;
-  compact: boolean;
-}) {
+function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boolean }) {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -186,9 +182,9 @@ function CaptureForm({
       });
       if (invokeErr) throw invokeErr;
       setDone(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message ?? "Something went wrong. Try again?");
+      setError(err instanceof Error ? err.message : "Something went wrong. Try again?");
     } finally {
       setSubmitting(false);
     }
@@ -207,12 +203,22 @@ function CaptureForm({
           </button>
         )}
         <div className={compact ? "flex items-center gap-3" : "text-center"}>
-          <CheckCircle2 className={compact ? "h-5 w-5 text-ember" : "mx-auto h-10 w-10 text-ember"} />
+          <CheckCircle2
+            className={compact ? "h-5 w-5 text-ember" : "mx-auto h-10 w-10 text-ember"}
+          />
           <div>
-            <p className={compact ? "text-sm font-medium" : "mt-3 font-display text-xl font-semibold"}>
+            <p
+              className={
+                compact ? "text-sm font-medium" : "mt-3 font-display text-xl font-semibold"
+              }
+            >
               On its way.
             </p>
-            <p className={compact ? "text-xs text-muted-foreground" : "mt-1 text-sm text-muted-foreground"}>
+            <p
+              className={
+                compact ? "text-xs text-muted-foreground" : "mt-1 text-sm text-muted-foreground"
+              }
+            >
               Check your inbox in about a minute.
             </p>
           </div>
@@ -233,9 +239,7 @@ function CaptureForm({
         </button>
         <div className="pr-8">
           <p className="font-display text-base font-semibold">See a sample first.</p>
-          <p className="text-xs text-muted-foreground">
-            Free 3-page preview by email. No signup.
-          </p>
+          <p className="text-xs text-muted-foreground">Free 3-page preview by email. No signup.</p>
           <form onSubmit={submit} className="mt-2 flex gap-2">
             <Input
               type="email"
@@ -273,7 +277,9 @@ function CaptureForm({
         />
         <Button type="submit" variant="ember" size="lg" className="w-full" disabled={submitting}>
           {submitting ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending…</>
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending…
+            </>
           ) : (
             "Send me the sample"
           )}
