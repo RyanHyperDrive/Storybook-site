@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getArtStyle } from "@/lib/art-styles";
+import { saveApprovedCharacter } from "@/lib/saved-characters";
 
 const RAW_BUCKET = "raw-uploads";
 
@@ -39,7 +40,10 @@ type Child = {
   age: number | null;
   pronouns: string | null;
   favorite_color: string | null;
+  favorite_activities: string | null;
+  loves: string | null;
   personality_traits: string | null;
+  accessibility_details: string | null;
 };
 
 export const Route = createFileRoute("/create/character-sheet")({
@@ -233,6 +237,39 @@ function Inner() {
             })
             .eq("id", subjectByChild[c.id].id),
         ),
+      );
+
+      // Persist approved child(ren) into the parent's reusable library so they
+      // can start another book starring the same character without redoing
+      // photo + character-sheet steps.
+      await Promise.all(
+        required.map(async (c) => {
+          const s = subjectByChild[c.id];
+          if (!s?.character_image_url || !c.name) return;
+          try {
+            await saveApprovedCharacter({
+              userId: user.id,
+              bookId: id,
+              subjectId: s.id,
+              child: {
+                name: c.name,
+                age: c.age,
+                pronouns: c.pronouns,
+                loves: c.loves,
+                favorite_color: c.favorite_color,
+                favorite_activities: c.favorite_activities,
+                personality_traits: c.personality_traits,
+                accessibility_details: c.accessibility_details,
+              },
+              artStyle: book?.art_style ?? null,
+              characterImagePath: s.character_image_url,
+              referenceStoragePath: s.reference_storage_path ?? null,
+              description: s.description ?? null,
+            });
+          } catch (err) {
+            console.warn("Could not save reusable character", err);
+          }
+        }),
       );
 
       // Mirror approval onto the book-level character_sheets row for downstream jobs.

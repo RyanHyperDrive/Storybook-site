@@ -18,6 +18,7 @@ import howitworksPhotos from "@/assets/howitworks-photos.jpg";
 import howitworksCharacters from "@/assets/howitworks-characters.jpg";
 import sampleCover from "@/assets/sample-watercolor-pip.jpg";
 import sampleSpread from "@/assets/sample-watercolor-pip-page1.jpg";
+import { SavedCharactersPicker } from "@/components/saved-characters-picker";
 
 export const Route = createFileRoute("/create/")({
   component: CreateLanding,
@@ -112,6 +113,11 @@ function CreateLanding() {
             <JourneyPreview />
           </div>
         </div>
+      </section>
+
+      {/* SAVED CHARACTERS — only visible if signed-in parent has any */}
+      <section className="mx-auto max-w-6xl px-4 pb-4">
+        <SavedCharactersPicker redirectTo="/create/style" />
       </section>
 
       {/* STEP CARDS */}

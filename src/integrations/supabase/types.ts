@@ -675,6 +675,69 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_characters: {
+        Row: {
+          accessibility_details: string | null
+          age: number | null
+          art_style: string | null
+          character_image_path: string
+          created_at: string
+          description: string | null
+          favorite_activities: string | null
+          favorite_color: string | null
+          id: string
+          loves: string | null
+          name: string
+          personality_traits: string | null
+          pronouns: string | null
+          reference_storage_path: string | null
+          source_book_id: string | null
+          source_subject_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accessibility_details?: string | null
+          age?: number | null
+          art_style?: string | null
+          character_image_path: string
+          created_at?: string
+          description?: string | null
+          favorite_activities?: string | null
+          favorite_color?: string | null
+          id?: string
+          loves?: string | null
+          name: string
+          personality_traits?: string | null
+          pronouns?: string | null
+          reference_storage_path?: string | null
+          source_book_id?: string | null
+          source_subject_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accessibility_details?: string | null
+          age?: number | null
+          art_style?: string | null
+          character_image_path?: string
+          created_at?: string
+          description?: string | null
+          favorite_activities?: string | null
+          favorite_color?: string | null
+          id?: string
+          loves?: string | null
+          name?: string
+          personality_traits?: string | null
+          pronouns?: string | null
+          reference_storage_path?: string | null
+          source_book_id?: string | null
+          source_subject_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       uploaded_photos: {
         Row: {
           book_id: string | null
