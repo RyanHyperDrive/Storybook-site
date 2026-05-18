@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { X, Loader2, CheckCircle2 } from "lucide-react";
+import { X, Loader2, CheckCircle2, AlertTriangle, Mail, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "exit_intent_shown";
+const FAILURE_KEY = "exit_intent_capture_failure";
 const TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
 const CTA_CLICKED_KEY = "primary_cta_clicked";
 const INACTIVITY_MS = 90_000;
@@ -21,6 +22,12 @@ const CTA_PHRASES = [
 ];
 
 const emailSchema = z.string().trim().email().max(320);
+
+type CaptureErrorState = {
+  message: string;
+  referenceId: string;
+  details: string;
+};
 
 function alreadyShown(): boolean {
   try {
@@ -44,6 +51,32 @@ function markShown() {
   } catch {
     /* ignore */
   }
+}
+
+function hasSessionFailureBackoff(): boolean {
+  try {
+    return Boolean(sessionStorage.getItem(FAILURE_KEY));
+  } catch {
+    return false;
+  }
+}
+
+function rememberSessionFailure(error: CaptureErrorState) {
+  try {
+    sessionStorage.setItem(
+      FAILURE_KEY,
+      JSON.stringify({ failedAt: Date.now(), referenceId: error.referenceId, message: error.message }),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+function makeSupportReference() {
+  return `EXIT-${Date.now().toString(36).toUpperCase()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)
+    .toUpperCase()}`;
 }
 
 function ctaClickedThisSession(): boolean {
