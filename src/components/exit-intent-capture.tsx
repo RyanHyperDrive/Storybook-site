@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { X, Loader2, CheckCircle2 } from "lucide-react";
+import { X, Loader2, CheckCircle2, AlertTriangle, Mail, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "exit_intent_shown";
+const FAILURE_KEY = "exit_intent_capture_failure";
 const TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
 const CTA_CLICKED_KEY = "primary_cta_clicked";
 const INACTIVITY_MS = 90_000;
@@ -21,6 +22,12 @@ const CTA_PHRASES = [
 ];
 
 const emailSchema = z.string().trim().email().max(320);
+
+type CaptureErrorState = {
+  message: string;
+  referenceId: string;
+  details: string;
+};
 
 function alreadyShown(): boolean {
   try {
@@ -46,6 +53,48 @@ function markShown() {
   }
 }
 
+function hasSessionFailureBackoff(): boolean {
+  try {
+    return Boolean(sessionStorage.getItem(FAILURE_KEY));
+  } catch {
+    return false;
+  }
+}
+
+function rememberSessionFailure(error: CaptureErrorState) {
+  try {
+    sessionStorage.setItem(
+      FAILURE_KEY,
+      JSON.stringify({
+        failedAt: Date.now(),
+        referenceId: error.referenceId,
+        message: error.message,
+      }),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearSessionFailureBackoff() {
+  try {
+    sessionStorage.removeItem(FAILURE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function isCaptureError(error: CaptureErrorState | string | null): error is CaptureErrorState {
+  return typeof error === "object" && error !== null;
+}
+
+function makeSupportReference() {
+  return `EXIT-${Date.now().toString(36).toUpperCase()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)
+    .toUpperCase()}`;
+}
+
 function ctaClickedThisSession(): boolean {
   try {
     return sessionStorage.getItem(CTA_CLICKED_KEY) === "1";
@@ -62,7 +111,7 @@ export function ExitIntentCapture() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (alreadyShown()) return;
+    if (alreadyShown() || hasSessionFailureBackoff()) return;
 
     const mobile = window.innerWidth < 768;
     setIsMobile(mobile);
@@ -86,7 +135,7 @@ export function ExitIntentCapture() {
 
     const trigger = () => {
       if (triggered.current) return;
-      if (alreadyShown() || ctaClickedThisSession()) return;
+      if (alreadyShown() || hasSessionFailureBackoff() || ctaClickedThisSession()) return;
       triggered.current = true;
       markShown();
       if (mobile) setStickyVisible(true);
@@ -161,11 +210,154 @@ export function ExitIntentCapture() {
   );
 }
 
+function getSupportHref(error: CaptureErrorState | null, email: string) {
+  const subject = encodeURIComponent(
+    `Exit-intent capture error ${error?.referenceId ?? ""}`.trim(),
+  );
+  const body = encodeURIComponent(
+    [
+      "Hi Storynest support,",
+      "",
+      "The sample email form failed for me.",
+      `Support reference: ${error?.referenceId ?? "unknown"}`,
+      email ? `Email entered: ${email}` : null,
+      "",
+      "Captured details:",
+      error?.details ?? "No diagnostics captured.",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
+  return `mailto:hello@storynest.app?subject=${subject}&body=${body}`;
+}
+
+function summarizeUnknownError(err: unknown) {
+  if (err instanceof Error) return `${err.name}: ${err.message}`;
+  if (typeof err === "string") return err;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return "Unknown error";
+  }
+}
+
+async function captureExitIntentEmail(email: string): Promise<void> {
+  const referenceId = makeSupportReference();
+  const page = typeof window !== "undefined" ? window.location.pathname : "/";
+  let sessionSummary = "not checked";
+
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) sessionSummary = `session check failed: ${error.message}`;
+    else sessionSummary = data.session ? "active session present" : "no active session";
+  } catch (sessionErr) {
+    sessionSummary = `session check threw: ${summarizeUnknownError(sessionErr)}`;
+  }
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const publishableKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
+
+  if (!supabaseUrl || !publishableKey) {
+    throw {
+      message: "Email capture is missing its public backend configuration.",
+      referenceId,
+      details: [
+        `Reference: ${referenceId}`,
+        `Session: ${sessionSummary}`,
+        `Backend URL present: ${Boolean(supabaseUrl)}`,
+        `Public key present: ${Boolean(publishableKey)}`,
+      ].join("\n"),
+    } satisfies CaptureErrorState;
+  }
+
+  let endpoint: string;
+  try {
+    endpoint = new URL("/functions/v1/capture-email", supabaseUrl).toString();
+  } catch (urlErr) {
+    throw {
+      message: "Email capture could not build a valid backend URL.",
+      referenceId,
+      details: [
+        `Reference: ${referenceId}`,
+        `Session: ${sessionSummary}`,
+        `URL error: ${summarizeUnknownError(urlErr)}`,
+      ].join("\n"),
+    } satisfies CaptureErrorState;
+  }
+
+  const payload = {
+    email,
+    source: "exit_intent",
+    page,
+    referenceId,
+    diagnostics: { session: sessionSummary },
+  };
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: publishableKey,
+        Authorization: `Bearer ${publishableKey}`,
+        "x-client-info": "storynest-exit-intent",
+        "x-exit-intent-reference": referenceId,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const text = await response.text();
+    let body: { ok?: boolean; error?: string; requestId?: string } | null = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      body = null;
+    }
+
+    if (!response.ok || !body?.ok) {
+      const cloudRequestId = response.headers.get("sb-request-id");
+      const executionId = response.headers.get("x-deno-execution-id");
+      throw {
+        message: body?.error || `Email capture failed with ${response.status}`,
+        referenceId: body?.requestId || referenceId,
+        details: [
+          `Reference: ${body?.requestId || referenceId}`,
+          `Session: ${sessionSummary}`,
+          `Endpoint: /functions/v1/capture-email`,
+          `Headers sent: content-type, apikey, authorization=publishable, x-client-info, x-exit-intent-reference`,
+          `Payload sent: source=exit_intent, page=${page}, email=provided`,
+          `Response: ${response.status} ${response.statusText}`,
+          `Cloud request: ${cloudRequestId ?? "not returned"}`,
+          `Execution: ${executionId ?? "not returned"}`,
+          `Body: ${(text || "empty").slice(0, 500)}`,
+        ].join("\n"),
+      } satisfies CaptureErrorState;
+    }
+  } catch (err) {
+    if (typeof err === "object" && err && "referenceId" in err && "details" in err) {
+      throw err;
+    }
+    throw {
+      message: "Email capture request could not reach the backend.",
+      referenceId,
+      details: [
+        `Reference: ${referenceId}`,
+        `Session: ${sessionSummary}`,
+        `Endpoint: /functions/v1/capture-email`,
+        `Headers intended: content-type, apikey, authorization=publishable, x-client-info, x-exit-intent-reference`,
+        `Payload intended: source=exit_intent, page=${page}, email=provided`,
+        `Network error: ${summarizeUnknownError(err)}`,
+      ].join("\n"),
+    } satisfies CaptureErrorState;
+  }
+}
+
 function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boolean }) {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<CaptureErrorState | string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,14 +369,21 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
     }
     setSubmitting(true);
     try {
-      const { error: invokeErr } = await supabase.functions.invoke("capture-email", {
-        body: { email: parsed.data, source: "exit_intent" },
-      });
-      if (invokeErr) throw invokeErr;
+      await captureExitIntentEmail(parsed.data);
+      clearSessionFailureBackoff();
       setDone(true);
     } catch (err: unknown) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : "Something went wrong. Try again?");
+      const diagnosticError =
+        typeof err === "object" && err && "referenceId" in err && "details" in err
+          ? (err as CaptureErrorState)
+          : {
+              message: err instanceof Error ? err.message : "Something went wrong. Try again?",
+              referenceId: makeSupportReference(),
+              details: summarizeUnknownError(err),
+            };
+      console.error("Exit-intent capture failed", diagnosticError);
+      rememberSessionFailure(diagnosticError);
+      setError(diagnosticError);
     } finally {
       setSubmitting(false);
     }
@@ -240,20 +439,46 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
         <div className="pr-8">
           <p className="font-display text-base font-semibold">See a sample first.</p>
           <p className="text-xs text-muted-foreground">Free 3-page preview by email. No signup.</p>
-          <form onSubmit={submit} className="mt-2 flex gap-2">
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="h-9 flex-1"
-              required
-            />
-            <Button type="submit" variant="ember" size="sm" disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
-            </Button>
+          <form onSubmit={submit} className="mt-2 space-y-2">
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="h-9 flex-1"
+                required
+              />
+              <Button type="submit" variant="ember" size="sm" disabled={submitting}>
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
+              </Button>
+            </div>
+            {error && (
+              <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-2 text-xs text-destructive">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                  <div className="min-w-0 flex-1">
+                    <p>{isCaptureError(error) ? error.message : error}</p>
+                    {isCaptureError(error) && (
+                      <p className="mt-1 text-muted-foreground">Ref: {error.referenceId}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button type="submit" size="sm" variant="outline" disabled={submitting}>
+                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Try again
+                  </Button>
+                  {isCaptureError(error) && (
+                    <Button asChild size="sm" variant="ghost">
+                      <a href={getSupportHref(error, email)}>
+                        <Mail className="mr-1.5 h-3.5 w-3.5" /> Contact support
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </form>
-          {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
         </div>
       </div>
     );
@@ -284,7 +509,41 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
             "Send me the sample"
           )}
         </Button>
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error && (
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" />
+              <div className="min-w-0 flex-1">
+                <p>{isCaptureError(error) ? error.message : error}</p>
+                {isCaptureError(error) && (
+                  <>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Support reference ID: {error.referenceId}
+                    </p>
+                    <details className="mt-2 text-xs text-muted-foreground">
+                      <summary className="cursor-pointer">Captured error details</summary>
+                      <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap rounded-lg bg-muted p-2 font-mono text-[11px]">
+                        {error.details}
+                      </pre>
+                    </details>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button type="submit" size="sm" variant="outline" disabled={submitting}>
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Try again
+              </Button>
+              {isCaptureError(error) && (
+                <Button asChild size="sm" variant="ghost">
+                  <a href={getSupportHref(error, email)}>
+                    <Mail className="mr-1.5 h-3.5 w-3.5" /> Contact support
+                  </a>
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </form>
       <p className="mt-4 text-xs text-muted-foreground">
         One sample, one optional launch email. Unsubscribe anytime. We never share your address.
