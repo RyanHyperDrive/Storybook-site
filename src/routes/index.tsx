@@ -37,6 +37,7 @@ import {
 } from "@/lib/art-styles";
 import { StyleArtwork } from "@/components/style-artwork";
 import { SampleBookModal } from "@/components/sample-book-modal";
+import { WaitlistModal } from "@/components/waitlist-modal";
 import { useSampleAssets, SAMPLE_KEY_BY_STYLE } from "@/hooks/use-sample-assets";
 
 const SAMPLE_COVER_FALLBACK: Record<ArtStyleKey, string> = {
@@ -96,6 +97,7 @@ const faqs = [
 
 function Home() {
   const [openKey, setOpenKey] = useState<ArtStyleKey | null>(null);
+  const [waitlistOpen, setWaitlistOpen] = useState<"hardcover" | "gift_edition" | null>(null);
   const { assets } = useSampleAssets();
   return (
     <div className="overflow-x-hidden">
