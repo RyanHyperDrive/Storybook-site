@@ -37,6 +37,16 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
     if (!sheet?.image_url) return errorResponse("No approved character sheet", 412);
+    let sheetUrl: string | undefined;
+    if (/^https?:\/\//i.test(sheet.image_url) || sheet.image_url.startsWith("data:")) {
+      sheetUrl = sheet.image_url;
+    } else {
+      const { data: sigSheet } = await admin.storage
+        .from("character-sheets")
+        .createSignedUrl(sheet.image_url, 60 * 5);
+      sheetUrl = sigSheet?.signedUrl ?? undefined;
+    }
+    if (!sheetUrl) return errorResponse("Could not resolve character sheet image", 500);
 
     let coverUrl: string | undefined = coverImageUrl;
     if (!coverUrl && book.cover_image_path) {
