@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getArtStyle } from "@/lib/art-styles";
+import { saveApprovedCharacter } from "@/lib/saved-characters";
 
 const RAW_BUCKET = "raw-uploads";
 
