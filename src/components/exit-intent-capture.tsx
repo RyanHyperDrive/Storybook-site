@@ -3,7 +3,7 @@ import { z } from "zod";
 import { X, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "exit_intent_shown";
@@ -146,6 +146,10 @@ export function ExitIntentCapture() {
         <DialogContent
           className="max-w-[480px] rounded-2xl border-border bg-paper p-0 sm:rounded-2xl"
         >
+          <DialogTitle className="sr-only">Wait — see a sample first.</DialogTitle>
+          <DialogDescription className="sr-only">
+            Get a free 3-page sample book preview by email. No signup required.
+          </DialogDescription>
           <CaptureForm onClose={() => setOpen(false)} compact={false} />
         </DialogContent>
       </Dialog>
