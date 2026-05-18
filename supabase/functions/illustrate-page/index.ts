@@ -369,35 +369,89 @@ serve(async (req) => {
     if (prevPageDataUrl) userContent.push({ type: "image_url", image_url: { url: prevPageDataUrl } });
     if (togetherDataUrl) userContent.push({ type: "image_url", image_url: { url: togetherDataUrl } });
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3.1-flash-image-preview",
-        modalities: ["image", "text"],
-        messages: [
-          { role: "user", content: userContent },
-        ],
-      }),
-    });
-
-    if (!aiRes.ok) {
-      const text = await aiRes.text();
-      if (aiRes.status === 429) return errorResponse("Rate limit exceeded, try again shortly", 429);
-      if (aiRes.status === 402) return errorResponse("AI credits exhausted", 402);
-      return errorResponse(`Image gateway error: ${text}`, 502);
+    // Call the gateway with a model + retry/fallback strategy. Some Gemini
+    // image-preview responses come back as text-only refusals or empty image
+    // arrays — when that happens we retry once on the same model, then fall
+    // back to the pro image model before giving up. We also surface the
+    // text reply in logs so we can see *why* it refused.
+    async function callImageModel(model: string) {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          modalities: ["image", "text"],
+          messages: [{ role: "user", content: userContent }],
+        }),
+      });
+      return res;
     }
 
-    const payload = await aiRes.json();
-    const imageUrl: string | undefined =
-      payload?.choices?.[0]?.message?.images?.[0]?.image_url?.url ??
-      payload?.choices?.[0]?.message?.images?.[0]?.url;
+    function extractImageUrl(payload: any): string | undefined {
+      return (
+        payload?.choices?.[0]?.message?.images?.[0]?.image_url?.url ??
+        payload?.choices?.[0]?.message?.images?.[0]?.url
+      );
+    }
 
-    if (!imageUrl || !imageUrl.startsWith("data:")) {
-      return errorResponse("Image generation returned no image", 502);
+    function extractTextReply(payload: any): string {
+      const msg = payload?.choices?.[0]?.message;
+      if (!msg) return "";
+      if (typeof msg.content === "string") return msg.content;
+      if (Array.isArray(msg.content)) {
+        return msg.content
+          .map((c: any) => (typeof c?.text === "string" ? c.text : ""))
+          .filter(Boolean)
+          .join(" ");
+      }
+      return "";
+    }
+
+    const attempts: { model: string; label: string }[] = [
+      { model: "google/gemini-3.1-flash-image-preview", label: "flash-1" },
+      { model: "google/gemini-3.1-flash-image-preview", label: "flash-2" },
+      { model: "google/gemini-3-pro-image-preview", label: "pro-fallback" },
+    ];
+
+    let imageUrl: string | undefined;
+    let lastTextReply = "";
+    let lastStatus = 0;
+    let lastErrBody = "";
+
+    for (const attempt of attempts) {
+      const aiRes = await callImageModel(attempt.model);
+      lastStatus = aiRes.status;
+      if (!aiRes.ok) {
+        lastErrBody = await aiRes.text();
+        console.error(`illustrate-page ${attempt.label} gateway error`, aiRes.status, lastErrBody);
+        if (aiRes.status === 429) return errorResponse("Rate limit exceeded, try again shortly", 429);
+        if (aiRes.status === 402) return errorResponse("AI credits exhausted", 402);
+        // Non-2xx other than rate/credits: try next attempt
+        continue;
+      }
+      const payload = await aiRes.json();
+      const candidate = extractImageUrl(payload);
+      if (candidate && candidate.startsWith("data:")) {
+        imageUrl = candidate;
+        break;
+      }
+      lastTextReply = extractTextReply(payload);
+      console.warn(
+        `illustrate-page ${attempt.label} returned no image`,
+        JSON.stringify({ textReply: lastTextReply.slice(0, 400), finishReason: payload?.choices?.[0]?.finish_reason }),
+      );
+    }
+
+    if (!imageUrl) {
+      const reason = lastTextReply
+        ? `Image model refused: ${lastTextReply.slice(0, 240)}`
+        : lastErrBody
+          ? `Image gateway error (${lastStatus}): ${lastErrBody.slice(0, 240)}`
+          : "Image generation returned no image after retries";
+      return errorResponse(reason, 502);
     }
 
     // Decode the base64 data URL and upload to private storage.
