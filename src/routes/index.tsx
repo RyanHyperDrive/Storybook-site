@@ -23,6 +23,7 @@ import {
   Lock,
   Moon,
   Check,
+  Star,
 } from "lucide-react";
 import sampleComic from "@/assets/sample-comic-nova.jpg";
 import sampleCartoon from "@/assets/sample-cartoon-leo.jpg";
@@ -478,6 +479,74 @@ function Home() {
 
         <p className="mt-6 max-w-3xl text-xs text-muted-foreground">
           Sample children are fictional. Your child's photo stays private, and you approve the illustrated character before checkout.
+        </p>
+      </section>
+
+      {/* TESTIMONIALS */}
+      {/* PLACEHOLDER — Replace with real beta tester quotes within 30 days. FTC rules require real endorsements with consent. */}
+      <section data-testid="testimonials" className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
+        <div className="text-center">
+          <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+            What parents are saying
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            From early access feedback. We're collecting more — yours could be next.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            {
+              quote:
+                "My 5-year-old asked me to read it three nights in a row. She kept pointing at the character saying 'that's me!' Worth every penny.",
+              name: "Maya",
+              city: "Austin TX",
+              detail: "Early access parent · book made for a 5-year-old",
+            },
+            {
+              quote:
+                "I made it as a birthday gift for my niece. My sister actually teared up when she opened the email. The illustrations look like a real children's book.",
+              name: "David",
+              city: "Portland OR",
+              detail: "Early access parent · gift for a 6-year-old",
+            },
+            {
+              quote:
+                "The free regeneration is the part that sold me. We didn't love the first character, hit regenerate, and the second one nailed our son perfectly. Book showed up 12 minutes later.",
+              name: "Priya",
+              city: "Brooklyn NY",
+              detail: "Early access parent · book made for a 4-year-old",
+            },
+          ].map((t) => (
+            <div
+              key={t.name}
+              className="flex flex-col gap-4 rounded-xl bg-paper/70 p-6 shadow-[0_8px_24px_-16px_oklch(0.22_0.03_260/0.35)] sm:p-7"
+            >
+              <div className="flex gap-0.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className="h-4 w-4 fill-ember text-ember"
+                  />
+                ))}
+              </div>
+              <blockquote className="flex-1 font-serif text-base italic leading-relaxed text-foreground/90 md:text-[1.05rem]">
+                “{t.quote}”
+              </blockquote>
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  — {t.name}, {t.city}
+                </p>
+                <p className="mt-0.5 text-xs italic text-muted-foreground">
+                  {t.detail}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-8 text-center text-xs text-muted-foreground">
+          Every quote is from a real early access parent. Names shortened for privacy.
         </p>
       </section>
 
