@@ -105,9 +105,14 @@ function Inner() {
       await Promise.all(
         (subs ?? []).map(async (s: any) => {
           if (s.reference_storage_path) {
+            // Request a small, resized thumbnail instead of the full-resolution
+            // original upload — originals can be many MB and take a long time
+            // to download over the signed URL.
             const { data } = await supabase.storage
               .from(RAW_BUCKET)
-              .createSignedUrl(s.reference_storage_path, 600);
+              .createSignedUrl(s.reference_storage_path, 600, {
+                transform: { width: 240, height: 240, resize: "cover", quality: 75 },
+              });
             if (data?.signedUrl) urls[s.id] = data.signedUrl;
           }
           if (s.character_image_url) {
