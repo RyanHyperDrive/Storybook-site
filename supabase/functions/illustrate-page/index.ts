@@ -221,7 +221,17 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      refUrl = sheet?.image_url ?? undefined;
+      const sheetVal = sheet?.image_url ?? undefined;
+      if (sheetVal) {
+        if (/^https?:\/\//i.test(sheetVal) || sheetVal.startsWith("data:")) {
+          refUrl = sheetVal;
+        } else {
+          const { data: sig } = await admin.storage
+            .from("character-sheets")
+            .createSignedUrl(sheetVal, 60 * 10);
+          refUrl = sig?.signedUrl ?? undefined;
+        }
+      }
     }
     if (!refUrl) return errorResponse("No approved character sheet found for this book", 412);
 
