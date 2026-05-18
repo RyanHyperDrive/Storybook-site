@@ -1,0 +1,2 @@
+update public.jobs set status='queued', message='Retrying after model refusal fix' where id='88c875ce-1c45-4987-9e4c-f5f210d34d06';
+update public.book_pages set status='queued' where id='07f0db58-d29d-433a-a293-9cf69ee74391';
