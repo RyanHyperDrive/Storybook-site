@@ -622,6 +622,61 @@ function Home() {
   );
 }
 
+function PricingCard({
+  label,
+  price,
+  subline,
+  features,
+  cta,
+  highlight,
+  comingSoon,
+}: {
+  label: string;
+  price: string;
+  subline: string;
+  features: string[];
+  cta: React.ReactNode;
+  highlight?: boolean;
+  comingSoon?: boolean;
+}) {
+  return (
+    <div
+      className={`relative flex h-full flex-col rounded-xl bg-background p-6 shadow-[0_10px_30px_-18px_oklch(0.22_0.03_260/0.45)] sm:p-7 ${
+        highlight
+          ? "border-2 border-ember md:-mt-3 md:scale-[1.03] md:shadow-[0_22px_45px_-18px_oklch(0.65_0.18_30/0.35)]"
+          : "border border-border"
+      }`}
+    >
+      {highlight && (
+        <span className="absolute -top-3 right-4 rounded-full bg-ember px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-background shadow-sm">
+          Most popular
+        </span>
+      )}
+      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-2 flex items-baseline gap-2">
+        <div className="font-display text-4xl font-semibold sm:text-[2.75rem]">{price}</div>
+        <div className="text-sm text-muted-foreground">{subline}</div>
+      </div>
+      {comingSoon && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          Coming soon — join the waitlist
+        </p>
+      )}
+      <ul className="mt-5 flex-1 space-y-2 text-sm text-foreground/85">
+        {features.map((f) => (
+          <li key={f} className="flex items-start gap-2">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-6">{cta}</div>
+    </div>
+  );
+}
+
 function Promise({ title, body, icon: Icon }: { title: string; body: string; icon: any }) {
   return (
     <div className="flex gap-3">
