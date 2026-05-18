@@ -23,6 +23,7 @@ import {
   Lock,
   Moon,
   Check,
+  Star,
 } from "lucide-react";
 import sampleComic from "@/assets/sample-comic-nova.jpg";
 import sampleCartoon from "@/assets/sample-cartoon-leo.jpg";
