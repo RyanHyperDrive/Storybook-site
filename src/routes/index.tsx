@@ -22,6 +22,7 @@ import {
   Clock,
   Lock,
   Moon,
+  Check,
 } from "lucide-react";
 import sampleComic from "@/assets/sample-comic-nova.jpg";
 import sampleCartoon from "@/assets/sample-cartoon-leo.jpg";
