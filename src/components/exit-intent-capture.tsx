@@ -65,7 +65,11 @@ function rememberSessionFailure(error: CaptureErrorState) {
   try {
     sessionStorage.setItem(
       FAILURE_KEY,
-      JSON.stringify({ failedAt: Date.now(), referenceId: error.referenceId, message: error.message }),
+      JSON.stringify({
+        failedAt: Date.now(),
+        referenceId: error.referenceId,
+        message: error.message,
+      }),
     );
   } catch {
     /* ignore */
@@ -207,7 +211,9 @@ export function ExitIntentCapture() {
 }
 
 function getSupportHref(error: CaptureErrorState | null, email: string) {
-  const subject = encodeURIComponent(`Exit-intent capture error ${error?.referenceId ?? ""}`.trim());
+  const subject = encodeURIComponent(
+    `Exit-intent capture error ${error?.referenceId ?? ""}`.trim(),
+  );
   const body = encodeURIComponent(
     [
       "Hi Storynest support,",
