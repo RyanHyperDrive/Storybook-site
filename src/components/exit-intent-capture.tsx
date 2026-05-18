@@ -194,11 +194,152 @@ export function ExitIntentCapture() {
   );
 }
 
+function getSupportHref(error: CaptureErrorState | null, email: string) {
+  const subject = encodeURIComponent(`Exit-intent capture error ${error?.referenceId ?? ""}`.trim());
+  const body = encodeURIComponent(
+    [
+      "Hi Storynest support,",
+      "",
+      "The sample email form failed for me.",
+      `Support reference: ${error?.referenceId ?? "unknown"}`,
+      email ? `Email entered: ${email}` : null,
+      "",
+      "Captured details:",
+      error?.details ?? "No diagnostics captured.",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
+  return `mailto:hello@storynest.app?subject=${subject}&body=${body}`;
+}
+
+function summarizeUnknownError(err: unknown) {
+  if (err instanceof Error) return `${err.name}: ${err.message}`;
+  if (typeof err === "string") return err;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return "Unknown error";
+  }
+}
+
+async function captureExitIntentEmail(email: string): Promise<void> {
+  const referenceId = makeSupportReference();
+  const page = typeof window !== "undefined" ? window.location.pathname : "/";
+  let sessionSummary = "not checked";
+
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) sessionSummary = `session check failed: ${error.message}`;
+    else sessionSummary = data.session ? "active session present" : "no active session";
+  } catch (sessionErr) {
+    sessionSummary = `session check threw: ${summarizeUnknownError(sessionErr)}`;
+  }
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const publishableKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
+
+  if (!supabaseUrl || !publishableKey) {
+    throw {
+      message: "Email capture is missing its public backend configuration.",
+      referenceId,
+      details: [
+        `Reference: ${referenceId}`,
+        `Session: ${sessionSummary}`,
+        `Backend URL present: ${Boolean(supabaseUrl)}`,
+        `Public key present: ${Boolean(publishableKey)}`,
+      ].join("\n"),
+    } satisfies CaptureErrorState;
+  }
+
+  let endpoint: string;
+  try {
+    endpoint = new URL("/functions/v1/capture-email", supabaseUrl).toString();
+  } catch (urlErr) {
+    throw {
+      message: "Email capture could not build a valid backend URL.",
+      referenceId,
+      details: [
+        `Reference: ${referenceId}`,
+        `Session: ${sessionSummary}`,
+        `URL error: ${summarizeUnknownError(urlErr)}`,
+      ].join("\n"),
+    } satisfies CaptureErrorState;
+  }
+
+  const payload = {
+    email,
+    source: "exit_intent",
+    page,
+    referenceId,
+    diagnostics: { session: sessionSummary },
+  };
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: publishableKey,
+        Authorization: `Bearer ${publishableKey}`,
+        "x-client-info": "storynest-exit-intent",
+        "x-exit-intent-reference": referenceId,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const text = await response.text();
+    let body: { ok?: boolean; error?: string; requestId?: string } | null = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      body = null;
+    }
+
+    if (!response.ok || !body?.ok) {
+      const cloudRequestId = response.headers.get("sb-request-id");
+      const executionId = response.headers.get("x-deno-execution-id");
+      throw {
+        message: body?.error || `Email capture failed with ${response.status}`,
+        referenceId: body?.requestId || referenceId,
+        details: [
+          `Reference: ${body?.requestId || referenceId}`,
+          `Session: ${sessionSummary}`,
+          `Endpoint: /functions/v1/capture-email`,
+          `Headers sent: content-type, apikey, authorization=publishable, x-client-info, x-exit-intent-reference`,
+          `Payload sent: source=exit_intent, page=${page}, email=provided`,
+          `Response: ${response.status} ${response.statusText}`,
+          `Cloud request: ${cloudRequestId ?? "not returned"}`,
+          `Execution: ${executionId ?? "not returned"}`,
+          `Body: ${(text || "empty").slice(0, 500)}`,
+        ].join("\n"),
+      } satisfies CaptureErrorState;
+    }
+  } catch (err) {
+    if (typeof err === "object" && err && "referenceId" in err && "details" in err) {
+      throw err;
+    }
+    throw {
+      message: "Email capture request could not reach the backend.",
+      referenceId,
+      details: [
+        `Reference: ${referenceId}`,
+        `Session: ${sessionSummary}`,
+        `Endpoint: /functions/v1/capture-email`,
+        `Headers intended: content-type, apikey, authorization=publishable, x-client-info, x-exit-intent-reference`,
+        `Payload intended: source=exit_intent, page=${page}, email=provided`,
+        `Network error: ${summarizeUnknownError(err)}`,
+      ].join("\n"),
+    } satisfies CaptureErrorState;
+  }
+}
+
 function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boolean }) {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<CaptureErrorState | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,14 +351,20 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
     }
     setSubmitting(true);
     try {
-      const { error: invokeErr } = await supabase.functions.invoke("capture-email", {
-        body: { email: parsed.data, source: "exit_intent" },
-      });
-      if (invokeErr) throw invokeErr;
+      await captureExitIntentEmail(parsed.data);
       setDone(true);
     } catch (err: unknown) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : "Something went wrong. Try again?");
+      const diagnosticError =
+        typeof err === "object" && err && "referenceId" in err && "details" in err
+          ? (err as CaptureErrorState)
+          : {
+              message: err instanceof Error ? err.message : "Something went wrong. Try again?",
+              referenceId: makeSupportReference(),
+              details: summarizeUnknownError(err),
+            };
+      console.error("Exit-intent capture failed", diagnosticError);
+      rememberSessionFailure(diagnosticError);
+      setError(diagnosticError);
     } finally {
       setSubmitting(false);
     }
