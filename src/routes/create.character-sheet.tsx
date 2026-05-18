@@ -485,6 +485,13 @@ function CharacterCard({
 
   const status = subject?.status ?? "pending";
 
+  const hasCharacter = !!subject?.character_image_url;
+  const primaryLabel = hasCharacter
+    ? "Regenerate character"
+    : status === "generating" || busy
+      ? "Generating…"
+      : "Generate character";
+
   return (
     <div className="rounded-lg border border-border bg-background p-4">
       <div className="flex items-start justify-between gap-3">
@@ -494,6 +501,34 @@ function CharacterCard({
         </div>
         <StatusBadge status={status} />
       </div>
+
+      {/* Primary CTA — promoted to the top so parents know exactly what to
+          tap, especially on mobile where the old button sat below the fold. */}
+      {!hasCharacter && (
+        <div className="mt-3 rounded-md border border-ember/30 bg-ember/5 p-3">
+          <p className="text-xs font-medium text-foreground">
+            Tap below to illustrate {child.name || "your child"} in the chosen art style.
+          </p>
+          <Button
+            variant="ember"
+            size="lg"
+            onClick={onGenerate}
+            disabled={busy || status === "generating"}
+            className="mt-2 w-full text-base shadow-sm"
+          >
+            {busy || status === "generating" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {primaryLabel}
+          </Button>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Takes about 30–60 seconds. Free regeneration if it doesn't feel like them.
+          </p>
+        </div>
+      )}
+
 
       <div className="mt-4 grid grid-cols-[88px_1fr] gap-4">
         <div>
