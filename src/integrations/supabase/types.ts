@@ -378,6 +378,60 @@ export type Database = {
           },
         ]
       }
+      gift_orders: {
+        Row: {
+          child_age: number | null
+          child_first_name: string | null
+          created_at: string
+          dedication_message: string | null
+          expires_at: string
+          gifter_email: string
+          gifter_name: string | null
+          hardcover_interest: boolean
+          id: string
+          parent_email: string
+          parent_name: string | null
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          upload_token: string
+        }
+        Insert: {
+          child_age?: number | null
+          child_first_name?: string | null
+          created_at?: string
+          dedication_message?: string | null
+          expires_at?: string
+          gifter_email: string
+          gifter_name?: string | null
+          hardcover_interest?: boolean
+          id?: string
+          parent_email: string
+          parent_name?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          upload_token?: string
+        }
+        Update: {
+          child_age?: number | null
+          child_first_name?: string | null
+          created_at?: string
+          dedication_message?: string | null
+          expires_at?: string
+          gifter_email?: string
+          gifter_name?: string | null
+          hardcover_interest?: boolean
+          id?: string
+          parent_email?: string
+          parent_name?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          upload_token?: string
+        }
+        Relationships: []
+      }
       jobs: {
         Row: {
           audit: Json
