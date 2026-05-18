@@ -72,6 +72,18 @@ function rememberSessionFailure(error: CaptureErrorState) {
   }
 }
 
+function clearSessionFailureBackoff() {
+  try {
+    sessionStorage.removeItem(FAILURE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function isCaptureError(error: CaptureErrorState | string | null): error is CaptureErrorState {
+  return typeof error === "object" && error !== null;
+}
+
 function makeSupportReference() {
   return `EXIT-${Date.now().toString(36).toUpperCase()}-${Math.random()
     .toString(36)
@@ -339,7 +351,7 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [error, setError] = useState<CaptureErrorState | null>(null);
+  const [error, setError] = useState<CaptureErrorState | string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -352,6 +364,7 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
     setSubmitting(true);
     try {
       await captureExitIntentEmail(parsed.data);
+      clearSessionFailureBackoff();
       setDone(true);
     } catch (err: unknown) {
       const diagnosticError =
