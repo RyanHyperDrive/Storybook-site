@@ -4,6 +4,15 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
 
+async function resolveImageRef(admin: any, bucket: string, value: unknown, ttl = 60 * 5): Promise<string | undefined> {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return undefined;
+  if (/^https?:\/\//i.test(raw) || raw.startsWith("data:")) return raw;
+  const { data, error } = await admin.storage.from(bucket).createSignedUrl(raw, ttl);
+  if (error) throw new Error(`Could not resolve ${bucket} image: ${error.message}`);
+  return data?.signedUrl ?? undefined;
+}
+
 /**
  * POST /validate-cover { bookId, coverImageUrl? }
  * Compares the book cover to the approved character sheet + visual contract.
@@ -37,25 +46,14 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
     if (!sheet?.image_url) return errorResponse("No approved character sheet", 412);
-    let sheetUrl: string | undefined;
-    if (/^https?:\/\//i.test(sheet.image_url) || sheet.image_url.startsWith("data:")) {
-      sheetUrl = sheet.image_url;
-    } else {
-      const { data: sigSheet } = await admin.storage
-        .from("character-sheets")
-        .createSignedUrl(sheet.image_url, 60 * 5);
-      sheetUrl = sigSheet?.signedUrl ?? undefined;
-    }
+    const sheetUrl = await resolveImageRef(admin, "character-sheets", sheet.image_url);
     if (!sheetUrl) return errorResponse("Could not resolve character sheet image", 500);
 
-    let coverUrl: string | undefined = coverImageUrl;
+    let coverUrl: string | undefined = await resolveImageRef(admin, "generated-pages", coverImageUrl);
     if (!coverUrl && book.cover_image_path) {
-      const { data: signed } = await admin.storage
-        .from("generated-pages")
-        .createSignedUrl(book.cover_image_path, 60 * 5);
-      coverUrl = signed?.signedUrl ?? undefined;
+      coverUrl = await resolveImageRef(admin, "generated-pages", book.cover_image_path);
     } else if (!coverUrl && book.cover_url) {
-      coverUrl = book.cover_url;
+      coverUrl = await resolveImageRef(admin, "generated-pages", book.cover_url);
     }
     if (!coverUrl) return errorResponse("No cover image to validate", 412);
 

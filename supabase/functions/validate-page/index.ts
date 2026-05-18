@@ -197,6 +197,13 @@ async function signed(admin: any, bucket: string, path: string): Promise<string 
   return data?.signedUrl ?? null;
 }
 
+async function resolveImageRef(admin: any, bucket: string, value: unknown): Promise<string | undefined> {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return undefined;
+  if (/^https?:\/\//i.test(raw) || raw.startsWith("data:")) return raw;
+  return (await signed(admin, bucket, raw)) ?? undefined;
+}
+
 /**
  * Synonym / compound-form expansion for parent-banned terms. The goal is to
  * reduce false negatives where the model sees "balloon animals" but the
@@ -329,7 +336,7 @@ serve(async (req) => {
       "4-6";
 
     // Resolve page image URL.
-    let pageUrl = pageImageUrl as string | undefined;
+    let pageUrl = await resolveImageRef(admin, "generated-pages", pageImageUrl);
     let pageRow: any = null;
     if (!pageUrl) {
       const { data: page } = await admin
@@ -346,7 +353,7 @@ serve(async (req) => {
     if (!pageUrl) return errorResponse("No page image found for this page", 412);
 
     // Resolve character sheet URL.
-    let sheetUrl = characterSheetUrl as string | undefined;
+    let sheetUrl = await resolveImageRef(admin, "character-sheets", characterSheetUrl);
     if (!sheetUrl) {
       const { data: sheet } = await admin
         .from("character_sheets")
@@ -358,11 +365,7 @@ serve(async (req) => {
         .maybeSingle();
       const sheetVal = sheet?.image_url ?? undefined;
       if (sheetVal) {
-        if (/^https?:\/\//i.test(sheetVal) || sheetVal.startsWith("data:")) {
-          sheetUrl = sheetVal;
-        } else {
-          sheetUrl = (await signed(admin, "character-sheets", sheetVal)) ?? undefined;
-        }
+        sheetUrl = await resolveImageRef(admin, "character-sheets", sheetVal);
       }
     }
     if (!sheetUrl) return errorResponse("No approved character sheet found for this book", 412);
@@ -370,9 +373,9 @@ serve(async (req) => {
     // Resolve optional cover image (secondary canonical look).
     let coverUrl: string | undefined;
     if (book.cover_image_path) {
-      coverUrl = (await signed(admin, "generated-pages", book.cover_image_path)) ?? undefined;
+      coverUrl = await resolveImageRef(admin, "generated-pages", book.cover_image_path);
     } else if (book.cover_url) {
-      coverUrl = book.cover_url;
+      coverUrl = await resolveImageRef(admin, "generated-pages", book.cover_url);
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

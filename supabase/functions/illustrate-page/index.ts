@@ -141,6 +141,15 @@ async function fetchAsDataUrl(url: string): Promise<string> {
   return `data:${contentType};base64,${btoa(binary)}`;
 }
 
+async function resolveImageRef(admin: any, bucket: string, value: unknown, ttl = 60 * 10): Promise<string | undefined> {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return undefined;
+  if (/^https?:\/\//i.test(raw) || raw.startsWith("data:")) return raw;
+  const { data, error } = await admin.storage.from(bucket).createSignedUrl(raw, ttl);
+  if (error) throw new Error(`Could not resolve ${bucket} image: ${error.message}`);
+  return data?.signedUrl ?? undefined;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return errorResponse("Method not allowed", 405);
@@ -186,7 +195,7 @@ serve(async (req) => {
     // For twins we ALWAYS pull both per-child sheets from child_subjects so
     // the model has a canonical reference for each twin on every page (not
     // just the primary sheet stored on character_sheets).
-    let refUrl = characterSheetUrl as string | undefined;
+    let refUrl = await resolveImageRef(admin, "character-sheets", characterSheetUrl);
     const twinSheetUrls: { name: string; url: string }[] = [];
     if (book.is_twins) {
       const { data: profiles } = await admin
@@ -203,10 +212,8 @@ serve(async (req) => {
         for (const p of profiles ?? []) {
           const s = (subs ?? []).find((x: any) => x.child_profile_id === p.id);
           if (s?.character_image_url) {
-            const { data: sig } = await admin.storage
-              .from("character-sheets")
-              .createSignedUrl(s.character_image_url, 60 * 10);
-            if (sig?.signedUrl) twinSheetUrls.push({ name: p.name ?? "twin", url: sig.signedUrl });
+            const signed = await resolveImageRef(admin, "character-sheets", s.character_image_url);
+            if (signed) twinSheetUrls.push({ name: p.name ?? "twin", url: signed });
           }
         }
       }
@@ -223,14 +230,7 @@ serve(async (req) => {
         .maybeSingle();
       const sheetVal = sheet?.image_url ?? undefined;
       if (sheetVal) {
-        if (/^https?:\/\//i.test(sheetVal) || sheetVal.startsWith("data:")) {
-          refUrl = sheetVal;
-        } else {
-          const { data: sig } = await admin.storage
-            .from("character-sheets")
-            .createSignedUrl(sheetVal, 60 * 10);
-          refUrl = sig?.signedUrl ?? undefined;
-        }
+        refUrl = await resolveImageRef(admin, "character-sheets", sheetVal);
       }
     }
     if (!refUrl) return errorResponse("No approved character sheet found for this book", 412);
@@ -247,10 +247,7 @@ serve(async (req) => {
         .limit(1)
         .maybeSingle();
       if (together?.storage_path) {
-        const { data: sig } = await admin.storage
-          .from("raw-uploads")
-          .createSignedUrl(together.storage_path, 60 * 10);
-        togetherUrl = sig?.signedUrl ?? undefined;
+        togetherUrl = await resolveImageRef(admin, "raw-uploads", together.storage_path);
       }
     }
 
@@ -258,12 +255,9 @@ serve(async (req) => {
     // page generation may not have a cover yet.
     let coverUrl: string | undefined;
     if (book.cover_image_path) {
-      const { data: signed } = await admin.storage
-        .from("generated-pages")
-        .createSignedUrl(book.cover_image_path, 60 * 10);
-      coverUrl = signed?.signedUrl ?? undefined;
+      coverUrl = await resolveImageRef(admin, "generated-pages", book.cover_image_path);
     } else if (book.cover_url) {
-      coverUrl = book.cover_url;
+      coverUrl = await resolveImageRef(admin, "generated-pages", book.cover_url);
     }
 
     // Rolling visual anchor: pull the most recently approved page image (the
@@ -289,10 +283,7 @@ serve(async (req) => {
         prevPath = prev?.image_storage_path ?? undefined;
       }
       if (prevPath) {
-        const { data: signedPrev } = await admin.storage
-          .from("generated-pages")
-          .createSignedUrl(prevPath, 60 * 10);
-        prevPageUrl = signedPrev?.signedUrl ?? undefined;
+        prevPageUrl = await resolveImageRef(admin, "generated-pages", prevPath);
       }
     }
 
