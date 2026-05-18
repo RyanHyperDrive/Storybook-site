@@ -433,20 +433,46 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
         <div className="pr-8">
           <p className="font-display text-base font-semibold">See a sample first.</p>
           <p className="text-xs text-muted-foreground">Free 3-page preview by email. No signup.</p>
-          <form onSubmit={submit} className="mt-2 flex gap-2">
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="h-9 flex-1"
-              required
-            />
-            <Button type="submit" variant="ember" size="sm" disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
-            </Button>
+          <form onSubmit={submit} className="mt-2 space-y-2">
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="h-9 flex-1"
+                required
+              />
+              <Button type="submit" variant="ember" size="sm" disabled={submitting}>
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
+              </Button>
+            </div>
+            {error && (
+              <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-2 text-xs text-destructive">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                  <div className="min-w-0 flex-1">
+                    <p>{isCaptureError(error) ? error.message : error}</p>
+                    {isCaptureError(error) && (
+                      <p className="mt-1 text-muted-foreground">Ref: {error.referenceId}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button type="submit" size="sm" variant="outline" disabled={submitting}>
+                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Try again
+                  </Button>
+                  {isCaptureError(error) && (
+                    <Button asChild size="sm" variant="ghost">
+                      <a href={getSupportHref(error, email)}>
+                        <Mail className="mr-1.5 h-3.5 w-3.5" /> Contact support
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </form>
-          {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
         </div>
       </div>
     );
@@ -477,7 +503,41 @@ function CaptureForm({ onClose, compact }: { onClose: () => void; compact: boole
             "Send me the sample"
           )}
         </Button>
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error && (
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" />
+              <div className="min-w-0 flex-1">
+                <p>{isCaptureError(error) ? error.message : error}</p>
+                {isCaptureError(error) && (
+                  <>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Support reference ID: {error.referenceId}
+                    </p>
+                    <details className="mt-2 text-xs text-muted-foreground">
+                      <summary className="cursor-pointer">Captured error details</summary>
+                      <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap rounded-lg bg-muted p-2 font-mono text-[11px]">
+                        {error.details}
+                      </pre>
+                    </details>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button type="submit" size="sm" variant="outline" disabled={submitting}>
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Try again
+              </Button>
+              {isCaptureError(error) && (
+                <Button asChild size="sm" variant="ghost">
+                  <a href={getSupportHref(error, email)}>
+                    <Mail className="mr-1.5 h-3.5 w-3.5" /> Contact support
+                  </a>
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </form>
       <p className="mt-4 text-xs text-muted-foreground">
         One sample, one optional launch email. Unsubscribe anytime. We never share your address.
