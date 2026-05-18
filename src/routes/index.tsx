@@ -104,6 +104,7 @@ function Home() {
   const { assets } = useSampleAssets();
   return (
     <div className="overflow-x-hidden">
+      <ExitIntentCapture />
       <SampleBookModal
         styleKey={openKey}
         open={openKey !== null}
