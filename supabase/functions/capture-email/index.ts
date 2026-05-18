@@ -13,9 +13,23 @@ import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return errorResponse("Method not allowed", 405);
+  const requestId = req.headers.get("x-exit-intent-reference") || crypto.randomUUID();
 
   try {
-    const { email, source = "exit_intent" } = await req.json();
+    const authHeader = req.headers.get("authorization");
+    const apikeyHeader = req.headers.get("apikey");
+    const contentType = req.headers.get("content-type");
+    const { email, source = "exit_intent", page = "/" } = await req.json();
+
+    console.log("capture-email request", {
+      requestId,
+      source,
+      page,
+      hasAuthorization: Boolean(authHeader),
+      authorizationType: authHeader?.split(" ")[0] ?? null,
+      hasApikey: Boolean(apikeyHeader),
+      contentType,
+    });
 
     if (
       typeof email !== "string" ||
@@ -38,16 +52,16 @@ serve(async (req) => {
       .insert({ email: email.toLowerCase().trim(), source });
 
     if (error) {
-      console.error("waitlist insert failed", error);
-      return errorResponse("Could not save email", 500);
+      console.error("waitlist insert failed", { requestId, error });
+      return jsonResponse({ error: "Could not save email", requestId }, 500);
     }
 
     // TODO: send sample preview via Resend.
-    console.log(`[capture-email] would email sample to ${email} (source=${source})`);
+    console.log(`[capture-email] would email sample to ${email} (source=${source}, requestId=${requestId})`);
 
-    return jsonResponse({ ok: true });
+    return jsonResponse({ ok: true, requestId });
   } catch (e: any) {
-    console.error("capture-email error", e);
-    return errorResponse(e?.message ?? "Internal error", 500);
+    console.error("capture-email error", { requestId, error: e });
+    return jsonResponse({ error: e?.message ?? "Internal error", requestId }, 500);
   }
 });
