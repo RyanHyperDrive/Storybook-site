@@ -196,14 +196,16 @@ function CaptureForm({
 
   if (done) {
     return (
-      <div className={compact ? "relative pr-8" : "relative p-8 pr-10"}>
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute right-2 top-2 rounded-full p-1.5 text-muted-foreground hover:bg-muted"
-        >
-          <X className="h-4 w-4" />
-        </button>
+      <div className={compact ? "relative pr-8" : "relative p-8"}>
+        {compact && (
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="absolute right-2 top-2 rounded-full p-1.5 text-muted-foreground hover:bg-muted"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
         <div className={compact ? "flex items-center gap-3" : "text-center"}>
           <CheckCircle2 className={compact ? "h-5 w-5 text-ember" : "mx-auto h-10 w-10 text-ember"} />
           <div>
