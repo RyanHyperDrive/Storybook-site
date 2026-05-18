@@ -121,8 +121,29 @@ function Home() {
               </span>
             </div>
 
+            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Perfect for
+              </span>
+              {[
+                "Bedtime",
+                "Birthdays",
+                "First day of school",
+                "New sibling",
+                "Grandparent gifts",
+                "Big feelings",
+              ].map((chip) => (
+                <span
+                  key={chip}
+                  className="inline-flex items-center rounded-full border border-border bg-background/70 px-2 py-0.5 text-[11px] font-medium text-foreground/80"
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+
             <h1 className="mt-4 font-display text-[2rem] font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-[3.4rem]">
-              A bedtime story starring{" "}
+              A storybook starring{" "}
               <br className="hidden sm:block" />
               <span className="text-ember">your child</span>.
             </h1>
@@ -139,10 +160,13 @@ function Home() {
               <div data-testid="page-count-line" className="mt-1 text-xs font-medium text-foreground/80">
                 Custom cover + dedication + 10 story pages
               </div>
+              <p className="mt-1 text-xs italic text-muted-foreground">
+                Compare: custom keepsake storybooks elsewhere run $50–80. Ours is ready in 15 minutes.
+              </p>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Link to="/create" className="w-full sm:w-auto">
                   <Button size="lg" variant="ember" className="w-full sm:w-auto">
-                    Start free character preview
+                    See your child as a storybook hero — free
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 </Link>
@@ -153,6 +177,12 @@ function Home() {
                   See what's included
                 </Link>
               </div>
+              <Link
+                to="/gift"
+                className="mt-1 block text-center text-sm text-muted-foreground underline-offset-4 hover:underline sm:text-left"
+              >
+                Buying for a grandchild, niece, or nephew? → Make it a gift
+              </Link>
               <p data-testid="hero-urgency" className="mt-3 flex items-center gap-2 text-xs font-semibold text-ember">
                 <Moon className="h-4 w-4 shrink-0" />
                 Start today. Read together tonight.
@@ -236,7 +266,7 @@ function Home() {
             </p>
           </div>
           <Link to="/create" className="text-sm font-medium text-ember underline-offset-4 hover:underline">
-            Start free preview →
+            See your child as a storybook hero — free →
           </Link>
         </div>
 
@@ -338,7 +368,7 @@ function Home() {
           </p>
           <Link to="/create" className="w-full sm:w-auto">
             <Button variant="ember" className="w-full sm:w-auto">
-              Start free character preview <ArrowRight className="ml-1 h-4 w-4" />
+              See your child as a storybook hero — free <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </Link>
         </div>
@@ -466,7 +496,7 @@ function Home() {
               <li>✓ Ready in about 10–20 minutes — we email you</li>
             </ul>
             <Link to="/create" className="mt-7 inline-block w-full sm:w-auto">
-              <Button variant="ember" size="lg" className="w-full sm:w-auto">Start free character preview</Button>
+              <Button variant="ember" size="lg" className="w-full sm:w-auto">See your child as a storybook hero — free</Button>
             </Link>
             <p className="mt-3 flex items-center gap-2 text-xs font-medium text-sage">
               <ShieldCheck className="h-4 w-4 shrink-0" />
