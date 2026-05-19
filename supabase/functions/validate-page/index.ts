@@ -186,16 +186,44 @@ export function validate(
     wrong_character_details: arr(obj.wrong_character_details),
     artifact_issues: arr(obj.artifact_issues),
     composition_issues: arr(obj.composition_issues),
+    head_cropped: Boolean(obj.head_cropped),
+    hair_cropped: Boolean(obj.hair_cropped),
+    face_cropped: Boolean(obj.face_cropped),
+    feet_cropped: Boolean(obj.feet_cropped),
+    hands_cropped: Boolean(obj.hands_cropped),
+    extreme_close_up_requested: Boolean(obj.extreme_close_up_requested),
+    safe_framing_ok: obj.safe_framing_ok === undefined ? true : Boolean(obj.safe_framing_ok),
     missing_required_elements: arr(obj.missing_required_elements),
     regeneration_recommended: Boolean(obj.regeneration_recommended),
     needs_regeneration: Boolean(obj.needs_regeneration ?? obj.regeneration_recommended),
     regeneration_instruction: typeof obj.regeneration_instruction === "string" ? obj.regeneration_instruction : "",
   };
 
+  // Safe-framing hard gate: head/hair/face cropping is ALWAYS a fail (unless
+  // an extreme close-up was explicitly requested, in which case the head/face
+  // must still be the deliberate subject — partial crops are still rejected).
+  // Feet cropping fails when the scene is a full-body / standing pose.
+  const headFaceCropped = cleaned.head_cropped || cleaned.hair_cropped || cleaned.face_cropped;
+  const feetCropFails = cleaned.feet_cropped && !cleaned.extreme_close_up_requested;
+  const framingFail = headFaceCropped || feetCropFails || cleaned.safe_framing_ok === false;
+  if (framingFail) {
+    cleaned.safe_framing_ok = false;
+    // Surface a concrete composition_issues entry so downstream consumers
+    // (review UI, regen instruction) see why the page failed.
+    const parts: string[] = [];
+    if (cleaned.head_cropped) parts.push("top of head cropped at frame edge");
+    if (cleaned.hair_cropped) parts.push("hair cropped at frame edge");
+    if (cleaned.face_cropped) parts.push("face cropped at frame edge");
+    if (feetCropFails) parts.push("feet cut off in a full-body / standing pose");
+    if (parts.length && !cleaned.composition_issues.some((c) => /crop|cut off/i.test(c))) {
+      cleaned.composition_issues = [...cleaned.composition_issues, ...parts];
+    }
+  }
+
   // Server-side regeneration policy. Bad/conflicting model output cannot
   // slip a low-quality page through. Character consistency, cover match,
-  // age fitness, parent-banned content, and (for comics) speech bubbles
-  // are hard gates.
+  // age fitness, parent-banned content, safe framing, and (for comics)
+  // speech bubbles are hard gates.
   const lowScore =
     cleaned.character_consistency_score < 0.88 ||
     cleaned.cover_match_score < 0.85 ||
@@ -208,20 +236,29 @@ export function validate(
     !cleaned.safety_ok ||
     cleaned.text_inside_image_detected ||
     cleaned.composition_issues.length > 0 ||
+    !cleaned.safe_framing_ok ||
+    framingFail ||
     cleaned.banned_content_detected.length > 0 ||
     (styleKey === "comic_book" && cleaned.speech_bubble_detected);
   if (lowScore || failedFlags) {
     cleaned.regeneration_recommended = true;
     cleaned.needs_regeneration = true;
-    // Make sure the illustrator's corrective note names the banned items
-    // explicitly so the next attempt can actually remove them.
     if (cleaned.banned_content_detected.length > 0) {
       const removeClause = `Remove: ${cleaned.banned_content_detected.join(", ")} (parent explicitly disallowed)`;
       cleaned.regeneration_instruction = cleaned.regeneration_instruction
         ? `${removeClause}. ${cleaned.regeneration_instruction}`
         : removeClause;
-    } else if (cleaned.composition_issues.length > 0 && !cleaned.regeneration_instruction) {
-      cleaned.regeneration_instruction = `Redraw with the child's full head, hair, face, and body safely inside the frame; avoid tight cropping.`;
+    } else if (framingFail) {
+      const reframeParts: string[] = [];
+      if (cleaned.head_cropped || cleaned.hair_cropped) reframeParts.push("full head and hair");
+      if (cleaned.face_cropped) reframeParts.push("entire face");
+      if (feetCropFails) reframeParts.push("both feet");
+      if (cleaned.hands_cropped) reframeParts.push("hands");
+      const subject = reframeParts.length ? reframeParts.join(", ") : "child's full head and body";
+      const reframeClause = `Reframe: bring the ${subject} fully inside the frame with comfortable padding; do not crop the top of the head or the feet in a standing pose.`;
+      cleaned.regeneration_instruction = cleaned.regeneration_instruction
+        ? `${reframeClause} ${cleaned.regeneration_instruction}`
+        : reframeClause;
     }
   }
 
