@@ -60,6 +60,13 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
   "wrong_character_details": [],
   "artifact_issues": [],
   "composition_issues": [],
+  "head_cropped": false,
+  "hair_cropped": false,
+  "face_cropped": false,
+  "feet_cropped": false,
+  "hands_cropped": false,
+  "extreme_close_up_requested": false,
+  "safe_framing_ok": true,
   "missing_required_elements": [],
   "regeneration_recommended": false,
   "needs_regeneration": false,
@@ -83,6 +90,17 @@ Scoring rules:
   - Ages 7-10: gore, sexual/romantic content, realistic violence, weapons used to harm, substance use, self-harm -> max 0.5.
 - "age_appropriateness_issues" lists concrete reasons the score was reduced (or [] if 1.0).
 - safety_ok = false if there is anything genuinely unsafe in the image regardless of age.
+
+SAFE FRAMING — strict, INDEPENDENT checks. Evaluate the main child / focal character in the frame regardless of how good the rest of the image looks:
+- "extreme_close_up_requested" = true ONLY if the scene description explicitly calls for an extreme close-up, portrait-only shot, or face-only crop. Otherwise false. Do NOT infer it from artistic preference.
+- "head_cropped" = true if ANY portion of the top of the head/skull is cut off by the image edge — even a sliver of scalp — OR the top of the head touches the frame edge with no padding above it.
+- "hair_cropped" = true if hair is cut off by any image edge (top or sides) beyond a hairline trim.
+- "face_cropped" = true if any part of the face (forehead, brow, chin, ears, cheek) is cut off by the frame.
+- "feet_cropped" = true if the feet, ankles, or shoes are cut off by the bottom edge in a scene where the child is standing, walking, running, jumping, dancing, or otherwise depicted full-body — UNLESS the child is clearly seated, lying down, behind an in-scene occluder (desk, blanket, water, tall grass), or the scene description explicitly calls for a waist-up / medium shot.
+- "hands_cropped" = true if hands holding or interacting with a story-required object are cut off.
+- "safe_framing_ok" = false if ANY of head_cropped, hair_cropped, face_cropped, OR feet_cropped (when the feet-applicable conditions above hold) is true AND extreme_close_up_requested is false. Even in an extreme close-up, head/hair/face must still be the intentional subject with comfortable padding — never an awkward partial crop.
+- Any true framing-crop flag MUST also appear in "composition_issues" as a literal phrase such as "top of head cropped at frame edge", "feet cut off below the ankles in a standing pose", or "chin cropped by lower frame". Be specific.
+
 - regeneration_recommended / needs_regeneration = true if ANY of:
     character_consistency_score < 0.88,
     cover_match_score < 0.85,
@@ -91,14 +109,19 @@ Scoring rules:
     age_appropriateness_score < 0.95,
     text_inside_image_detected = true,
     composition_issues is non-empty,
+    safe_framing_ok = false,
+    head_cropped = true,
+    hair_cropped = true,
+    face_cropped = true,
+    (feet_cropped = true AND extreme_close_up_requested = false),
     banned_content_detected is non-empty,
     (style is "comic_book" AND speech_bubble_detected = true),
     correct_number_of_main_characters = false,
     twin_distinction_ok = false,
     safety_ok = false.
-- "regeneration_instruction" is a short, concrete fix the illustrator should apply (e.g. "Restore the red striped scarf and match hair length to the character sheet", "Remove the speech bubbles entirely; use motion lines and starbursts instead", "Remove the balloon — the parent explicitly disallowed balloons"). If banned_content_detected is non-empty, the instruction MUST start with "Remove: <list>".
+- "regeneration_instruction" is a short, concrete fix the illustrator should apply. If banned_content_detected is non-empty, the instruction MUST start with "Remove: <list>". If any framing-crop flag is true, the instruction MUST start with "Reframe: " and name exactly which parts (head, hair, face, feet, hands) must be brought fully inside the frame with comfortable padding.
 - "artifact_issues" lists visible defects (extra fingers, warped face, etc).
-- "composition_issues" lists image-framing problems, especially if the child's head, hair, face, chin, hands, or feet are unintentionally cut off, or if the crop makes the child hard to recognize. Cropped-off head/face/hair is a regeneration issue unless the scene explicitly requested an extreme close-up.
+- "composition_issues" lists image-framing problems. Cropped-off head/hair/face/feet/hands is ALWAYS a regeneration issue unless extreme_close_up_requested is true — and even then, head and face must remain fully inside the frame with padding.
 - "missing_required_elements" lists items from the must-include list that are absent.`;
 }
 
