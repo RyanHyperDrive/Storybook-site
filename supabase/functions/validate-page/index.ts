@@ -54,6 +54,7 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
   "missing_required_character_details": [],
   "wrong_character_details": [],
   "artifact_issues": [],
+  "composition_issues": [],
   "missing_required_elements": [],
   "regeneration_recommended": false,
   "needs_regeneration": false,
@@ -84,6 +85,7 @@ Scoring rules:
     scene_match_score < 0.85,
     age_appropriateness_score < 0.95,
     text_inside_image_detected = true,
+    composition_issues is non-empty,
     banned_content_detected is non-empty,
     (style is "comic_book" AND speech_bubble_detected = true),
     correct_number_of_main_characters = false,
@@ -91,6 +93,7 @@ Scoring rules:
     safety_ok = false.
 - "regeneration_instruction" is a short, concrete fix the illustrator should apply (e.g. "Restore the red striped scarf and match hair length to the character sheet", "Remove the speech bubbles entirely; use motion lines and starbursts instead", "Remove the balloon — the parent explicitly disallowed balloons"). If banned_content_detected is non-empty, the instruction MUST start with "Remove: <list>".
 - "artifact_issues" lists visible defects (extra fingers, warped face, etc).
+- "composition_issues" lists image-framing problems, especially if the child's head, hair, face, chin, hands, or feet are unintentionally cut off, or if the crop makes the child hard to recognize. Cropped-off head/face/hair is a regeneration issue unless the scene explicitly requested an extreme close-up.
 - "missing_required_elements" lists items from the must-include list that are absent.`;
 }
 
@@ -104,6 +107,7 @@ const REQUIRED_KEYS = [
   "twin_distinction_ok",
   "safety_ok",
   "artifact_issues",
+  "composition_issues",
   "missing_required_elements",
   "regeneration_recommended",
   "regeneration_instruction",
