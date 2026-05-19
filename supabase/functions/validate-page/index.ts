@@ -26,12 +26,17 @@ import { requireUser } from "../_shared/auth.ts";
  * and returns the structured QC report.
  */
 
-function buildSystemPrompt(ageBand: string, styleKey: string, hasCover: boolean): string {
+function buildSystemPrompt(ageBand: string, styleKey: string, hasCover: boolean, hasPrevPage: boolean): string {
+  const refs = [
+    "1. The approved character sheet (Image 1).",
+    hasCover ? "2. The approved cover image (Image 2)." : "",
+    hasPrevPage ? `${hasCover ? "3" : "2"}. The previous approved story page (continuity reference).` : "",
+    `${1 + (hasCover ? 1 : 0) + (hasPrevPage ? 1 : 0) + 1}. The generated page image to validate.`,
+  ].filter(Boolean).join("\n");
   return `You are validating a personalized children's storybook page for a child in the age band ${ageBand}, art style "${styleKey}".
 
 Compare:
-1. The approved character sheet (Image 1).
-${hasCover ? "2. The approved cover image (Image 2).\n3. The generated page image (Image 3).\n" : "2. The generated page image (Image 2).\n"}
+${refs}
 And against the visual consistency contract, the required scene, the parent-provided child details, and the age band.
 
 Return STRICT JSON only — no markdown, no commentary — matching this schema exactly:
@@ -54,6 +59,7 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
   "missing_required_character_details": [],
   "wrong_character_details": [],
   "artifact_issues": [],
+  "composition_issues": [],
   "missing_required_elements": [],
   "regeneration_recommended": false,
   "needs_regeneration": false,
@@ -62,7 +68,7 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
 
 Scoring rules:
 - All scores are floats from 0.0 to 1.0.
-- character_consistency_score = how faithfully the page reproduces the same face, hair, skin tone, distinguishing features, accessibility devices, and canonical outfit from the character sheet (and cover, if provided). Drift in face shape, hair color, hair style, skin tone, eye color, outfit colors, or accessibility devices must drop the score sharply. character_likeness_score may mirror this for back-compat.
+- character_consistency_score = how faithfully the page reproduces the same face, hair, skin tone, distinguishing features, accessibility devices, and clothing continuity from the character sheet, cover, and previous page if provided. Drift in face shape, hair color, hair style, skin tone, eye color, outfit colors, or accessibility devices must drop the score sharply. If the story scene explicitly establishes a scene-specific outfit (for example pajamas), prefer continuity with that story outfit and the previous page over the character sheet's default/canonical outfit. character_likeness_score may mirror this for back-compat.
 - cover_match_score = how faithfully the page matches the approved cover's character rendering. ${hasCover ? "Score it strictly." : "If no cover image is provided, set this to 1.0."}
 - style_consistency_score = adherence to the named art style.
 - scene_match_score = how faithfully the image depicts the required scene; scene_accuracy_score may mirror this.
@@ -84,6 +90,7 @@ Scoring rules:
     scene_match_score < 0.85,
     age_appropriateness_score < 0.95,
     text_inside_image_detected = true,
+    composition_issues is non-empty,
     banned_content_detected is non-empty,
     (style is "comic_book" AND speech_bubble_detected = true),
     correct_number_of_main_characters = false,
@@ -91,6 +98,7 @@ Scoring rules:
     safety_ok = false.
 - "regeneration_instruction" is a short, concrete fix the illustrator should apply (e.g. "Restore the red striped scarf and match hair length to the character sheet", "Remove the speech bubbles entirely; use motion lines and starbursts instead", "Remove the balloon — the parent explicitly disallowed balloons"). If banned_content_detected is non-empty, the instruction MUST start with "Remove: <list>".
 - "artifact_issues" lists visible defects (extra fingers, warped face, etc).
+- "composition_issues" lists image-framing problems, especially if the child's head, hair, face, chin, hands, or feet are unintentionally cut off, or if the crop makes the child hard to recognize. Cropped-off head/face/hair is a regeneration issue unless the scene explicitly requested an extreme close-up.
 - "missing_required_elements" lists items from the must-include list that are absent.`;
 }
 
@@ -104,6 +112,7 @@ const REQUIRED_KEYS = [
   "twin_distinction_ok",
   "safety_ok",
   "artifact_issues",
+  "composition_issues",
   "missing_required_elements",
   "regeneration_recommended",
   "regeneration_instruction",
@@ -153,6 +162,7 @@ export function validate(
     missing_required_character_details: arr(obj.missing_required_character_details),
     wrong_character_details: arr(obj.wrong_character_details),
     artifact_issues: arr(obj.artifact_issues),
+    composition_issues: arr(obj.composition_issues),
     missing_required_elements: arr(obj.missing_required_elements),
     regeneration_recommended: Boolean(obj.regeneration_recommended),
     needs_regeneration: Boolean(obj.needs_regeneration ?? obj.regeneration_recommended),
@@ -174,6 +184,7 @@ export function validate(
     !cleaned.twin_distinction_ok ||
     !cleaned.safety_ok ||
     cleaned.text_inside_image_detected ||
+    cleaned.composition_issues.length > 0 ||
     cleaned.banned_content_detected.length > 0 ||
     (styleKey === "comic_book" && cleaned.speech_bubble_detected);
   if (lowScore || failedFlags) {
@@ -186,6 +197,8 @@ export function validate(
       cleaned.regeneration_instruction = cleaned.regeneration_instruction
         ? `${removeClause}. ${cleaned.regeneration_instruction}`
         : removeClause;
+    } else if (cleaned.composition_issues.length > 0 && !cleaned.regeneration_instruction) {
+      cleaned.regeneration_instruction = `Redraw with the child's full head, hair, face, and body safely inside the frame; avoid tight cropping.`;
     }
   }
 
@@ -378,6 +391,23 @@ serve(async (req) => {
       coverUrl = await resolveImageRef(admin, "generated-pages", book.cover_url);
     }
 
+    // Resolve previous approved page as a continuity reference for outfit,
+    // hairstyle, palette, and character proportions across adjacent scenes.
+    let prevPageUrl: string | undefined;
+    const { data: prevPage } = await admin
+      .from("book_pages")
+      .select("image_storage_path")
+      .eq("book_id", bookId)
+      .lt("page_number", pageNumber)
+      .eq("status", "ready")
+      .not("image_storage_path", "is", null)
+      .order("page_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (prevPage?.image_storage_path) {
+      prevPageUrl = await resolveImageRef(admin, "generated-pages", prevPage.image_storage_path);
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
@@ -431,10 +461,8 @@ serve(async (req) => {
       `Parent-provided child details:\n${childSummary || "(none)"}`,
       `Visual consistency contract (JSON): ${contractJson}`,
       "",
-      coverUrl
-        ? "Image 1 = approved character sheet. Image 2 = approved cover. Image 3 = generated page image."
-        : "Image 1 = approved character sheet. Image 2 = generated page image.",
-      "Score the page against the sheet, the cover, the contract, the scene, the parent details, the style, the age band, and the BANNED CONTENT list. Return strict JSON only.",
+      `Image order: Image 1 = approved character sheet.${coverUrl ? " Image 2 = approved cover." : ""}${prevPageUrl ? ` Image ${coverUrl ? 3 : 2} = previous approved story page continuity reference.` : ""} Image ${1 + (coverUrl ? 1 : 0) + (prevPageUrl ? 1 : 0) + 1} = generated page image to validate.`,
+      "Score the page against the sheet, the cover if provided, the previous page if provided, the contract, the scene, the parent details, the style, the age band, and the BANNED CONTENT list. Return strict JSON only.",
     ].join("\n");
 
     const validatorContent: any[] = [
@@ -442,6 +470,7 @@ serve(async (req) => {
       { type: "image_url", image_url: { url: sheetUrl } },
     ];
     if (coverUrl) validatorContent.push({ type: "image_url", image_url: { url: coverUrl } });
+    if (prevPageUrl) validatorContent.push({ type: "image_url", image_url: { url: prevPageUrl } });
     validatorContent.push({ type: "image_url", image_url: { url: pageUrl } });
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -454,7 +483,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: buildSystemPrompt(ageBand, styleKey, !!coverUrl) },
+          { role: "system", content: buildSystemPrompt(ageBand, styleKey, !!coverUrl, !!prevPageUrl) },
           { role: "user", content: validatorContent },
         ],
       }),
@@ -507,6 +536,7 @@ serve(async (req) => {
         ? `Age-fit (band ${ageBand}) ${report.age_appropriateness_score.toFixed(2)}: ${report.age_appropriateness_issues.join("; ") || "below threshold"}`
         : "",
       report.artifact_issues.length ? `Artifacts: ${report.artifact_issues.join("; ")}` : "",
+      report.composition_issues.length ? `Composition: ${report.composition_issues.join("; ")}` : "",
       report.missing_required_elements.length ? `Missing: ${report.missing_required_elements.join("; ")}` : "",
     ].filter(Boolean).join(" | ") || null;
 
@@ -528,6 +558,7 @@ serve(async (req) => {
       },
       age_appropriateness_issues: report.age_appropriateness_issues,
       artifact_issues: report.artifact_issues,
+      composition_issues: report.composition_issues,
       missing_required_elements: report.missing_required_elements,
       wrong_character_details: report.wrong_character_details,
       missing_required_character_details: report.missing_required_character_details,

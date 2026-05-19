@@ -76,6 +76,17 @@ serve(async (req) => {
       .update({ status: "regenerating" })
       .eq("id", pageId);
 
+    const { data: prevPage } = await admin
+      .from("book_pages")
+      .select("image_storage_path")
+      .eq("book_id", book.id)
+      .lt("page_number", page.page_number)
+      .eq("status", "ready")
+      .not("image_storage_path", "is", null)
+      .order("page_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     // Synchronously call illustrate-page.
     const res = await fetch(`${SUPABASE_URL}/functions/v1/illustrate-page`, {
       method: "POST",
@@ -89,6 +100,7 @@ serve(async (req) => {
         visualMustHaves: scenePage.visual_must_haves ?? [],
         visualMustNotInclude: scenePage.visual_must_not_include ?? [],
         correctiveNote: typeof feedback === "string" ? feedback : "",
+        previousPageImagePath: prevPage?.image_storage_path,
       }),
     });
     const json = await res.json().catch(() => null);
