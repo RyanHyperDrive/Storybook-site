@@ -415,9 +415,9 @@ function PipelineDetails({ book, pages }: { book: any; pages: any[] }) {
         />
         <Row
           label="Pages"
-          helper={`${doneCount}/${expected || "?"} ready${activeCount ? ` · ${activeCount} in progress` : ""}${reviewCount ? ` · ${reviewCount} need review` : ""}`}
-          tone={expected && doneCount >= expected ? "done" : activeCount ? "active" : "pending"}
-          status={expected && doneCount >= expected ? "Ready" : `${doneCount}/${expected || "?"}`}
+          helper={`${doneCount}/${expected || "?"} illustrated${activeCount ? ` · ${activeCount} in progress` : ""}${reviewCount ? ` · ${reviewCount} need review` : ""}`}
+          tone={reviewCount ? "warn" : expected && doneCount >= expected ? "done" : activeCount ? "active" : "pending"}
+          status={reviewCount ? "Review" : expected && doneCount >= expected ? "Ready" : `${doneCount}/${expected || "?"}`}
         />
         <Row
           label="Retries"
@@ -431,9 +431,9 @@ function PipelineDetails({ book, pages }: { book: any; pages: any[] }) {
         />
         <Row
           label="Final render"
-          helper={renderReady ? "PDF assembled and ready to download." : "Waiting for all pages to be approved."}
-          tone={renderReady ? "done" : "pending"}
-          status={renderReady ? "Ready" : "Pending"}
+          helper={renderReady ? "PDF assembled and ready to download." : reviewCount ? "Review flagged pages before final PDF assembly." : "Assembling the downloadable PDF."}
+          tone={renderReady ? "done" : reviewCount ? "warn" : "active"}
+          status={renderReady ? "Ready" : reviewCount ? "Review" : "Building"}
         />
       </div>
 
