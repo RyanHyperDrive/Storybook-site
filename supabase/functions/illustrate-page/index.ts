@@ -86,7 +86,7 @@ const PROMPT_TEMPLATE = (input: {
   }
   let n = refs.length + 1;
   if (input.hasCoverRef) { refs.push(`- Image ${n}: the approved book cover (secondary canonical look — match its character rendering exactly).`); n++; }
-  if (input.hasPrevPageRef) { refs.push(`- Image ${n}: the most recently approved page from THIS book (tertiary canonical look — match its character rendering, line weight, palette, and style exactly so the book reads as one continuous illustrated work).`); n++; }
+  if (input.hasPrevPageRef) { refs.push(`- Image ${n}: the most recently approved page from THIS book (continuity reference — match its character rendering, clothing, line weight, palette, and style exactly so the book reads as one continuous illustrated work).`); n++; }
   if (input.hasTogetherRef) { refs.push(`- Image ${n}: photo of the two real twins together — use it to ground their relative size, posture, and how they actually differ in real life when both appear in the scene.`); n++; }
   return `Create a children's storybook illustration in the approved style: ${input.styleKey}.
 
@@ -120,6 +120,8 @@ Composition:
 - Full storybook page illustration.
 - No page text embedded in the image. All titles and page text are rendered by the app over the image.
 - Keep the character clearly visible and on-model with the character sheet${input.hasCoverRef ? ", cover" : ""}${input.hasPrevPageRef ? ", and previous page" : ""}.
+- FRAMING HARD GATE: never crop off the child's head, hair, face, chin, hands, or feet unless the story explicitly requires an extreme close-up. Leave comfortable margin around the full head and hair. For bedtime or seated scenes, keep the whole head and upper body visible inside the frame.
+- CONTINUITY HARD GATE: if the previous page shows the child wearing a specific outfit, keep that same outfit, colors, hairstyle, and facial proportions on this page unless the scene text explicitly says the child changed clothes. The previous page reference is a clothing and likeness anchor, not just a style sample.
 - Warm, safe, age-appropriate mood for ages ${input.ageBand}.
 - Consistent color palette, line weight, shading, and rendering quality with the reference images. Do not change art technique between pages.`;
 };
