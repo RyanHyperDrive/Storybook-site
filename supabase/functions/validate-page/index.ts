@@ -391,6 +391,23 @@ serve(async (req) => {
       coverUrl = await resolveImageRef(admin, "generated-pages", book.cover_url);
     }
 
+    // Resolve previous approved page as a continuity reference for outfit,
+    // hairstyle, palette, and character proportions across adjacent scenes.
+    let prevPageUrl: string | undefined;
+    const { data: prevPage } = await admin
+      .from("book_pages")
+      .select("image_storage_path")
+      .eq("book_id", bookId)
+      .lt("page_number", pageNumber)
+      .eq("status", "ready")
+      .not("image_storage_path", "is", null)
+      .order("page_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (prevPage?.image_storage_path) {
+      prevPageUrl = await resolveImageRef(admin, "generated-pages", prevPage.image_storage_path);
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
@@ -444,10 +461,8 @@ serve(async (req) => {
       `Parent-provided child details:\n${childSummary || "(none)"}`,
       `Visual consistency contract (JSON): ${contractJson}`,
       "",
-      coverUrl
-        ? "Image 1 = approved character sheet. Image 2 = approved cover. Image 3 = generated page image."
-        : "Image 1 = approved character sheet. Image 2 = generated page image.",
-      "Score the page against the sheet, the cover, the contract, the scene, the parent details, the style, the age band, and the BANNED CONTENT list. Return strict JSON only.",
+      `Image order: Image 1 = approved character sheet.${coverUrl ? " Image 2 = approved cover." : ""}${prevPageUrl ? ` Image ${coverUrl ? 3 : 2} = previous approved story page continuity reference.` : ""} Image ${1 + (coverUrl ? 1 : 0) + (prevPageUrl ? 1 : 0) + 1} = generated page image to validate.`,
+      "Score the page against the sheet, the cover if provided, the previous page if provided, the contract, the scene, the parent details, the style, the age band, and the BANNED CONTENT list. Return strict JSON only.",
     ].join("\n");
 
     const validatorContent: any[] = [
@@ -455,6 +470,7 @@ serve(async (req) => {
       { type: "image_url", image_url: { url: sheetUrl } },
     ];
     if (coverUrl) validatorContent.push({ type: "image_url", image_url: { url: coverUrl } });
+    if (prevPageUrl) validatorContent.push({ type: "image_url", image_url: { url: prevPageUrl } });
     validatorContent.push({ type: "image_url", image_url: { url: pageUrl } });
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -467,7 +483,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: buildSystemPrompt(ageBand, styleKey, !!coverUrl) },
+          { role: "system", content: buildSystemPrompt(ageBand, styleKey, !!coverUrl, !!prevPageUrl) },
           { role: "user", content: validatorContent },
         ],
       }),
