@@ -26,12 +26,17 @@ import { requireUser } from "../_shared/auth.ts";
  * and returns the structured QC report.
  */
 
-function buildSystemPrompt(ageBand: string, styleKey: string, hasCover: boolean): string {
+function buildSystemPrompt(ageBand: string, styleKey: string, hasCover: boolean, hasPrevPage: boolean): string {
+  const refs = [
+    "1. The approved character sheet (Image 1).",
+    hasCover ? "2. The approved cover image (Image 2)." : "",
+    hasPrevPage ? `${hasCover ? "3" : "2"}. The previous approved story page (continuity reference).` : "",
+    `${1 + (hasCover ? 1 : 0) + (hasPrevPage ? 1 : 0) + 1}. The generated page image to validate.`,
+  ].filter(Boolean).join("\n");
   return `You are validating a personalized children's storybook page for a child in the age band ${ageBand}, art style "${styleKey}".
 
 Compare:
-1. The approved character sheet (Image 1).
-${hasCover ? "2. The approved cover image (Image 2).\n3. The generated page image (Image 3).\n" : "2. The generated page image (Image 2).\n"}
+${refs}
 And against the visual consistency contract, the required scene, the parent-provided child details, and the age band.
 
 Return STRICT JSON only — no markdown, no commentary — matching this schema exactly:
@@ -63,7 +68,7 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
 
 Scoring rules:
 - All scores are floats from 0.0 to 1.0.
-- character_consistency_score = how faithfully the page reproduces the same face, hair, skin tone, distinguishing features, accessibility devices, and canonical outfit from the character sheet (and cover, if provided). Drift in face shape, hair color, hair style, skin tone, eye color, outfit colors, or accessibility devices must drop the score sharply. character_likeness_score may mirror this for back-compat.
+- character_consistency_score = how faithfully the page reproduces the same face, hair, skin tone, distinguishing features, accessibility devices, and clothing continuity from the character sheet, cover, and previous page if provided. Drift in face shape, hair color, hair style, skin tone, eye color, outfit colors, or accessibility devices must drop the score sharply. If the story scene explicitly establishes a scene-specific outfit (for example pajamas), prefer continuity with that story outfit and the previous page over the character sheet's default/canonical outfit. character_likeness_score may mirror this for back-compat.
 - cover_match_score = how faithfully the page matches the approved cover's character rendering. ${hasCover ? "Score it strictly." : "If no cover image is provided, set this to 1.0."}
 - style_consistency_score = adherence to the named art style.
 - scene_match_score = how faithfully the image depicts the required scene; scene_accuracy_score may mirror this.
