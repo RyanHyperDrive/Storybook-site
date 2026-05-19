@@ -17,6 +17,7 @@ function baseReport(overrides: Record<string, unknown> = {}) {
     twin_distinction_ok: true,
     safety_ok: true,
     artifact_issues: [],
+    composition_issues: [],
     missing_required_elements: [],
     regeneration_recommended: false,
     regeneration_instruction: "",
