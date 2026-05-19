@@ -104,6 +104,39 @@ Deno.test("comic_book + speech_bubble_detected forces regeneration", () => {
   assertEquals(r.data.needs_regeneration, true);
 });
 
+Deno.test("head_cropped forces regeneration with Reframe: instruction", () => {
+  const r = validate(baseReport({ head_cropped: true }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+  assertEquals(r.data.safe_framing_ok, false);
+  assertEquals(r.data.regeneration_instruction.startsWith("Reframe:"), true);
+});
+
+Deno.test("face_cropped forces regeneration", () => {
+  const r = validate(baseReport({ face_cropped: true }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+});
+
+Deno.test("feet_cropped forces regeneration when not extreme close-up", () => {
+  const r = validate(baseReport({ feet_cropped: true, extreme_close_up_requested: false }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+  assertEquals(r.data.safe_framing_ok, false);
+});
+
+Deno.test("feet_cropped allowed when scene is an extreme close-up", () => {
+  const r = validate(baseReport({ feet_cropped: true, extreme_close_up_requested: true }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, false);
+});
+
+Deno.test("safe_framing_ok=false alone forces regeneration", () => {
+  const r = validate(baseReport({ safe_framing_ok: false }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+});
+
 Deno.test("comic_book art-style anchor forbids bubbles + sound-effect text", async () => {
   const src = await Deno.readTextFile(
     new URL("../../../src/lib/art-styles.ts", import.meta.url),
