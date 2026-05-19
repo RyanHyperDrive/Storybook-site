@@ -17,6 +17,7 @@ function baseReport(overrides: Record<string, unknown> = {}) {
     twin_distinction_ok: true,
     safety_ok: true,
     artifact_issues: [],
+    composition_issues: [],
     missing_required_elements: [],
     regeneration_recommended: false,
     regeneration_instruction: "",
@@ -100,6 +101,39 @@ Deno.test("text inside image always forces regeneration", () => {
 
 Deno.test("comic_book + speech_bubble_detected forces regeneration", () => {
   const r = validate(baseReport({ speech_bubble_detected: true }), { styleKey: "comic_book" });
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+});
+
+Deno.test("head_cropped forces regeneration with Reframe: instruction", () => {
+  const r = validate(baseReport({ head_cropped: true }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+  assertEquals(r.data.safe_framing_ok, false);
+  assertEquals(r.data.regeneration_instruction.startsWith("Reframe:"), true);
+});
+
+Deno.test("face_cropped forces regeneration", () => {
+  const r = validate(baseReport({ face_cropped: true }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+});
+
+Deno.test("feet_cropped forces regeneration when not extreme close-up", () => {
+  const r = validate(baseReport({ feet_cropped: true, extreme_close_up_requested: false }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, true);
+  assertEquals(r.data.safe_framing_ok, false);
+});
+
+Deno.test("feet_cropped allowed when scene is an extreme close-up", () => {
+  const r = validate(baseReport({ feet_cropped: true, extreme_close_up_requested: true }));
+  if (!r.ok) throw new Error(r.error);
+  assertEquals(r.data.needs_regeneration, false);
+});
+
+Deno.test("safe_framing_ok=false alone forces regeneration", () => {
+  const r = validate(baseReport({ safe_framing_ok: false }));
   if (!r.ok) throw new Error(r.error);
   assertEquals(r.data.needs_regeneration, true);
 });
