@@ -192,6 +192,8 @@ export function validate(
       cleaned.regeneration_instruction = cleaned.regeneration_instruction
         ? `${removeClause}. ${cleaned.regeneration_instruction}`
         : removeClause;
+    } else if (cleaned.composition_issues.length > 0 && !cleaned.regeneration_instruction) {
+      cleaned.regeneration_instruction = `Redraw with the child's full head, hair, face, and body safely inside the frame; avoid tight cropping.`;
     }
   }
 
