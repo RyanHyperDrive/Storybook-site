@@ -513,6 +513,7 @@ serve(async (req) => {
         ? `Age-fit (band ${ageBand}) ${report.age_appropriateness_score.toFixed(2)}: ${report.age_appropriateness_issues.join("; ") || "below threshold"}`
         : "",
       report.artifact_issues.length ? `Artifacts: ${report.artifact_issues.join("; ")}` : "",
+      report.composition_issues.length ? `Composition: ${report.composition_issues.join("; ")}` : "",
       report.missing_required_elements.length ? `Missing: ${report.missing_required_elements.join("; ")}` : "",
     ].filter(Boolean).join(" | ") || null;
 
@@ -534,6 +535,7 @@ serve(async (req) => {
       },
       age_appropriateness_issues: report.age_appropriateness_issues,
       artifact_issues: report.artifact_issues,
+      composition_issues: report.composition_issues,
       missing_required_elements: report.missing_required_elements,
       wrong_character_details: report.wrong_character_details,
       missing_required_character_details: report.missing_required_character_details,
