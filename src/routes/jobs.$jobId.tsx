@@ -142,19 +142,35 @@ function Inner() {
 
   const failed = job.status === "error" || job.status === "failed";
   const done = job.status === "done";
+  const reviewCountForJob = pages.filter((p) => p.needs_review).length;
+  const finalRenderReady = !!book?.ebook_url;
+  const fullyReady = done && finalRenderReady && reviewCountForJob === 0;
+  const previewReady = done && !fullyReady;
   const pct: number = Math.max(0, Math.min(100, job.progress ?? 0));
+  const displayPct = previewReady && !finalRenderReady ? Math.min(pct, 96) : pct;
   const currentStep: StepKey = (job.current_step as StepKey) || stepFromProgress(pct);
-  const currentMeta = STEPS.find((s) => s.key === currentStep) ?? STEPS[0];
+  const displayStep: StepKey = previewReady && !finalRenderReady ? "pdf_assembly" : currentStep;
+  const currentMeta = STEPS.find((s) => s.key === displayStep) ?? STEPS[0];
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="text-center">
         <h1 className="font-display text-3xl font-semibold">
-          {done ? "Your book is ready" : failed ? "Something went wrong" : "Creating your book"}
+          {fullyReady
+            ? "Your book is ready"
+            : previewReady
+              ? "Your book preview is ready"
+              : failed
+                ? "Something went wrong"
+                : "Creating your book"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {done
+          {fullyReady
             ? "All pages have been illustrated and assembled."
+            : previewReady
+              ? reviewCountForJob > 0
+                ? `${reviewCountForJob} page${reviewCountForJob === 1 ? "" : "s"} need review before the final PDF is ready.`
+                : "All pages are illustrated. The final PDF is still being assembled."
             : failed
               ? job.message ?? "Your book couldn't be generated. Please try again."
               : currentMeta.helper}
@@ -165,11 +181,11 @@ function Inner() {
         <div className="mt-8 rounded-lg border border-border bg-paper/40 p-5">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span className="font-semibold uppercase tracking-wide text-foreground">
-              {done ? "Complete" : currentMeta.label}
+              {fullyReady ? "Complete" : previewReady && !finalRenderReady ? "Final render pending" : currentMeta.label}
             </span>
-            <span>{pct}%</span>
+            <span>{displayPct}%</span>
           </div>
-          <Progress value={pct} className="mt-3" />
+          <Progress value={displayPct} className="mt-3" />
         </div>
       )}
 
@@ -191,7 +207,7 @@ function Inner() {
           </div>
         </div>
       ) : (
-        <Timeline currentStep={currentStep} done={done} />
+        <Timeline currentStep={displayStep} done={fullyReady} />
       )}
 
       {book && !failed && (
@@ -217,7 +233,7 @@ function Inner() {
             variant="ember"
             onClick={() => navigate({ to: "/books/$bookId", params: { bookId: job.book_id } })}
           >
-            <BookOpen className="h-4 w-4" /> Open your book
+            <BookOpen className="h-4 w-4" /> {fullyReady ? "Open your book" : "Review your book"}
           </Button>
         ) : (
           <Link to="/library" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
