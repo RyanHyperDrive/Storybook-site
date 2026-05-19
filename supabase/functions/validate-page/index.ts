@@ -157,6 +157,7 @@ export function validate(
     missing_required_character_details: arr(obj.missing_required_character_details),
     wrong_character_details: arr(obj.wrong_character_details),
     artifact_issues: arr(obj.artifact_issues),
+    composition_issues: arr(obj.composition_issues),
     missing_required_elements: arr(obj.missing_required_elements),
     regeneration_recommended: Boolean(obj.regeneration_recommended),
     needs_regeneration: Boolean(obj.needs_regeneration ?? obj.regeneration_recommended),
@@ -178,6 +179,7 @@ export function validate(
     !cleaned.twin_distinction_ok ||
     !cleaned.safety_ok ||
     cleaned.text_inside_image_detected ||
+    cleaned.composition_issues.length > 0 ||
     cleaned.banned_content_detected.length > 0 ||
     (styleKey === "comic_book" && cleaned.speech_bubble_detected);
   if (lowScore || failedFlags) {
