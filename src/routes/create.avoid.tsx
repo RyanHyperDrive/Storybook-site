@@ -176,10 +176,10 @@ function AvoidStep() {
 
   return (
     <WizardLayout>
-      <h1 className="font-display text-3xl font-semibold">Things to avoid</h1>
+      <h1 className="font-display text-3xl font-semibold">Anything to leave out?</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Add anything you'd rather not see in the story or illustrations. Every page is checked
-        against this list — if something slips through, it's regenerated automatically.
+        Every book is gentle and age-appropriate by default. If your child is scared of something
+        specific, add it and we'll keep it out.
       </p>
 
       <div className="mt-8 space-y-6">
