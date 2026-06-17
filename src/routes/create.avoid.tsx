@@ -21,16 +21,14 @@ export const Route = createFileRoute("/create/avoid")({
 });
 
 const SUGGESTIONS = [
-  "monsters",
+  "the dark",
   "thunderstorms",
+  "dogs",
+  "spiders",
   "snakes",
-  "balloons",
-  "guns",
-  "fire",
-  "blood",
-  "death",
-  "scary faces",
-  "dark forests",
+  "bees",
+  "clowns",
+  "loud noises",
 ];
 
 // details_avoid is stored as plain text. We treat it as a newline- or
