@@ -203,12 +203,15 @@ Return JSON only after all eight are clean.`;
 const PAGE_KEYS = [
   "page_number",
   "page_text",
+  "beat",
   "scene_description",
   "characters_present",
   "visual_must_haves",
   "visual_must_not_include",
   "continuity_notes",
 ];
+
+const EM_DASH_RE = /[—–]|--/;
 
 function validateStory(
   obj: any,
@@ -218,6 +221,17 @@ function validateStory(
   if (!obj || typeof obj !== "object") return { ok: false, error: "Not an object" };
   for (const k of ["title", "subtitle", "dedication", "style_notes"]) {
     if (typeof obj[k] !== "string") return { ok: false, error: `Field ${k} must be a string` };
+    if (EM_DASH_RE.test(obj[k])) {
+      return { ok: false, error: `Field ${k} contains a forbidden em-dash/en-dash/double-hyphen; rewrite without dashes.` };
+    }
+  }
+  if (!obj.story_spine || typeof obj.story_spine !== "object" || Array.isArray(obj.story_spine)) {
+    return { ok: false, error: "story_spine must be an object" };
+  }
+  for (const k of ["problem", "child_plan_or_skill", "magic_rule", "emotional_arc"]) {
+    if (typeof obj.story_spine[k] !== "string") {
+      return { ok: false, error: `story_spine.${k} must be a string` };
+    }
   }
   if (!Array.isArray(obj.pages)) return { ok: false, error: "pages must be an array" };
   if (obj.pages.length !== expectedPages) {
@@ -233,6 +247,15 @@ function validateStory(
     if (p.page_number !== i + 1) return { ok: false, error: `Page ${i + 1} has wrong page_number (${p.page_number})` };
     if (typeof p.page_text !== "string" || !p.page_text.trim()) {
       return { ok: false, error: `Page ${i + 1} page_text must be a non-empty string` };
+    }
+    if (typeof p.beat !== "string" || !p.beat.trim()) {
+      return { ok: false, error: `Page ${i + 1} beat must be a non-empty string` };
+    }
+    if (EM_DASH_RE.test(p.page_text)) {
+      return { ok: false, error: `Page ${i + 1} page_text contains a forbidden em-dash/en-dash/double-hyphen; rewrite without dashes.` };
+    }
+    if (EM_DASH_RE.test(p.beat)) {
+      return { ok: false, error: `Page ${i + 1} beat contains a forbidden em-dash/en-dash/double-hyphen; rewrite without dashes.` };
     }
     const sentenceCount = (p.page_text.match(/[.!?]+/g) ?? []).length;
     if (sentenceCount < 1 || sentenceCount > maxSentences + 1) {
