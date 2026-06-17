@@ -234,7 +234,7 @@ function AvoidStep() {
         {suggestionsRemaining.length > 0 && (
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Common things parents avoid
+              Common things kids are scared of
             </h3>
             <ul className="mt-2 flex flex-wrap gap-2">
               {suggestionsRemaining.map((s) => (
