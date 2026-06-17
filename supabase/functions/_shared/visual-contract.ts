@@ -61,7 +61,7 @@ export function describeSubject(s: ContractSubject): string {
     s.build_notes && `build: ${s.build_notes}`,
     s.accessibility_details && `accessibility: ${s.accessibility_details}`,
     s.distinguishing_features && `distinguishing: ${s.distinguishing_features}`,
-    s.canonical_outfit && `canonical outfit: ${s.canonical_outfit}`,
+    s.canonical_outfit && `default everyday outfit (use ONLY when the scene doesn't call for different clothing — e.g. pajamas at bedtime, a costume/armor/etc. when the story calls for it): ${s.canonical_outfit}`,
     s.parent_confirmed_notes && `notes: ${s.parent_confirmed_notes}`,
     s.details_to_avoid && `avoid: ${s.details_to_avoid}`,
   ].filter(Boolean);
@@ -91,7 +91,7 @@ export function styleNegatives(styleKey: string): string {
 
 /** Fixed consistency clause appended to every page prompt. */
 export const CHARACTER_CONSISTENCY_CLAUSE =
-  "The child character must look like the same real child shown in the approved character sheet and cover. Preserve facial structure, hair texture and color, skin tone AND undertone, eye/nose/lip shape, outfit cues, distinguishing features, and accessibility details. Do NOT lighten or desaturate skin. Do NOT straighten, loosen, or thin out textured/coily/curly hair. Do NOT narrow a wide nose, thin full lips, or anglicize features. Do not redesign the character. Do not age the character up or down. Do not change hair style/color, skin tone, face shape, or outfit color palette. If you are unsure, copy the reference image rendering exactly.";
+  "The child character must look like the same real child shown in the approved character sheet and cover. The thing that must stay identical on every page is the CHILD'S IDENTITY: facial structure, hair texture and color, skin tone AND undertone, eye/nose/lip shape, build, distinguishing features, and accessibility details. Do NOT lighten or desaturate skin. Do NOT straighten, loosen, or thin out textured/coily/curly hair. Do NOT narrow a wide nose, thin full lips, or anglicize features. Do not redesign the character. Do not age the character up or down. Do not change hair style/color, skin tone, or face shape. CLOTHING is NOT fixed — it should match what the current page's scene calls for (e.g. pajamas in a bedtime scene, a costume or armor when the story calls for it) and stay consistent with the previous page within the same continuous setting. Only the child's identity must never change. If you are unsure about identity, copy the reference image rendering exactly.";
 
 /** Render the contract as a prompt fragment. */
 export function contractToPromptFragment(
@@ -162,7 +162,7 @@ export function buildContract(input: {
       nose_shape: pick("nose_shape", "nose_shape", "nose") ?? null,
       lip_shape: pick("lip_shape", "lip_shape", "lip") ?? null,
       eye_shape: pick("eye_shape", "eye_shape", "eye shape") ?? null,
-      build_notes: (typeof v.build === "string" && v.build) ? v.build : (extractTrait(desc, "build") ?? null),
+      build_notes: deriveBuildNotes(p?.age ?? null, (typeof v.build === "string" && v.build) ? v.build : extractTrait(desc, "build")),
       accessibility_details: [p?.accessibility_details, accessibility].filter(Boolean).join("; ") || null,
       distinguishing_features: [p?.personality_traits, distinguishing].filter(Boolean).join("; ") || null,
       canonical_outfit: (typeof v.canonical_outfit === "string" && v.canonical_outfit)
@@ -195,4 +195,24 @@ function extractTrait(text: string, keyword: string): string | null {
   const re = new RegExp(`${keyword}[^.\\n]{0,80}`, "i");
   const m = text.match(re);
   return m ? m[0].trim() : null;
+}
+
+/**
+ * Derive an age-appropriate build description. Vision models frequently
+ * mislabel older kids as "toddler build" — never trust that guess if the
+ * parent told us the actual age.
+ */
+function deriveBuildNotes(age: number | null, visionGuess: string | null): string | null {
+  const isToddlerLabel = (s: string) => /toddler|baby|infant/i.test(s);
+  if (typeof age === "number" && age > 0) {
+    if (age <= 3) {
+      return visionGuess && !/\b(adult|teen)\b/i.test(visionGuess)
+        ? visionGuess
+        : `typical proportions for a ${age}-year-old toddler`;
+    }
+    // For non-toddlers, discard any "toddler/baby/infant" mislabel from vision.
+    if (visionGuess && !isToddlerLabel(visionGuess)) return visionGuess;
+    return `typical proportions for a ${age}-year-old child`;
+  }
+  return visionGuess ?? null;
 }
