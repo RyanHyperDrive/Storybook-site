@@ -196,3 +196,23 @@ function extractTrait(text: string, keyword: string): string | null {
   const m = text.match(re);
   return m ? m[0].trim() : null;
 }
+
+/**
+ * Derive an age-appropriate build description. Vision models frequently
+ * mislabel older kids as "toddler build" — never trust that guess if the
+ * parent told us the actual age.
+ */
+function deriveBuildNotes(age: number | null, visionGuess: string | null): string | null {
+  const isToddlerLabel = (s: string) => /toddler|baby|infant/i.test(s);
+  if (typeof age === "number" && age > 0) {
+    if (age <= 3) {
+      return visionGuess && !/\b(adult|teen)\b/i.test(visionGuess)
+        ? visionGuess
+        : `typical proportions for a ${age}-year-old toddler`;
+    }
+    // For non-toddlers, discard any "toddler/baby/infant" mislabel from vision.
+    if (visionGuess && !isToddlerLabel(visionGuess)) return visionGuess;
+    return `typical proportions for a ${age}-year-old child`;
+  }
+  return visionGuess ?? null;
+}
