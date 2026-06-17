@@ -162,7 +162,7 @@ export function buildContract(input: {
       nose_shape: pick("nose_shape", "nose_shape", "nose") ?? null,
       lip_shape: pick("lip_shape", "lip_shape", "lip") ?? null,
       eye_shape: pick("eye_shape", "eye_shape", "eye shape") ?? null,
-      build_notes: (typeof v.build === "string" && v.build) ? v.build : (extractTrait(desc, "build") ?? null),
+      build_notes: deriveBuildNotes(p?.age ?? null, (typeof v.build === "string" && v.build) ? v.build : extractTrait(desc, "build")),
       accessibility_details: [p?.accessibility_details, accessibility].filter(Boolean).join("; ") || null,
       distinguishing_features: [p?.personality_traits, distinguishing].filter(Boolean).join("; ") || null,
       canonical_outfit: (typeof v.canonical_outfit === "string" && v.canonical_outfit)
