@@ -13,7 +13,25 @@ import {
   isArtStyleKey,
   type ArtStyleKey,
 } from "@/lib/art-styles";
-import { StyleArtwork } from "@/components/style-artwork";
+import classicCover from "@/assets/sample-classic-mira.jpg";
+import classicPage1 from "@/assets/sample-classic-mira-page1.jpg";
+import classicPage2 from "@/assets/sample-classic-mira-page2.jpg";
+import cartoonCover from "@/assets/sample-cartoon-leo.jpg";
+import cartoonPage1 from "@/assets/sample-cartoon-leo-page1.jpg";
+import cartoonPage2 from "@/assets/sample-cartoon-leo-page2.jpg";
+import comicCover from "@/assets/sample-comic-nova.jpg";
+import comicPage1 from "@/assets/sample-comic-nova-page1.jpg";
+import comicPage2 from "@/assets/sample-comic-nova-page2.jpg";
+import mangaCover from "@/assets/sample-manga-yuki.jpg";
+import mangaPage1 from "@/assets/sample-manga-yuki-page1.jpg";
+import mangaPage2 from "@/assets/sample-manga-yuki-page2.jpg";
+
+const STYLE_SAMPLES: Record<ArtStyleKey, { cover: string; page1: string; page2: string }> = {
+  watercolor_adventure: { cover: classicCover, page1: classicPage1, page2: classicPage2 },
+  soft_cartoon: { cover: cartoonCover, page1: cartoonPage1, page2: cartoonPage2 },
+  comic_book: { cover: comicCover, page1: comicPage1, page2: comicPage2 },
+  manga_inspired: { cover: mangaCover, page1: mangaPage1, page2: mangaPage2 },
+};
 
 export const Route = createFileRoute("/create/style")({
   component: StyleStep,
