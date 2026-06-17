@@ -42,7 +42,7 @@ const STEPS: { key: StepKey; label: string; helper: string; icon: any; pct: numb
   { key: "character_profile", label: "Character profile", helper: "Distilling the details that make your child unique.", icon: UserRound, pct: 18 },
   { key: "character_sheet", label: "Character sheet", helper: "Locking in the illustrated look so every page matches.", icon: Sparkles, pct: 30 },
   { key: "story_writing", label: "Story writing", helper: "Drafting the narrative around your prompt and theme.", icon: PenLine, pct: 45 },
-  { key: "page_illustrations", label: "Page illustrations", helper: "Painting each spread in the style you chose.", icon: Brush, pct: 75 },
+  { key: "page_illustrations", label: "Page illustrations", helper: "Painting each page in the style you chose.", icon: Brush, pct: 75 },
   { key: "quality_checks", label: "Quality checks", helper: "Reviewing every page for consistency and tone.", icon: ShieldCheck, pct: 88 },
   { key: "pdf_assembly", label: "PDF assembly", helper: "Binding the pages into your downloadable book.", icon: FileText, pct: 96 },
   { key: "ready", label: "Ready", helper: "Your book is ready to read.", icon: BookOpen, pct: 100 },
