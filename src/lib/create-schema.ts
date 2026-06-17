@@ -16,7 +16,9 @@ export const childSchema = z.object({
   accessibility_details: z.string().trim().max(400).optional().default(""),
 });
 
-export type ChildDraft = z.infer<typeof childSchema>;
+export type ChildDraft = Omit<z.infer<typeof childSchema>, "pronouns"> & {
+  pronouns: string;
+};
 
 export const emptyChild: ChildDraft = {
   name: "",
