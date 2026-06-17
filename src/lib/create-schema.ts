@@ -6,7 +6,9 @@ export const childSchema = z.object({
     .string()
     .trim()
     .refine((v) => v === "" || (/^\d+$/.test(v) && +v >= 1 && +v <= 12), "Age must be 1–12"),
-  pronouns: z.string().trim().max(40).optional().default(""),
+  pronouns: z
+    .string()
+    .refine((v) => { return v === "he" || v === "she"; }, "Please select Boy or Girl"),
   favorite_color: z.string().trim().max(40).optional().default(""),
   favorite_activities: z.string().trim().max(400).optional().default(""),
   loves: z.string().trim().max(400).optional().default(""),
@@ -14,7 +16,9 @@ export const childSchema = z.object({
   accessibility_details: z.string().trim().max(400).optional().default(""),
 });
 
-export type ChildDraft = z.infer<typeof childSchema>;
+export type ChildDraft = Omit<z.infer<typeof childSchema>, "pronouns"> & {
+  pronouns: string;
+};
 
 export const emptyChild: ChildDraft = {
   name: "",
