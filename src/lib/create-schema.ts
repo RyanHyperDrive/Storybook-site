@@ -34,19 +34,23 @@ export const emptyChild: ChildDraft = {
 // Reading level keys map to age bands. Legacy values are preserved so existing
 // books in the database continue to load.
 export const storySchema = z.object({
-  title: z.string().trim().max(80).optional().default(""),
-  theme: z.string().trim().min(1, "Pick a theme").max(80),
+  theme: z.string().trim().max(80).optional().default(""),
   prompt: z.string().trim().max(800).optional().default(""),
   details_include: z.string().trim().max(400).optional().default(""),
   details_avoid: z.string().trim().max(400).optional().default(""),
   dedication: z.string().trim().max(280).optional().default(""),
-  reading_level: z
-    .enum(["ages_2_3", "ages_4_6", "ages_7_10", "ages_3_5", "ages_4_7", "ages_6_8"])
-    .default("ages_4_6"),
   guardian_consent: z.literal(true, {
     errorMap: () => ({ message: "Please confirm guardian consent to continue" }),
   }),
 });
+
+/** Derive a reading level key from the child's age (years). */
+export function readingLevelForAge(age: number | null | undefined): "ages_2_3" | "ages_4_6" | "ages_7_10" {
+  if (typeof age !== "number" || !Number.isFinite(age)) return "ages_4_6";
+  if (age <= 3) return "ages_2_3";
+  if (age <= 6) return "ages_4_6";
+  return "ages_7_10";
+}
 
 export type StoryDraft = z.infer<typeof storySchema>;
 

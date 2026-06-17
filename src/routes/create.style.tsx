@@ -13,7 +13,25 @@ import {
   isArtStyleKey,
   type ArtStyleKey,
 } from "@/lib/art-styles";
-import { StyleArtwork } from "@/components/style-artwork";
+import classicCover from "@/assets/sample-classic-mira.jpg";
+import classicPage1 from "@/assets/sample-classic-mira-page1.jpg";
+import classicPage2 from "@/assets/sample-classic-mira-page2.jpg";
+import cartoonCover from "@/assets/sample-cartoon-leo.jpg";
+import cartoonPage1 from "@/assets/sample-cartoon-leo-page1.jpg";
+import cartoonPage2 from "@/assets/sample-cartoon-leo-page2.jpg";
+import comicCover from "@/assets/sample-comic-nova.jpg";
+import comicPage1 from "@/assets/sample-comic-nova-page1.jpg";
+import comicPage2 from "@/assets/sample-comic-nova-page2.jpg";
+import mangaCover from "@/assets/sample-manga-yuki.jpg";
+import mangaPage1 from "@/assets/sample-manga-yuki-page1.jpg";
+import mangaPage2 from "@/assets/sample-manga-yuki-page2.jpg";
+
+const STYLE_SAMPLES: Record<ArtStyleKey, { cover: string; page1: string; page2: string }> = {
+  watercolor_adventure: { cover: classicCover, page1: classicPage1, page2: classicPage2 },
+  soft_cartoon: { cover: cartoonCover, page1: cartoonPage1, page2: cartoonPage2 },
+  comic_book: { cover: comicCover, page1: comicPage1, page2: comicPage2 },
+  manga_inspired: { cover: mangaCover, page1: mangaPage1, page2: mangaPage2 },
+};
 
 export const Route = createFileRoute("/create/style")({
   component: StyleStep,
@@ -69,9 +87,10 @@ function StyleStep() {
         character next.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {ART_STYLES.map((s) => {
           const active = picked === s.key;
+          const samples = STYLE_SAMPLES[s.key];
           return (
             <button
               key={s.key}
@@ -79,21 +98,46 @@ function StyleStep() {
               onClick={() => choose(s.key)}
               aria-pressed={active}
               className={[
-                "group flex items-stretch gap-3 overflow-hidden rounded-lg border bg-background p-2 text-left transition-all",
+                "group flex flex-col gap-3 overflow-hidden rounded-lg border bg-background p-3 text-left transition-all",
                 active
                   ? "border-ember ring-2 ring-ember/30"
                   : "border-border hover:border-muted-foreground",
               ].join(" ")}
             >
-              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md sm:h-28 sm:w-24">
-                <StyleArtwork styleKey={s.key} variant="cover" />
-                {active && (
-                  <div className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-ember text-ember-foreground">
-                    <Check className="h-3.5 w-3.5" />
+              <div className="flex gap-2">
+                <div className="relative aspect-[3/4] flex-[2] overflow-hidden rounded-md bg-muted">
+                  <img
+                    src={samples.cover}
+                    alt={`${s.name} sample cover`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  {active && (
+                    <div className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-ember text-ember-foreground">
+                      <Check className="h-3.5 w-3.5" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col gap-2">
+                  <div className="aspect-[3/4] overflow-hidden rounded-md bg-muted">
+                    <img
+                      src={samples.page1}
+                      alt={`${s.name} sample page 1`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                   </div>
-                )}
+                  <div className="aspect-[3/4] overflow-hidden rounded-md bg-muted">
+                    <img
+                      src={samples.page2}
+                      alt={`${s.name} sample page 2`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="flex min-w-0 flex-1 flex-col justify-center py-1 pr-2">
+              <div className="min-w-0">
                 <div className="text-sm font-semibold">{s.name}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   {s.description}

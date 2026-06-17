@@ -21,16 +21,14 @@ export const Route = createFileRoute("/create/avoid")({
 });
 
 const SUGGESTIONS = [
-  "monsters",
+  "the dark",
   "thunderstorms",
+  "dogs",
+  "spiders",
   "snakes",
-  "balloons",
-  "guns",
-  "fire",
-  "blood",
-  "death",
-  "scary faces",
-  "dark forests",
+  "bees",
+  "clowns",
+  "loud noises",
 ];
 
 // details_avoid is stored as plain text. We treat it as a newline- or
@@ -178,10 +176,10 @@ function AvoidStep() {
 
   return (
     <WizardLayout>
-      <h1 className="font-display text-3xl font-semibold">Things to avoid</h1>
+      <h1 className="font-display text-3xl font-semibold">Anything to leave out?</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Add anything you'd rather not see in the story or illustrations. Every page is checked
-        against this list — if something slips through, it's regenerated automatically.
+        Every book is gentle and age-appropriate by default. If your child is scared of something
+        specific, add it and we'll keep it out.
       </p>
 
       <div className="mt-8 space-y-6">
@@ -236,7 +234,7 @@ function AvoidStep() {
         {suggestionsRemaining.length > 0 && (
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Common things parents avoid
+              Common things kids are scared of
             </h3>
             <ul className="mt-2 flex flex-wrap gap-2">
               {suggestionsRemaining.map((s) => (
