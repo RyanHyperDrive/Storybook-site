@@ -8,7 +8,7 @@ export const childSchema = z.object({
     .refine((v) => v === "" || (/^\d+$/.test(v) && +v >= 1 && +v <= 12), "Age must be 1–12"),
   pronouns: z
     .string()
-    .refine((v) => v === "he" || v === "she", "Please select Boy or Girl"),
+    .refine((v) => { return v === "he" || v === "she"; }, "Please select Boy or Girl"),
   favorite_color: z.string().trim().max(40).optional().default(""),
   favorite_activities: z.string().trim().max(400).optional().default(""),
   loves: z.string().trim().max(400).optional().default(""),
