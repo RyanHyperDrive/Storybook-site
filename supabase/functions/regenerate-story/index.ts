@@ -26,15 +26,25 @@ serve(async (req) => {
 
     const { data: book } = await admin
       .from("books")
-      .select("id, user_id, story_theme, story_prompt, child_name, child_loves, details_include, details_avoid, reading_level, visual_consistency_contract")
+      .select("id, user_id, story_theme, story_prompt, child_name, child_age, child_pronouns, child_loves, details_include, details_avoid, reading_level, visual_consistency_contract")
       .eq("id", bookId)
       .maybeSingle();
     if (!book || book.user_id !== user.id) return errorResponse("Not found or forbidden", 403);
 
-    const theme = (typeof themeOverride === "string" && themeOverride.trim())
+    const chosenTheme = (typeof themeOverride === "string" && themeOverride.trim())
       ? themeOverride.trim()
-      : (book.story_theme ?? book.story_prompt ?? "a warm adventure");
-    const child_details = `${book.child_name ?? "the child"}${book.details_include ? ` — ${book.details_include}` : ""}`;
+      : (book.story_theme ?? "").toString().trim();
+    const parentPrompt = (book.story_prompt ?? "").toString().trim();
+    const theme = [
+      chosenTheme && `Chosen theme: ${chosenTheme}`,
+      parentPrompt && `Parent's story request (most important — the story should be about this): ${parentPrompt}`,
+    ].filter(Boolean).join("\n") || "a warm adventure";
+    const child_details = [
+      book.child_name && `Name: ${book.child_name}`,
+      book.child_age != null && `Age: ${book.child_age}`,
+      book.child_pronouns && `Pronouns: ${book.child_pronouns}`,
+      book.details_include && `Loves/include: ${book.details_include}`,
+    ].filter(Boolean).join(". ") || (book.child_name ?? "the child");
     const favorites = book.child_loves ?? "";
     const baseAvoid = book.details_avoid ?? "";
     const avoid = feedback ? `${baseAvoid}${baseAvoid ? "; " : ""}USER FEEDBACK (must apply): ${feedback}` : baseAvoid;
