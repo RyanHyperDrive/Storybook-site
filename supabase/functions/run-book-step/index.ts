@@ -157,8 +157,15 @@ serve(async (req) => {
           ? contract.subjects.map((s: any) => s.display_name).filter(Boolean)
           : [book.child_name].filter(Boolean);
 
+        const chosenTheme = (book.story_theme ?? "").toString().trim();
+        const parentPrompt = (book.story_prompt ?? "").toString().trim();
+        const themeForWriter = [
+          chosenTheme && `Chosen theme: ${chosenTheme}`,
+          parentPrompt && `Parent's story request (most important — the story should be about this): ${parentPrompt}`,
+        ].filter(Boolean).join("\n") || "a gentle bedtime adventure";
+
         const r = await callFn("write-story", authHeader, {
-          theme: book.story_theme || book.story_prompt || "a gentle bedtime adventure",
+          theme: themeForWriter,
           child_details: childDetails || `A child named ${book.child_name ?? "the hero"}.`,
           favorites: book.details_include ?? "",
           avoid: book.details_avoid ?? "",
