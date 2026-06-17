@@ -93,7 +93,7 @@ function ProfileStep() {
                   ...emptyChild,
                   name: b.child_name ?? "",
                   age: b.child_age?.toString() ?? "",
-                  pronouns: b.child_pronouns ?? "",
+                  pronouns: normalizePronouns(b.child_pronouns),
                   loves: b.child_loves ?? "",
                 },
                 { ...emptyChild },
@@ -279,14 +279,30 @@ function ChildFieldset({
           </p>
         </div>
         <div>
-          <Label htmlFor={`${label}-pronouns`}>Pronouns</Label>
-          <Input
-            id={`${label}-pronouns`}
-            maxLength={40}
-            value={value.pronouns}
-            onChange={(e) => onChange("pronouns", e.target.value)}
-            placeholder="she/her, he/him, they/them"
-          />
+          <Label>Is your child a boy or a girl?</Label>
+          <div className="mt-2 flex gap-3">
+            {[
+              { label: "Boy", value: "he" },
+              { label: "Girl", value: "she" },
+            ].map((opt) => {
+              const active = value.pronouns === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onChange("pronouns", opt.value)}
+                  className={[
+                    "flex-1 rounded-md border px-4 py-3 text-base font-medium transition-colors",
+                    active
+                      ? "border-ember bg-ember/10 text-foreground"
+                      : "border-border bg-background text-muted-foreground hover:bg-muted",
+                  ].join(" ")}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -358,11 +374,19 @@ function ChildFieldset({
   );
 }
 
+function normalizePronouns(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const lower = raw.toLowerCase().trim();
+  if (lower.startsWith("he")) return "he";
+  if (lower.startsWith("she")) return "she";
+  return "";
+}
+
 function rowToDraft(row: any): ChildDraft {
   return {
     name: row?.name ?? "",
     age: row?.age?.toString() ?? "",
-    pronouns: row?.pronouns ?? "",
+    pronouns: normalizePronouns(row?.pronouns),
     favorite_color: row?.favorite_color ?? "",
     favorite_activities: row?.favorite_activities ?? "",
     loves: row?.loves ?? "",
