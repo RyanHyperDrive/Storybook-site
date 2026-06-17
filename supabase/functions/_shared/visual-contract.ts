@@ -61,7 +61,7 @@ export function describeSubject(s: ContractSubject): string {
     s.build_notes && `build: ${s.build_notes}`,
     s.accessibility_details && `accessibility: ${s.accessibility_details}`,
     s.distinguishing_features && `distinguishing: ${s.distinguishing_features}`,
-    s.canonical_outfit && `canonical outfit: ${s.canonical_outfit}`,
+    s.canonical_outfit && `default everyday outfit (use ONLY when the scene doesn't call for different clothing — e.g. pajamas at bedtime, a costume/armor/etc. when the story calls for it): ${s.canonical_outfit}`,
     s.parent_confirmed_notes && `notes: ${s.parent_confirmed_notes}`,
     s.details_to_avoid && `avoid: ${s.details_to_avoid}`,
   ].filter(Boolean);
