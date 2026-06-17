@@ -6,13 +6,12 @@ import { WizardLayout } from "@/components/wizard-layout";
 import { getDraftId, STORY_LOCAL_KEY } from "@/lib/draft";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { storySchema, READING_LEVELS, THEMES } from "@/lib/create-schema";
+import { storySchema, readingLevelForAge, THEMES } from "@/lib/create-schema";
 
 export const Route = createFileRoute("/create/story")({
   component: () => (
@@ -27,14 +26,13 @@ function StoryStep() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const id = getDraftId();
-  const [title, setTitle] = useState("");
-  const [theme, setTheme] = useState<string>(THEMES[0]);
+  const [theme, setTheme] = useState<string>("");
   const [prompt, setPrompt] = useState("");
   const [detailsInclude, setDetailsInclude] = useState("");
-  const [detailsAvoid, setDetailsAvoid] = useState("");
   const [dedication, setDedication] = useState("");
-  const [readingLevel, setReadingLevel] = useState<string>("ages_4_6");
+  const [childAge, setChildAge] = useState<number | null>(null);
   const [consent, setConsent] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
@@ -69,14 +67,12 @@ function StoryStep() {
     if (!raw) return;
     try {
       const s = JSON.parse(raw);
-      if (s.title) setTitle(s.title);
       if (s.theme) setTheme(s.theme);
       if (s.prompt) setPrompt(s.prompt);
       if (s.detailsInclude) setDetailsInclude(s.detailsInclude);
-      if (s.detailsAvoid) setDetailsAvoid(s.detailsAvoid);
       if (s.dedication) setDedication(s.dedication);
-      if (s.readingLevel) setReadingLevel(s.readingLevel);
       if (s.consent) setConsent(true);
+      if (s.theme || s.detailsInclude || s.dedication) setMoreOpen(true);
     } catch {
       /* ignore */
     }
@@ -92,45 +88,29 @@ function StoryStep() {
       .maybeSingle()
       .then(({ data }: { data: any }) => {
         if (!data) return;
-        if (data.title) setTitle(data.title);
         if (data.story_theme) setTheme(data.story_theme);
         if (data.story_prompt) setPrompt(data.story_prompt);
         if (data.details_include) setDetailsInclude(data.details_include);
-        if (data.details_avoid) setDetailsAvoid(data.details_avoid);
         if (data.dedication) setDedication(data.dedication);
-        const raw = (data.reading_level as string | null) ?? "ages_4_6";
-        const mapped =
-          raw === "ages_2_3" || raw === "ages_7_10" || raw === "ages_4_6"
-            ? raw
-            : raw === "ages_3_5"
-              ? "ages_2_3"
-              : raw === "ages_6_8"
-                ? "ages_7_10"
-                : "ages_4_6";
-        setReadingLevel(mapped);
+        if (typeof data.child_age === "number") setChildAge(data.child_age);
         if (data.guardian_consent_at) setConsent(true);
+        if (data.story_theme || data.details_include || data.dedication) setMoreOpen(true);
       });
   }, [id, user]);
 
   function persistLocal(next?: Partial<{
-    title: string;
     theme: string;
     prompt: string;
     detailsInclude: string;
-    detailsAvoid: string;
     dedication: string;
-    readingLevel: string;
     consent: boolean;
   }>) {
     if (typeof window === "undefined") return;
     const payload = {
-      title,
       theme,
       prompt,
       detailsInclude,
-      detailsAvoid,
       dedication,
-      readingLevel,
       consent,
       ...next,
     };
@@ -141,13 +121,10 @@ function StoryStep() {
     e.preventDefault();
 
     const parsed = storySchema.safeParse({
-      title,
       theme,
       prompt,
       details_include: detailsInclude,
-      details_avoid: detailsAvoid,
       dedication,
-      reading_level: readingLevel,
       guardian_consent: consent as true,
     });
     if (!parsed.success) {
@@ -157,9 +134,9 @@ function StoryStep() {
 
     persistLocal();
 
+    const derivedReadingLevel = readingLevelForAge(childAge);
+
     if (!user || !id) {
-      // Anonymous — keep going to the style step. We'll sync to the
-      // database after sign-in on the photo step.
       navigate({ to: "/create/avoid" });
       return;
     }
@@ -168,13 +145,11 @@ function StoryStep() {
     const { error } = await supabase
       .from("books")
       .update({
-        title,
-        story_theme: theme,
+        story_theme: theme || null,
         story_prompt: prompt,
         details_include: detailsInclude || null,
-        details_avoid: detailsAvoid || null,
         dedication: dedication || null,
-        reading_level: readingLevel,
+        reading_level: derivedReadingLevel,
         guardian_consent_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -202,96 +177,81 @@ function StoryStep() {
 
       <form onSubmit={next} className="mt-8 space-y-6">
         <div>
-          <Label htmlFor="title">Working title (optional)</Label>
-          <Input
-            id="title"
-            maxLength={80}
-            value={title}
-            onChange={(e) => { setTitle(e.target.value); persistLocal({ title: e.target.value }); }}
-            placeholder="The Brave Little Explorer"
-          />
-        </div>
-
-        <div>
-          <Label>Story theme</Label>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {THEMES.map((t) => (
-              <button
-                type="button"
-                key={t}
-                onClick={() => { setTheme(t); persistLocal({ theme: t }); }}
-                className={[
-                  "rounded-md border px-3 py-1.5 text-sm transition-colors",
-                  theme === t
-                    ? "border-ember bg-ember/10 text-foreground"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted",
-                ].join(" ")}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="reading-level">Reading level</Label>
-          <select
-            id="reading-level"
-            value={readingLevel}
-            onChange={(e) => { setReadingLevel(e.target.value); persistLocal({ readingLevel: e.target.value }); }}
-            className="mt-2 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            {READING_LEVELS.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {READING_LEVELS.find((r) => r.value === readingLevel)?.hint}
-          </p>
-        </div>
-
-        <div>
           <Label htmlFor="prompt">What should the story be about?</Label>
           <Textarea
             id="prompt"
-            rows={4}
+            rows={5}
             maxLength={800}
             value={prompt}
             onChange={(e) => { setPrompt(e.target.value); persistLocal({ prompt: e.target.value }); }}
             placeholder="They've been nervous about kindergarten. We'd love a story where they discover a kind classmate."
           />
-        </div>
-
-        <div>
-          <Label htmlFor="include">Details to include</Label>
-          <Textarea
-            id="include"
-            rows={3}
-            maxLength={400}
-            value={detailsInclude}
-            onChange={(e) => { setDetailsInclude(e.target.value); persistLocal({ detailsInclude: e.target.value }); }}
-            placeholder="Grandma Rose, our cabin by the lake, the red rain boots."
-          />
           <p className="mt-1 text-xs text-muted-foreground">
-            You'll manage the list of things to avoid in the next step.
+            A theme, a real situation, or a lesson to weave in — like "nervous about starting kindergarten," "had a rough day and needs a confidence boost," or "learning to share with the new baby." Leave it blank and we'll surprise them.
           </p>
         </div>
 
-        <div>
-          <Label htmlFor="dedication">Dedication message</Label>
-          <Textarea
-            id="dedication"
-            rows={3}
-            maxLength={280}
-            value={dedication}
-            onChange={(e) => { setDedication(e.target.value); persistLocal({ dedication: e.target.value }); }}
-            placeholder="For Ada, our brave explorer. Love, Mom & Dad."
-          />
-          <p className="mt-1 text-xs text-muted-foreground">
-            Printed on the dedication page. You can edit this before final approval.
-          </p>
+        <div className="rounded-md border border-border bg-paper/40">
+          <button
+            type="button"
+            onClick={() => setMoreOpen((v) => !v)}
+            className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold"
+            aria-expanded={moreOpen}
+          >
+            <span>Add more details (optional)</span>
+            <ChevronDown className={`h-4 w-4 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+          </button>
+          {moreOpen && (
+            <div className="space-y-5 border-t border-border px-4 py-4">
+              <div>
+                <Label>Story theme</Label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {THEMES.map((t) => (
+                    <button
+                      type="button"
+                      key={t}
+                      onClick={() => { const newT = theme === t ? "" : t; setTheme(newT); persistLocal({ theme: newT }); }}
+                      className={[
+                        "rounded-md border px-3 py-1.5 text-sm transition-colors",
+                        theme === t
+                          ? "border-ember bg-ember/10 text-foreground"
+                          : "border-border bg-background text-muted-foreground hover:bg-muted",
+                      ].join(" ")}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="include">Details to include</Label>
+                <Textarea
+                  id="include"
+                  rows={3}
+                  maxLength={400}
+                  value={detailsInclude}
+                  onChange={(e) => { setDetailsInclude(e.target.value); persistLocal({ detailsInclude: e.target.value }); }}
+                  placeholder="Grandma Rose, our cabin by the lake, the red rain boots."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="dedication">Dedication message</Label>
+                <Textarea
+                  id="dedication"
+                  rows={3}
+                  maxLength={280}
+                  value={dedication}
+                  onChange={(e) => { setDedication(e.target.value); persistLocal({ dedication: e.target.value }); }}
+                  placeholder="For Ada, our brave explorer. Love, Mom & Dad."
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Printed on the dedication page. You can edit this before final approval.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="rounded-md border border-border bg-paper/40 p-4">
