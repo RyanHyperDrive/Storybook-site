@@ -275,7 +275,7 @@ function ChildFieldset({
             placeholder="5"
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Designed for ages 4–7. Reading level is adjusted for your child.
+            Designed for ages 2–10. Reading level is adjusted for your child.
           </p>
         </div>
         <div>

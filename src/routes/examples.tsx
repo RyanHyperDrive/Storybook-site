@@ -38,7 +38,7 @@ export const Route = createFileRoute("/examples")({
       {
         name: "description",
         content:
-          "See real sample StoryNest books. Each one is a custom cover, dedication, and 10 story pages, personalized for ages 4–7.",
+          "See real sample StoryNest books. Each one is a custom cover, dedication, and 10 story pages, personalized for ages 2–10.",
       },
       { property: "og:title", content: "Examples — StoryNest" },
       {
@@ -71,14 +71,14 @@ function ExamplesPage() {
               Real sample books, start to finish.
             </h1>
             <p className="mt-4 text-base text-muted-foreground">
-              Tap any cover to flip through the cover, dedication, and the first two illustrated pages. Every StoryNest book is a custom cover + dedication + 10 story pages, personalized for ages 4–7.
+              Tap any cover to flip through the cover, dedication, and the first two illustrated pages. Every StoryNest book is a custom cover + dedication + 10 story pages, personalized for ages 2–10.
             </p>
           </div>
 
           <div data-testid="examples-included" className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border bg-background/70 px-4 py-3 text-xs text-foreground/80 sm:text-sm">
             <span className="inline-flex items-center gap-1.5"><BookOpen className="h-4 w-4 text-ember" /> Custom cover + dedication + 10 story pages</span>
             <span className="hidden h-4 w-px bg-border sm:inline-block" />
-            <span className="inline-flex items-center gap-1.5"><Heart className="h-4 w-4 text-ember" /> Personalized for ages 4–7</span>
+            <span className="inline-flex items-center gap-1.5"><Heart className="h-4 w-4 text-ember" /> Personalized for ages 2–10</span>
             <span className="hidden h-4 w-px bg-border sm:inline-block" />
             <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-sage" /> Parent-approved character before checkout</span>
           </div>
