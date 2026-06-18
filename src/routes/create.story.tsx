@@ -117,8 +117,16 @@ function StoryStep() {
     localStorage.setItem(STORY_LOCAL_KEY, JSON.stringify(payload));
   }
 
+  const [consentError, setConsentError] = useState(false);
+
   async function next(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!consent) {
+      setConsentError(true);
+      toast.error("Please confirm guardian consent to continue.");
+      return;
+    }
 
     const parsed = storySchema.safeParse({
       theme,
@@ -254,11 +262,23 @@ function StoryStep() {
           )}
         </div>
 
-        <div className="rounded-md border border-border bg-paper/40 p-4">
+        <div
+          className={[
+            "rounded-md border p-4 transition-colors",
+            consentError && !consent
+              ? "border-ember bg-ember/10 ring-2 ring-ember"
+              : "border-border bg-paper/40",
+          ].join(" ")}
+        >
           <label className="flex cursor-pointer items-start gap-3">
             <Checkbox
               checked={consent}
-              onCheckedChange={(v) => { const c = v === true; setConsent(c); persistLocal({ consent: c }); }}
+              onCheckedChange={(v) => {
+                const c = v === true;
+                setConsent(c);
+                if (c) setConsentError(false);
+                persistLocal({ consent: c });
+              }}
               className="mt-0.5"
               aria-label="Guardian consent"
             />
@@ -281,8 +301,8 @@ function StoryStep() {
             </Button>
           </Link>
           <div className="flex flex-col items-end gap-2">
-            <Button type="submit" variant="ember" disabled={busy || !consent}>
-              {busy && <Loader2 className="h-4 w-4 animate-spin" />} Choose the art style{" "}
+            <Button type="submit" variant="ember" disabled={busy}>
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />} Next: things to avoid{" "}
               <ArrowRight className="h-4 w-4" />
             </Button>
             <p className="text-xs text-muted-foreground">
