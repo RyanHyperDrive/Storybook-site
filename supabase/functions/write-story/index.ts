@@ -213,7 +213,7 @@ const PAGE_KEYS = [
 
 const EM_DASH_RE = /[—–]|--/;
 
-function validateStory(
+export function validateStory(
   obj: any,
   expectedPages: number,
   maxSentences: number,
