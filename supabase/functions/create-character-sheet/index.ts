@@ -265,8 +265,10 @@ serve(async (req) => {
     }
 
     let sourceUrl: string | null = null;
-    for (let attempt = 0; attempt < 18; attempt++) {
-      await sleep(5000);
+    // Poll up to ~145s total: first 5 checks every 3s, then every 5s.
+    const MAX_ATTEMPTS = 31;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      await sleep(attempt < 5 ? 3000 : 5000);
       const infoRes = await fetch(`${KIE_INFO_URL}?taskId=${encodeURIComponent(taskId)}`, {
         headers: { Authorization: `Bearer ${KIE_API_KEY}` },
       });
