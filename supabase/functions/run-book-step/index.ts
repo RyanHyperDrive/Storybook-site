@@ -75,7 +75,7 @@ serve(async (req) => {
     // Append a structured validation event to jobs.audit and bump counters.
     // Stored shape: { events: [...], totals: { validations, failures, retries } }
     async function appendAudit(event: {
-      target: "cover" | "page";
+      target: "cover" | "page" | "story";
       page_number?: number;
       attempt: number;
       passed: boolean;
@@ -85,6 +85,7 @@ serve(async (req) => {
       reasons?: string[];
       banned_content_detected?: string[];
       regeneration_instruction?: string;
+      notes?: string[];
     }) {
       const { data: jr } = await admin
         .from("jobs")
