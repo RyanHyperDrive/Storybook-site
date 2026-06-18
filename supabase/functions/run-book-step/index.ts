@@ -12,6 +12,9 @@ import { requireUser } from "../_shared/auth.ts";
  * so the browser can poll without hitting edge-function timeouts. Steps:
  *
  *   photo_check → character_profile → character_sheet → story_writing
+ *   → story_editing (second-pass editor critiques + rewrites the story
+ *     BEFORE any image is generated, so we never burn image credits on a
+ *     story that then changes)
  *   → cover_illustration (validate + retry up to MAX_RETRIES)
  *   → page_illustrations (one page per call, validate + retry up to MAX_RETRIES)
  *   → quality_checks → pdf_assembly → ready
@@ -72,7 +75,7 @@ serve(async (req) => {
     // Append a structured validation event to jobs.audit and bump counters.
     // Stored shape: { events: [...], totals: { validations, failures, retries } }
     async function appendAudit(event: {
-      target: "cover" | "page";
+      target: "cover" | "page" | "story";
       page_number?: number;
       attempt: number;
       passed: boolean;
@@ -82,6 +85,7 @@ serve(async (req) => {
       reasons?: string[];
       banned_content_detected?: string[];
       regeneration_instruction?: string;
+      notes?: string[];
     }) {
       const { data: jr } = await admin
         .from("jobs")
@@ -140,7 +144,7 @@ serve(async (req) => {
       if (step === "story_writing") {
         // Already written?
         if (book.story_json && Array.isArray((book.story_json as any).pages)) {
-          await updateJob({ current_step: "cover_illustration", progress: 40, message: "Story ready." });
+          await updateJob({ current_step: "story_editing", progress: 38, message: "Story ready." });
           return jsonResponse({ ok: true, skipped: true });
         }
         const childDetails = [
@@ -183,9 +187,80 @@ serve(async (req) => {
           dedication: book.dedication ?? r.json.story.dedication ?? null,
         }).eq("id", bookId);
 
-        await updateJob({ current_step: "cover_illustration", progress: 40, message: "Story written." });
+        await updateJob({ current_step: "story_editing", progress: 38, message: "Story written." });
         return jsonResponse({ ok: true });
       }
+
+      if (step === "story_editing") {
+        // Second-pass story editor: critique + rewrite the story BEFORE any
+        // image is generated. Idempotent: if story_review shows accepted (or
+        // accepted_with_warnings) we just advance. NEVER blocks the book —
+        // any editor failure still advances to cover_illustration.
+        const existingReview = (book.story_review ?? null) as any;
+        if (existingReview && (existingReview.accepted === true || existingReview.accepted_with_warnings === true)) {
+          await updateJob({ current_step: "cover_illustration", progress: 40, message: "Story polished." });
+          return jsonResponse({ ok: true, skipped: true });
+        }
+
+        const childDetails = [
+          book.child_name && `Name: ${book.child_name}`,
+          book.child_age != null && `Age: ${book.child_age}`,
+          book.child_pronouns && `Pronouns: ${book.child_pronouns}`,
+          book.child_loves && `Loves: ${book.child_loves}`,
+        ].filter(Boolean).join(". ");
+
+        const contract = (book.visual_consistency_contract ?? null) as any;
+        const cast = Array.isArray(contract?.subjects)
+          ? contract.subjects.map((s: any) => s.display_name).filter(Boolean)
+          : [book.child_name].filter(Boolean);
+
+        const editRes = await callFn("edit-story", authHeader, {
+          bookId,
+          reading_level: book.reading_level ?? "ages_4_6",
+          child_details: childDetails || `A child named ${book.child_name ?? "the hero"}.`,
+          favorites: book.details_include ?? "",
+          avoid: book.details_avoid ?? "",
+          parent_situation: book.story_prompt ?? "",
+          cast,
+        });
+
+        if (editRes.status >= 400 || !editRes.json?.story) {
+          // NEVER block — record the failure on the book and advance anyway.
+          const errMsg = editRes.json?.error ?? `edit-story failed (status ${editRes.status})`;
+          await admin.from("books").update({
+            story_review: { accepted_with_warnings: true, error: errMsg, edited_at: new Date().toISOString() },
+          }).eq("id", bookId);
+          await appendAudit({
+            target: "story",
+            attempt: 1,
+            passed: false,
+            will_retry: false,
+            shipped_with_warnings: true,
+            notes: [errMsg],
+          });
+          await updateJob({ current_step: "cover_illustration", progress: 40, message: "Story polished (best effort)." });
+          return jsonResponse({ ok: true, storyEditorSkipped: true });
+        }
+
+        const review = editRes.json.review ?? {};
+        const accepted = review.accepted === true;
+        await appendAudit({
+          target: "story",
+          attempt: (review.passes_used ?? 0) + 1,
+          passed: accepted,
+          will_retry: false,
+          shipped_with_warnings: !accepted,
+          scores: review.scores ?? undefined,
+          notes: [
+            ...((Array.isArray(review.global_notes) ? review.global_notes : []) as string[]),
+            ...((Array.isArray(review.failing_flags) ? review.failing_flags.map((f: string) => `flag:${f}`) : []) as string[]),
+          ],
+        });
+
+        await updateJob({ current_step: "cover_illustration", progress: 40, message: accepted ? "Story polished." : "Story polished (best effort)." });
+        return jsonResponse({ ok: true, storyEdited: true, accepted });
+      }
+
 
       if (step === "cover_illustration") {
         // Dedicated cover step: generate (or regenerate) the cover, then

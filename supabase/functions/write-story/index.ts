@@ -54,7 +54,7 @@ const SAFETY_AGES_7_10 =
   "NO bullying portrayed approvingly, NO substance use, NO adult themes, NO unsafe instructions " +
   "(fire, climbing alone, talking to strangers, ingesting things, etc.). Tension must resolve kindly.";
 
-const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
+export const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
   ages_2_3: {
     ageBand: "2-3",
     minPages: 8,
@@ -213,7 +213,7 @@ const PAGE_KEYS = [
 
 const EM_DASH_RE = /[—–]|--/;
 
-function validateStory(
+export function validateStory(
   obj: any,
   expectedPages: number,
   maxSentences: number,
