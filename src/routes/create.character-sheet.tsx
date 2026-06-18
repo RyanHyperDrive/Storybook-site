@@ -330,7 +330,7 @@ function Inner() {
           const j = await r.json().catch(() => ({}));
           console.warn("build-contract failed", j);
           toast.warning(
-            "Approved, but we'll need a quick admin review before generation. You can still continue to checkout.",
+            "We're still finishing your character — please try again in a moment.",
           );
         }
       } catch (err) {
@@ -447,7 +447,7 @@ function Inner() {
                 disabled={approving || busyChild !== null}
               >
                 {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                Create my book — $29.99
+                Approve & continue
               </Button>
               <p className="text-xs text-muted-foreground">
                 Approve the character, then pay. Free regeneration if it doesn't feel like them.
