@@ -12,6 +12,9 @@ import { requireUser } from "../_shared/auth.ts";
  * so the browser can poll without hitting edge-function timeouts. Steps:
  *
  *   photo_check → character_profile → character_sheet → story_writing
+ *   → story_editing (second-pass editor critiques + rewrites the story
+ *     BEFORE any image is generated, so we never burn image credits on a
+ *     story that then changes)
  *   → cover_illustration (validate + retry up to MAX_RETRIES)
  *   → page_illustrations (one page per call, validate + retry up to MAX_RETRIES)
  *   → quality_checks → pdf_assembly → ready
