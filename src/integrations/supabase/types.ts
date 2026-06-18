@@ -96,6 +96,7 @@ export type Database = {
           status: string
           story_json: Json | null
           story_prompt: string | null
+          story_review: Json | null
           story_theme: string | null
           title: string | null
           updated_at: string
@@ -124,6 +125,7 @@ export type Database = {
           status?: string
           story_json?: Json | null
           story_prompt?: string | null
+          story_review?: Json | null
           story_theme?: string | null
           title?: string | null
           updated_at?: string
@@ -152,6 +154,7 @@ export type Database = {
           status?: string
           story_json?: Json | null
           story_prompt?: string | null
+          story_review?: Json | null
           story_theme?: string | null
           title?: string | null
           updated_at?: string
