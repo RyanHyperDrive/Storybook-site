@@ -39,7 +39,7 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "$29.99 one-time per personalized illustrated storybook. Custom cover + dedication + 10 story pages, designed for ages 4–7 — ready in about 10–20 minutes.",
+          "$29.99 one-time per personalized illustrated storybook. Custom cover + dedication + 10 story pages, designed for ages 2–10 — ready in about 10–20 minutes.",
       },
     ],
   }),
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/pricing")({
 
 const features = [
   "Custom cover + dedication + 10 story pages",
-  "Designed for ages 4–7 — reading level adapts to your child",
+  "Designed for ages 2–10 — reading level adapts to your child",
   "Choose from 4 art styles (watercolor, soft cartoon, comic, manga)",
   "Parent-approved illustrated character before payment",
   "Free regeneration if it doesn't feel right",
@@ -90,7 +90,7 @@ const addons = [
 const faqs = [
   {
     q: "What's included for $29.99?",
-    a: "One personalized storybook: a custom cover, a dedication, and 10 illustrated story pages, designed for ages 4–7. You can read it in any browser and download it as a printable PDF, stored privately in your library.",
+    a: "One personalized storybook: a custom cover, a dedication, and 10 illustrated story pages, designed for ages 2–10. You can read it in any browser and download it as a printable PDF, stored privately in your library.",
   },
   {
     q: "When am I actually charged?",
@@ -114,7 +114,7 @@ const faqs = [
   },
   {
     q: "Is it readable for kids with low vision or dyslexia?",
-    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Every illustration has descriptive alt text. Reading level is tuned for ages 4–7 — from pre-readers being read to, to confident early readers.",
+    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Every illustration has descriptive alt text. Reading level is tuned for ages 2–10 — from pre-readers being read to, to confident early readers.",
   },
   {
     q: "Is this made with AI?",
@@ -144,7 +144,7 @@ function Pricing() {
                 <Clock className="h-3 w-3 text-ember" /> Ready in 10–20 min
               </span>
               <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/70 px-2.5 py-0.5 text-[11px] font-medium text-foreground/80 backdrop-blur">
-                <BookOpen className="h-3 w-3 text-ember" /> 10 story pages · ages 4–7
+                <BookOpen className="h-3 w-3 text-ember" /> 10 story pages · ages 2–10
               </span>
             </div>
 

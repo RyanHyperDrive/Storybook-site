@@ -190,7 +190,7 @@ function CreateLanding() {
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
             <p className="text-center text-xs text-muted-foreground sm:text-left">
-              Designed for ages 4–7 · Custom cover + dedication + 10 story pages · Web reader + PDF
+              Designed for Ages 2–10 · Custom cover + dedication + 10 story pages · Web reader + PDF
             </p>
             <Link to="/create/photos" className="w-full sm:w-auto">
               <Button variant="ember" size="lg" className="w-full sm:w-auto">
@@ -352,7 +352,7 @@ function JourneyPreview() {
                   <Check className="h-3 w-3 text-sage" /> Custom cover + dedication
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="h-3 w-3 text-sage" /> 10 story pages · ages 4–7
+                  <Check className="h-3 w-3 text-sage" /> 10 story pages · Ages 2–10
                 </li>
                 <li className="flex items-center gap-1.5">
                   <Check className="h-3 w-3 text-sage" /> Web reader + PDF

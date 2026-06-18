@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AuthGate } from "@/components/auth-gate";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -124,7 +124,7 @@ function Inner() {
   // Build the reader spreads: cover → dedication → story pages → ending.
   const spreads = useMemo<Spread[]>(() => {
     if (!book) return [];
-    const storyPages = pages.slice(0, 10);
+    const storyPages = [...pages].sort((a, b) => a.page_number - b.page_number);
     const list: Spread[] = [];
     list.push({
       key: "cover",
@@ -343,30 +343,39 @@ function Inner() {
       )}
 
       {/* Reader */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
-        <div className="grid md:grid-cols-2">
-          <IllustrationPane spread={cur} fallback={s1} />
-          <TextPane
+      <SwipeArea
+        onPrev={() => setIdx((i) => Math.max(0, i - 1))}
+        onNext={() => setIdx((i) => Math.min(spreads.length - 1, i + 1))}
+      >
+        <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
+          <div className="grid md:grid-cols-2">
+            <IllustrationPane
+              spread={cur}
+              fallback={s1}
+              onTap={() => setIdx((i) => Math.min(spreads.length - 1, i + 1))}
+            />
+            <TextPane
+              spread={cur}
+              childName={book.child_name}
+              onSaveText={
+                cur.kind === "story" && cur.storyPage
+                  ? (t) => saveTextInline(cur.storyPage!.id, t)
+                  : undefined
+              }
+            />
+          </div>
+          <ReaderControls
+            idx={idx}
+            total={spreads.length}
             spread={cur}
-            childName={book.child_name}
-            onSaveText={
-              cur.kind === "story" && cur.storyPage
-                ? (t) => saveTextInline(cur.storyPage!.id, t)
-                : undefined
-            }
+            onPrev={() => setIdx((i) => Math.max(0, i - 1))}
+            onNext={() => setIdx((i) => Math.min(spreads.length - 1, i + 1))}
+            onOpenImageEditor={cur.kind === "story" ? () => setEditorOpen(true) : undefined}
+            onOpenCoverEditor={cur.kind === "cover" ? () => setCoverEditorOpen(true) : undefined}
+            regenBusy={regenBusyKey === cur.key || (cur.kind === "cover" && regenBusyKey === "cover")}
           />
         </div>
-        <ReaderControls
-          idx={idx}
-          total={spreads.length}
-          spread={cur}
-          onPrev={() => setIdx((i) => Math.max(0, i - 1))}
-          onNext={() => setIdx((i) => Math.min(spreads.length - 1, i + 1))}
-          onOpenImageEditor={cur.kind === "story" ? () => setEditorOpen(true) : undefined}
-          onOpenCoverEditor={cur.kind === "cover" ? () => setCoverEditorOpen(true) : undefined}
-          regenBusy={regenBusyKey === cur.key || (cur.kind === "cover" && regenBusyKey === "cover")}
-        />
-      </div>
+      </SwipeArea>
 
       {/* Page strip */}
       <PageStrip spreads={spreads} idx={idx} onJump={setIdx} />
@@ -403,7 +412,51 @@ function Inner() {
   );
 }
 
-function IllustrationPane({ spread, fallback }: { spread: Spread; fallback: string }) {
+function SwipeArea({
+  children,
+  onPrev,
+  onNext,
+}: {
+  children: React.ReactNode;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+  return (
+    <div
+      onTouchStart={(e) => {
+        const t = e.touches[0];
+        startX.current = t.clientX;
+        startY.current = t.clientY;
+      }}
+      onTouchEnd={(e) => {
+        if (startX.current == null || startY.current == null) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - startX.current;
+        const dy = t.clientY - startY.current;
+        startX.current = null;
+        startY.current = null;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+          if (dx < 0) onNext();
+          else onPrev();
+        }
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function IllustrationPane({
+  spread,
+  fallback,
+  onTap,
+}: {
+  spread: Spread;
+  fallback: string;
+  onTap?: () => void;
+}) {
   if (spread.kind === "dedication") {
     return (
       <div className="grid place-items-center bg-paper/60 p-10 text-center">
@@ -424,13 +477,18 @@ function IllustrationPane({ spread, fallback }: { spread: Spread; fallback: stri
     );
   }
   return (
-    <div className="aspect-[4/5] w-full bg-muted md:aspect-auto md:min-h-[520px]">
+    <button
+      type="button"
+      onClick={onTap}
+      className="block aspect-[4/5] w-full cursor-pointer bg-muted md:aspect-auto md:min-h-[520px]"
+      aria-label="Tap to turn the page"
+    >
       <img
         src={spread.imageUrl ?? fallback}
         alt={spread.label}
         className="h-full w-full object-cover"
       />
-    </div>
+    </button>
   );
 }
 
@@ -463,7 +521,7 @@ function TextPane({
             Starring {childName ?? "your child"}.
           </p>
         </div>
-        <div className="text-xs text-muted-foreground">Use ← → to turn pages.</div>
+        <div className="text-xs text-muted-foreground">Tap or swipe to turn the page.</div>
       </div>
     );
   }
@@ -568,38 +626,58 @@ function ReaderControls({
   regenBusy: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-paper/40 px-4 py-3">
-      <Button variant="ghost" size="sm" onClick={onPrev} disabled={idx === 0}>
-        <ArrowLeft className="h-4 w-4" /> Previous
-      </Button>
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="tabular-nums">
+    <div className="border-t border-border bg-paper/40 px-4 py-4">
+      <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+        <Button
+          variant="ember"
+          size="lg"
+          onClick={onPrev}
+          disabled={idx === 0}
+          className="h-12 px-5 text-base"
+          aria-label="Previous page"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span className="hidden sm:inline">Previous</span>
+        </Button>
+        <div className="text-center text-sm font-semibold tabular-nums text-foreground">
           {idx + 1} / {total}
-        </span>
-        {onOpenImageEditor && (
-          <Button size="sm" variant="outline" onClick={onOpenImageEditor} disabled={regenBusy}>
-            {regenBusy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCcw className="h-3.5 w-3.5" />
-            )}
-            Regenerate image
-          </Button>
-        )}
-        {onOpenCoverEditor && (
-          <Button size="sm" variant="outline" onClick={onOpenCoverEditor} disabled={regenBusy}>
-            {regenBusy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCcw className="h-3.5 w-3.5" />
-            )}
-            Regenerate cover
-          </Button>
-        )}
+        </div>
+        <Button
+          variant="ember"
+          size="lg"
+          onClick={onNext}
+          disabled={idx >= total - 1}
+          className="h-12 px-5 text-base"
+          aria-label="Next page"
+        >
+          <span className="hidden sm:inline">Next</span>
+          <ArrowRight className="h-5 w-5" />
+        </Button>
       </div>
-      <Button variant="ghost" size="sm" onClick={onNext} disabled={idx >= total - 1}>
-        Next <ArrowRight className="h-4 w-4" />
-      </Button>
+      {(onOpenImageEditor || onOpenCoverEditor) && (
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          {onOpenImageEditor && (
+            <Button size="sm" variant="outline" onClick={onOpenImageEditor} disabled={regenBusy}>
+              {regenBusy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-3.5 w-3.5" />
+              )}
+              Regenerate image
+            </Button>
+          )}
+          {onOpenCoverEditor && (
+            <Button size="sm" variant="outline" onClick={onOpenCoverEditor} disabled={regenBusy}>
+              {regenBusy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-3.5 w-3.5" />
+              )}
+              Regenerate cover
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

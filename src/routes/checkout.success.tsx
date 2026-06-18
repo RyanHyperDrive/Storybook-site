@@ -114,7 +114,7 @@ function SuccessPage() {
             <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
             <h1 className="font-display text-3xl font-semibold">Payment received</h1>
             <p className="text-muted-foreground">
-              We're generating your storybook now. You can close this page — we'll email you when it's ready.
+              We're generating your storybook now. Keep this page open while we create your book. You can also find it anytime in your Library.
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
               {jobId && (

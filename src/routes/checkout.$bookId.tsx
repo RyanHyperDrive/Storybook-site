@@ -110,7 +110,7 @@ function CheckoutPage() {
 
           <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
             <li>• Custom cover + dedication + 10 story pages</li>
-            <li>• Designed for ages 4–7</li>
+            <li>• Designed for ages 2–10</li>
             <li>• Your approved character on every page</li>
             <li>• Web reader + downloadable PDF</li>
             <li>• Free regenerations of any single page</li>

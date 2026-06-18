@@ -266,8 +266,6 @@ function Inner() {
             photo={photoForSlot(slot)}
             uploading={busySlot === slot}
             onPick={(file) => uploadForSlot(slot, file)}
-            onAccept={(p) => setStatus(p, "accepted")}
-            onNeedsReplacement={(p) => setStatus(p, "needs_replacement")}
             onRemove={remove}
           />
         ))}
@@ -346,8 +344,6 @@ function SlotCard({
   photo,
   uploading,
   onPick,
-  onAccept,
-  onNeedsReplacement,
   onRemove,
 }: {
   slot: SlotKey;
@@ -356,10 +352,9 @@ function SlotCard({
   photo: PhotoRow | null;
   uploading: boolean;
   onPick: (file: File) => void;
-  onAccept: (p: PhotoRow) => void;
-  onNeedsReplacement: (p: PhotoRow) => void;
   onRemove: (p: PhotoRow) => void;
 }) {
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const label =
     slot === "together"
       ? "Both together (optional)"
@@ -383,7 +378,6 @@ function SlotCard({
           <div className="text-sm font-semibold">{label}</div>
           <p className="mt-0.5 text-xs text-muted-foreground">{helper}</p>
         </div>
-        {photo && <StatusBadge status={photo.status} />}
       </div>
 
       <div className="mt-3 grid grid-cols-[120px_1fr] gap-4">
@@ -402,7 +396,7 @@ function SlotCard({
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-md border border-border bg-paper/60 px-3 py-1.5 text-sm hover:border-ember hover:bg-ember/5">
             <ImagePlus className="h-4 w-4" />
             {photo ? "Replace photo" : "Upload photo"}
@@ -419,59 +413,40 @@ function SlotCard({
           </label>
 
           {photo && (
-            <div className="flex flex-wrap items-center gap-2">
-              {photo.status !== "accepted" && (
-                <Button size="sm" variant="outline" onClick={() => onAccept(photo)}>
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Mark as good
+            <div className="mt-4 border-t border-border pt-3">
+              {confirmRemove ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Remove this photo?</span>
+                  <Button
+                    size="sm"
+                    variant="ember"
+                    onClick={() => {
+                      onRemove(photo);
+                      setConfirmRemove(false);
+                    }}
+                  >
+                    Yes, remove
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setConfirmRemove(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setConfirmRemove(true)}
+                  aria-label="Remove photo"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Remove
                 </Button>
               )}
-              {photo.status !== "needs_replacement" && (
-                <Button size="sm" variant="ghost" onClick={() => onNeedsReplacement(photo)}>
-                  <RefreshCcw className="h-3.5 w-3.5" /> Needs replacement
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onRemove(photo)}
-                aria-label="Remove photo"
-              >
-                <Trash2 className="h-3.5 w-3.5" /> Remove
-              </Button>
             </div>
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: Status }) {
-  const map: Record<Status, { label: string; className: string; icon: React.ReactNode }> = {
-    pending_quality_check: {
-      label: "Pending quality check",
-      className: "border-border bg-muted text-foreground",
-      icon: <Loader2 className="h-3 w-3" />,
-    },
-    accepted: {
-      label: "Accepted",
-      className: "border-sage/40 bg-sage/10 text-sage",
-      icon: <CheckCircle2 className="h-3 w-3" />,
-    },
-    needs_replacement: {
-      label: "Needs replacement",
-      className: "border-amber-500/40 bg-amber-500/10 text-amber-700",
-      icon: <AlertTriangle className="h-3 w-3" />,
-    },
-  };
-  const m = map[status];
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${m.className}`}
-    >
-      {m.icon}
-      {m.label}
-    </span>
   );
 }
 

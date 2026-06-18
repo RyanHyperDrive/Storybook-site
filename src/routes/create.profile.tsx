@@ -227,7 +227,7 @@ function ProfileStep() {
           </Link>
           <Button type="submit" variant="ember" disabled={busy} className="w-full sm:w-auto">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            Choose the story <ArrowRight className="h-4 w-4" />
+            Next: shape the story <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </form>
@@ -275,7 +275,7 @@ function ChildFieldset({
             placeholder="5"
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Designed for ages 4–7. Reading level is adjusted for your child.
+            Designed for ages 2–10. Reading level is adjusted for your child.
           </p>
         </div>
         <div>

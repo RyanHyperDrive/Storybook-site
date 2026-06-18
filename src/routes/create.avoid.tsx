@@ -268,7 +268,7 @@ function AvoidStep() {
             </Button>
           </Link>
           <Button type="button" variant="ember" onClick={next} disabled={busy}>
-            {busy && <Loader2 className="h-4 w-4 animate-spin" />} Choose the art style{" "}
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />} Pick the art style{" "}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

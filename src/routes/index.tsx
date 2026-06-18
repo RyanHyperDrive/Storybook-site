@@ -86,7 +86,7 @@ const faqs = [
   },
   {
     q: "Is it readable for kids with low vision or dyslexia?",
-    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Image alt text describes every illustration. Personalized for ages 4–7 so the reading level lands right for early readers.",
+    a: "The web reader uses high-contrast text, generous spacing, and a dyslexia-friendly font option. Image alt text describes every illustration. Personalized for Ages 2–10 so the reading level lands right for early readers.",
   },
   {
     q: "Refunds?",
@@ -120,7 +120,7 @@ function Home() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="bg-sage/15 text-sage hover:bg-sage/15" variant="secondary">
-                <Sparkles className="mr-1 h-3.5 w-3.5" /> Personalized for ages 4–7
+                <Sparkles className="mr-1 h-3.5 w-3.5" /> Personalized for Ages 2–10
               </Badge>
               <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/70 px-2.5 py-0.5 text-[11px] font-medium text-foreground/80 backdrop-blur">
                 <Clock className="h-3 w-3 text-ember" /> Ready in 10–20 min
@@ -300,7 +300,7 @@ function Home() {
               n: 2,
               icon: Heart,
               title: "Share what they love",
-              body: "Their name, age (4–7), and the things that light them up.",
+              body: "Their name, age (2–10), and the things that light them up.",
               note: "Rockets, dinosaurs, princesses — you choose",
               img: howLoves,
               alt: "Playful storybook illustrations of a rocket, dinosaur, crown, pony, and ringed planet",
@@ -404,7 +404,7 @@ function Home() {
         <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border bg-paper/50 px-4 py-3 text-xs text-foreground/80 sm:text-sm">
           <span className="inline-flex items-center gap-1.5"><BookOpen className="h-4 w-4 text-ember" /> Custom cover + dedication + 10 story pages</span>
           <span className="hidden h-4 w-px bg-border sm:inline-block" />
-          <span className="inline-flex items-center gap-1.5"><Heart className="h-4 w-4 text-ember" /> Personalized for ages 4–7</span>
+          <span className="inline-flex items-center gap-1.5"><Heart className="h-4 w-4 text-ember" /> Personalized for Ages 2–10</span>
           <span className="hidden h-4 w-px bg-border sm:inline-block" />
           <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-sage" /> You approve the character before checkout</span>
         </div>
@@ -646,7 +646,7 @@ function Home() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <Promise title="Privacy first" body="Your photos are private to your account. We never sell them and never use them to train models." icon={ShieldCheck} />
               <Promise title="Parent-approved character" body="You always review the illustrated character before the story is generated. Free regeneration if it doesn't feel right." icon={RefreshCcw} />
-              <Promise title="Real children's-book quality" body="Warm illustrations and thoughtful pacing, designed for ages 4–7." icon={BookOpen} />
+              <Promise title="Real children's-book quality" body="Warm illustrations and thoughtful pacing, designed for Ages 2–10." icon={BookOpen} />
               <Promise title="Web + PDF" body="Read in any browser or download a print-ready PDF — yours to keep." icon={FileText} />
             </div>
           </div>
