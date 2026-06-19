@@ -15,8 +15,10 @@ import {
   PencilLine,
   RefreshCcw,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import { getArtStyle } from "@/lib/art-styles";
 import { saveApprovedCharacter } from "@/lib/saved-characters";
 
