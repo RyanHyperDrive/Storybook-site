@@ -349,8 +349,13 @@ function Inner() {
       </div>
 
       {!isReady && (
-        <div className="mt-6 rounded-md border border-border bg-paper/40 p-3 text-xs text-muted-foreground">
-          This book is still being assembled. You can preview pages as they finish.
+        <div className="mt-6 flex flex-col gap-2 rounded-md border border-border bg-paper/40 p-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>This book is still being assembled. You can preview pages as they finish.</span>
+          {latestJobId && (
+            <Link to="/jobs/$jobId" params={{ jobId: latestJobId }} className="shrink-0">
+              <Button variant="outline" size="sm" className="h-8">Watch progress</Button>
+            </Link>
+          )}
         </div>
       )}
 
