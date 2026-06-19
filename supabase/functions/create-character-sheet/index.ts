@@ -276,6 +276,7 @@ serve(async (req) => {
     userContent.push({ type: "image_url", image_url: { url: childPhotoDataUrl } });
     if (siblingSheetDataUrl) userContent.push({ type: "image_url", image_url: { url: siblingSheetDataUrl } });
     if (togetherPhotoDataUrl) userContent.push({ type: "image_url", image_url: { url: togetherPhotoDataUrl } });
+    if (prevSheetDataUrl) userContent.push({ type: "image_url", image_url: { url: prevSheetDataUrl } });
 
     async function callImageModel(model: string) {
       return await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
