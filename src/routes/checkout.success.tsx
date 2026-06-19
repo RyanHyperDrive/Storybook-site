@@ -5,6 +5,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { WizardLayout } from "@/components/wizard-layout";
+import { clearDraftId } from "@/lib/draft";
 
 const searchSchema = z.object({
   book_id: z.string().uuid().optional(),
