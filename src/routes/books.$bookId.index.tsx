@@ -74,6 +74,7 @@ function Inner() {
   const [error, setError] = useState<string | null>(null);
   const [idx, setIdx] = useState(0);
   const [regenBusyKey, setRegenBusyKey] = useState<string | null>(null);
+  const [latestJobId, setLatestJobId] = useState<string | null>(null);
 
   async function load() {
     setError(null);
@@ -109,6 +110,17 @@ function Inner() {
       } else {
         setCoverUrl(null);
       }
+      // Pull the most recent job for this book so a still-generating book has
+      // a "Watch progress" link straight to /jobs/{jobId}.
+      const { data: jobRow } = await supabase
+        .from("jobs")
+        .select("id")
+        .eq("book_id", bookId)
+        .in("status", ["queued", "running", "done"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setLatestJobId(jobRow?.id ?? null);
     } catch (e: any) {
       setError(e.message ?? "Failed to load book.");
     } finally {
@@ -337,8 +349,13 @@ function Inner() {
       </div>
 
       {!isReady && (
-        <div className="mt-6 rounded-md border border-border bg-paper/40 p-3 text-xs text-muted-foreground">
-          This book is still being assembled. You can preview pages as they finish.
+        <div className="mt-6 flex flex-col gap-2 rounded-md border border-border bg-paper/40 p-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>This book is still being assembled. You can preview pages as they finish.</span>
+          {latestJobId && (
+            <Link to="/jobs/$jobId" params={{ jobId: latestJobId }} className="shrink-0">
+              <Button variant="outline" size="sm" className="h-8">Watch progress</Button>
+            </Link>
+          )}
         </div>
       )}
 

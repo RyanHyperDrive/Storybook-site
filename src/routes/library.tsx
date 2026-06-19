@@ -65,6 +65,7 @@ function Inner() {
   const { user } = useAuth();
   const [books, setBooks] = useState<BookRow[]>([]);
   const [covers, setCovers] = useState<Record<string, string | null>>({});
+  const [latestJobs, setLatestJobs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sort, setSort] = useState<SortKey>("newest");
@@ -88,6 +89,26 @@ function Inner() {
       );
       if (cancelled) return;
       setCovers(Object.fromEntries(entries));
+
+      // For books that are still generating, find the most recent job so we
+      // can offer a "Watch progress" link straight to /jobs/{jobId}.
+      const generatingIds = rows
+        .filter((b) => (b.status ?? "").toLowerCase() === "generating")
+        .map((b) => b.id);
+      if (generatingIds.length) {
+        const { data: jobRows } = await supabase
+          .from("jobs")
+          .select("id, book_id, created_at, status")
+          .in("book_id", generatingIds)
+          .in("status", ["queued", "running", "done"])
+          .order("created_at", { ascending: false });
+        if (cancelled) return;
+        const map: Record<string, string> = {};
+        for (const j of (jobRows ?? []) as Array<{ id: string; book_id: string }>) {
+          if (!map[j.book_id]) map[j.book_id] = j.id;
+        }
+        setLatestJobs(map);
+      }
     })();
     return () => { cancelled = true; };
   }, [user]);
@@ -211,6 +232,13 @@ function Inner() {
                     <div className="mt-1 text-xs text-muted-foreground">{statusLabel(b.status)}</div>
                   </div>
                 </Link>
+                {(b.status ?? "").toLowerCase() === "generating" && latestJobs[b.id] && (
+                  <div className="mt-2 pl-2">
+                    <Link to="/jobs/$jobId" params={{ jobId: latestJobs[b.id] }}>
+                      <Button variant="outline" size="sm" className="h-9">Watch progress</Button>
+                    </Link>
+                  </div>
+                )}
               </li>
             );
           })}
