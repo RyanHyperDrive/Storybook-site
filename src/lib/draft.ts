@@ -22,7 +22,9 @@ export async function ensureDraftBook(userId: string) {
   const existing = getDraftId();
   if (existing) {
     const { data } = await supabase.from("books").select("*").eq("id", existing).maybeSingle();
-    if (data && data.user_id === userId) return data;
+    if (data && data.user_id === userId && data.status === "draft") return data;
+    // Stale pointer (missing, other user, or already submitted/finished) — clear it.
+    clearDraftId();
   }
   const { data, error } = await supabase
     .from("books")
