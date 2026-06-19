@@ -238,60 +238,109 @@ serve(async (req) => {
       .update({ status: "generating", error_message: null })
       .eq("id", childSubjectId);
 
-    const KIE_API_KEY = Deno.env.get("KIE_API_KEY");
-    if (!KIE_API_KEY) return errorResponse("KIE_API_KEY is not configured", 500);
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY is not configured", 500);
 
-    const input_urls: string[] = [signed.signedUrl];
-    if (siblingSheetDataUrl) input_urls.push(siblingSheetDataUrl);
-    if (togetherPhotoDataUrl) input_urls.push(togetherPhotoDataUrl);
+    // Inline the child's reference photo as a data URL (mirrors illustrate-page).
+    async function fetchAsDataUrl(url: string, fallbackMime = "image/png"): Promise<string> {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`Failed to fetch reference image: ${r.status}`);
+      const ct = r.headers.get("content-type") ?? fallbackMime;
+      const buf = new Uint8Array(await r.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < buf.length; i += 0x8000) {
+        bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+      }
+      return `data:${ct};base64,${btoa(bin)}`;
+    }
+    const childPhotoDataUrl = await fetchAsDataUrl(signed.signedUrl, "image/jpeg");
 
-    const createRes = await fetch(KIE_CREATE_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${KIE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: KIE_MODEL,
-        input: {
-          prompt,
-          input_urls,
-          aspect_ratio: "3:4",
-          resolution: "1K",
+    const userContent: any[] = [{ type: "text", text: prompt }];
+    userContent.push({ type: "image_url", image_url: { url: childPhotoDataUrl } });
+    if (siblingSheetDataUrl) userContent.push({ type: "image_url", image_url: { url: siblingSheetDataUrl } });
+    if (togetherPhotoDataUrl) userContent.push({ type: "image_url", image_url: { url: togetherPhotoDataUrl } });
+
+    async function callImageModel(model: string) {
+      return await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
         },
-      }),
-    });
-    const createJson: any = await createRes.json().catch(() => ({}));
-    const taskId = createJson?.data?.taskId ?? createJson?.data?.task_id ?? createJson?.taskId;
-    if (!createRes.ok || !taskId) {
-      throw new Error(`Image generation did not start: ${JSON.stringify(createJson).slice(0, 300)}`);
+        body: JSON.stringify({
+          model,
+          modalities: ["image", "text"],
+          messages: [{ role: "user", content: userContent }],
+        }),
+      });
+    }
+    function extractImageUrl(payload: any): string | undefined {
+      return (
+        payload?.choices?.[0]?.message?.images?.[0]?.image_url?.url ??
+        payload?.choices?.[0]?.message?.images?.[0]?.url
+      );
+    }
+    function extractTextReply(payload: any): string {
+      const msg = payload?.choices?.[0]?.message;
+      if (!msg) return "";
+      if (typeof msg.content === "string") return msg.content;
+      if (Array.isArray(msg.content)) {
+        return msg.content.map((c: any) => (typeof c?.text === "string" ? c.text : "")).filter(Boolean).join(" ");
+      }
+      return "";
     }
 
-    let sourceUrl: string | null = null;
-    // Poll up to ~145s total: first 5 checks every 3s, then every 5s.
-    const MAX_ATTEMPTS = 31;
-    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      await sleep(attempt < 5 ? 3000 : 5000);
-      const infoRes = await fetch(`${KIE_INFO_URL}?taskId=${encodeURIComponent(taskId)}`, {
-        headers: { Authorization: `Bearer ${KIE_API_KEY}` },
-      });
-      const infoJson: any = await infoRes.json().catch(() => ({}));
-      const data = infoJson?.data ?? {};
-      const state = data.state ?? data.status;
-      if (state === "success" || state === "completed") {
-        sourceUrl = resultUrlsFrom(data)[0] ?? null;
+    const attempts: { model: string; label: string }[] = [
+      { model: "google/gemini-3.1-flash-image-preview", label: "flash-1" },
+      { model: "google/gemini-3.1-flash-image-preview", label: "flash-2" },
+      { model: "google/gemini-3-pro-image-preview", label: "pro-fallback" },
+    ];
+
+    let imageDataUrl: string | undefined;
+    let lastTextReply = "";
+    let lastStatus = 0;
+    let lastErrBody = "";
+    for (const attempt of attempts) {
+      const aiRes = await callImageModel(attempt.model);
+      lastStatus = aiRes.status;
+      if (!aiRes.ok) {
+        lastErrBody = await aiRes.text();
+        console.error(`create-character-sheet ${attempt.label} gateway error`, aiRes.status, lastErrBody);
+        if (aiRes.status === 429) return errorResponse("Rate limit exceeded, try again shortly", 429);
+        if (aiRes.status === 402) return errorResponse("AI credits exhausted", 402);
+        continue;
+      }
+      const payload = await aiRes.json();
+      const candidate = extractImageUrl(payload);
+      if (candidate && candidate.startsWith("data:")) {
+        imageDataUrl = candidate;
         break;
       }
-      if (state === "fail" || state === "failed") {
-        throw new Error(data.failMsg || data.errorMessage || "Image generation failed");
-      }
+      lastTextReply = extractTextReply(payload);
+      console.warn(
+        `create-character-sheet ${attempt.label} returned no image`,
+        JSON.stringify({ textReply: lastTextReply.slice(0, 400), finishReason: payload?.choices?.[0]?.finish_reason }),
+      );
     }
-    if (!sourceUrl) throw new Error("Image generation is taking longer than expected. Please try again.");
+    if (!imageDataUrl) {
+      const reason = lastTextReply
+        ? `Image model refused: ${lastTextReply.slice(0, 240)}`
+        : lastErrBody
+          ? `Image gateway error (${lastStatus}): ${lastErrBody.slice(0, 240)}`
+          : "Image generation returned no image after retries";
+      throw new Error(reason);
+    }
 
-    const imgRes = await fetch(sourceUrl);
-    if (!imgRes.ok) throw new Error(`Generated image download failed (${imgRes.status})`);
-    const bytes = new Uint8Array(await imgRes.arrayBuffer());
-    const imagePath = `${user.id}/${childSubjectId}-${Date.now()}.png`;
+    const match = imageDataUrl.match(/^data:(.+?);base64,(.*)$/);
+    if (!match) throw new Error("Malformed image data URL from gateway");
+    const mime = match[1] || "image/png";
+    const base64 = match[2];
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const ext = mime.includes("jpeg") || mime.includes("jpg") ? "jpg" : "png";
+    const imagePath = `${user.id}/${childSubjectId}-${Date.now()}.${ext}`;
     const { error: uploadErr } = await admin.storage
       .from(CHARACTER_BUCKET)
-      .upload(imagePath, bytes, { contentType: "image/png", upsert: true });
+      .upload(imagePath, bytes, { contentType: mime, upsert: true });
     if (uploadErr) throw new Error(`Could not save generated character: ${uploadErr.message}`);
 
     const image_url = imagePath;
