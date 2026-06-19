@@ -558,7 +558,8 @@ function TextPane({
 
   if (spread.kind === "cover") {
     return (
-      <div className="flex flex-col justify-between gap-6 p-8 md:p-12">
+      <div className="flex h-full flex-col justify-between gap-6 overflow-auto p-8 md:p-12">
+
         <div className="text-xs uppercase tracking-wide text-muted-foreground">A storybook</div>
         <div>
           <h2 className="font-display text-4xl font-semibold leading-tight">{spread.text}</h2>
