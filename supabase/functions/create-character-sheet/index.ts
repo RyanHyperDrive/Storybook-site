@@ -62,11 +62,15 @@ serve(async (req) => {
   if (req.method !== "POST") return errorResponse("Method not allowed", 405);
 
   let childSubjectId: string | undefined;
+  let instruction: string | undefined;
   let adminForError: any = null;
   try {
     const { user, admin } = await requireUser(req);
     adminForError = admin;
-    ({ childSubjectId } = await req.json());
+    const body = await req.json();
+    childSubjectId = body?.childSubjectId;
+    const rawInstruction = typeof body?.instruction === "string" ? body.instruction.trim() : "";
+    instruction = rawInstruction ? rawInstruction.slice(0, 500) : undefined;
     if (!childSubjectId) return errorResponse("childSubjectId is required");
 
     const subject = await assertOwnership(admin, "child_subjects", childSubjectId, user.id);
