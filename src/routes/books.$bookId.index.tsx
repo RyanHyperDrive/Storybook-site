@@ -573,7 +573,8 @@ function TextPane({
   }
   if (spread.kind === "dedication") {
     return (
-      <div className="flex flex-col justify-center gap-4 p-8 md:p-12">
+      <div className="flex h-full flex-col justify-center gap-4 overflow-auto p-8 md:p-12">
+
         <div className="text-xs uppercase tracking-wide text-muted-foreground">Dedication</div>
         <p className="font-display text-2xl leading-snug">{spread.text}</p>
       </div>
