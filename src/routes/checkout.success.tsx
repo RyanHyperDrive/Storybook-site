@@ -64,16 +64,19 @@ function SuccessPage() {
         // 2. Mark book as generating.
         await supabase.from("books").update({ status: "generating" }).eq("id", book_id);
 
-        // 3. Kick off (or reuse) the generation job.
+        // 3. Kick off (or reuse) the generation job — only reuse if still in flight.
         const { data: existingJob } = await supabase
           .from("jobs")
-          .select("id")
+          .select("id, status")
           .eq("book_id", book_id)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        let id = existingJob?.id ?? null;
+        let id =
+          existingJob && (existingJob.status === "queued" || existingJob.status === "running")
+            ? existingJob.id
+            : null;
         if (!id) {
           const { data: job, error: jobErr } = await supabase
             .from("jobs")
@@ -89,6 +92,10 @@ function SuccessPage() {
           if (jobErr) throw jobErr;
           id = job.id;
         }
+
+        // This book is now submitted — clear the draft pointer so the next
+        // "new book" starts fresh instead of reusing this one.
+        clearDraftId();
 
         setJobId(id);
         setState("done");
