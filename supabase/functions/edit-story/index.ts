@@ -304,7 +304,7 @@ async function callGateway(systemPrompt: string, userPrompt: string, apiKey: str
         body: JSON.stringify({
           model: "google/gemini-2.5-pro",
           response_format: { type: "json_object" },
-          max_tokens: 4000,
+          max_tokens: 8000,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
