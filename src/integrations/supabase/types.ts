@@ -439,10 +439,12 @@ export type Database = {
         Row: {
           audit: Json
           book_id: string
+          consecutive_errors: number
           created_at: string
           current_step: string
           id: string
           kind: string
+          locked_at: string | null
           message: string | null
           progress: number
           status: string
@@ -455,10 +457,12 @@ export type Database = {
         Insert: {
           audit?: Json
           book_id: string
+          consecutive_errors?: number
           created_at?: string
           current_step?: string
           id?: string
           kind: string
+          locked_at?: string | null
           message?: string | null
           progress?: number
           status?: string
@@ -471,10 +475,12 @@ export type Database = {
         Update: {
           audit?: Json
           book_id?: string
+          consecutive_errors?: number
           created_at?: string
           current_step?: string
           id?: string
           kind?: string
+          locked_at?: string | null
           message?: string | null
           progress?: number
           status?: string
