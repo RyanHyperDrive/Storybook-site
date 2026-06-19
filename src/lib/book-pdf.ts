@@ -194,18 +194,18 @@ export async function buildBookPdf(input: BuildPdfInput): Promise<Uint8Array> {
     const img = bytes ? await embedImage(doc, bytes) : null;
     drawContainedImage(page, img, {
       x: MARGIN,
-      y: PAGE_H - MARGIN - IMG_AREA_H,
-      w: textWidth,
-      h: IMG_AREA_H,
+      y: PAGE_H - MARGIN - IMG_H,
+      w: IMG_W,
+      h: IMG_H,
     });
     const text = (p.text ?? "").trim();
     drawWrappedText(
       page,
       text,
       serif,
-      14,
+      12,
       MARGIN,
-      PAGE_H - MARGIN - IMG_AREA_H - 24,
+      PAGE_H - MARGIN - IMG_H - 14,
       textWidth,
     );
     const pageLabel = `${p.pageNumber}`;
@@ -218,6 +218,7 @@ export async function buildBookPdf(input: BuildPdfInput): Promise<Uint8Array> {
       color: MUTED,
     });
   }
+
 
   // --- The End ---
   {
