@@ -183,7 +183,7 @@ function Inner() {
     return data as Subject;
   }
 
-  async function generateFor(child: Child) {
+  async function generateFor(child: Child, instruction?: string) {
     if (!user) return;
     setBusyChild(child.id);
     try {
@@ -197,6 +197,9 @@ function Inner() {
       await load();
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
+      const trimmed = (instruction ?? "").trim();
+      const body: Record<string, unknown> = { childSubjectId: subject.id };
+      if (trimmed) body.instruction = trimmed;
       const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-character-sheet`, {
         method: "POST",
         headers: {
@@ -204,7 +207,7 @@ function Inner() {
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ childSubjectId: subject.id }),
+        body: JSON.stringify(body),
       });
       const payload = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(payload?.error ?? "Character generation failed");
