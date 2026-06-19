@@ -110,6 +110,17 @@ function Inner() {
       } else {
         setCoverUrl(null);
       }
+      // Pull the most recent job for this book so a still-generating book has
+      // a "Watch progress" link straight to /jobs/{jobId}.
+      const { data: jobRow } = await supabase
+        .from("jobs")
+        .select("id")
+        .eq("book_id", bookId)
+        .in("status", ["queued", "running", "done"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setLatestJobId(jobRow?.id ?? null);
     } catch (e: any) {
       setError(e.message ?? "Failed to load book.");
     } finally {
