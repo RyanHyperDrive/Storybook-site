@@ -193,18 +193,39 @@ function Inner() {
     return () => window.removeEventListener("keydown", onKey);
   }, [spreads.length]);
 
+  const [pdfBusy, setPdfBusy] = useState(false);
   async function downloadPdf() {
     if (!book) return;
-    if (book.ebook_url) {
-      const url = await resolveSignedUrl(book.ebook_url);
-      if (url) {
-        window.open(url, "_blank", "noopener,noreferrer");
-        return;
-      }
+    if (book.status !== "ready") {
+      toast.message("Still being assembled", {
+        description: "Your downloadable PDF will be available once all pages finish.",
+      });
+      return;
     }
-    toast.message("PDF not ready yet", {
-      description: "Your downloadable PDF will appear here once assembly finishes.",
-    });
+    setPdfBusy(true);
+    try {
+      const { buildBookPdf, triggerPdfDownload, sanitizeFilename } = await import(
+        "@/lib/book-pdf"
+      );
+      const storyPages = [...pages].sort((a, b) => a.page_number - b.page_number);
+      const bytes = await buildBookPdf({
+        title: book.title ?? `${book.child_name ?? "Your child"}'s storybook`,
+        childName: book.child_name ?? null,
+        dedication: book.dedication ?? null,
+        coverUrl: coverUrl,
+        pages: storyPages.map((p, i) => ({
+          pageNumber: i + 1,
+          text: p.text_content ?? "",
+          imageUrl: imgUrls[p.id] ?? null,
+        })),
+      });
+      const name = sanitizeFilename(book.child_name || book.title || "storybook");
+      triggerPdfDownload(bytes, `${name}.pdf`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not build the PDF. Please try again.");
+    } finally {
+      setPdfBusy(false);
+    }
   }
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -337,8 +358,9 @@ function Inner() {
               : <Wand2 className="h-4 w-4" />}
             Rewrite story
           </Button>
-          <Button variant="outline" size="sm" onClick={downloadPdf}>
-            <Download className="h-4 w-4" /> Download PDF
+          <Button variant="outline" size="sm" onClick={downloadPdf} disabled={pdfBusy}>
+            {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {pdfBusy ? "Building PDF…" : "Download PDF"}
           </Button>
           <Link to="/books/$bookId/manage" params={{ bookId }}>
             <Button variant="ghost" size="sm">
@@ -365,7 +387,8 @@ function Inner() {
         onNext={() => setIdx((i) => Math.min(spreads.length - 1, i + 1))}
       >
         <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
-          <div className="grid md:grid-cols-2">
+          {/* Fixed-size spread frame: every spread (cover / dedication / story / ending) uses the SAME dimensions, so the card never resizes between turns. */}
+          <div className="grid h-[640px] grid-rows-[1fr_1fr] md:h-[600px] md:grid-cols-2 md:grid-rows-1">
             <IllustrationPane
               spread={cur}
               fallback={s1}
@@ -474,11 +497,16 @@ function IllustrationPane({
   fallback: string;
   onTap?: () => void;
 }) {
+  // Every spread uses the same fixed frame. Images are CONTAINED (never cropped),
+  // letterboxed on the paper-colored background. Non-image spreads show a
+  // centered glyph in the same frame so the card size stays constant.
+  const frame =
+    "relative flex h-full w-full items-center justify-center overflow-hidden bg-paper/60 p-6";
   if (spread.kind === "dedication") {
     return (
-      <div className="grid place-items-center bg-paper/60 p-10 text-center">
-        <div>
-          <Heart className="mx-auto h-8 w-8 text-ember" />
+      <div className={frame}>
+        <div className="text-center">
+          <Heart className="mx-auto h-10 w-10 text-ember" />
           <div className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
             Dedication
           </div>
@@ -488,8 +516,8 @@ function IllustrationPane({
   }
   if (spread.kind === "ending") {
     return (
-      <div className="grid place-items-center bg-paper/60 p-10 text-center">
-        <Sparkles className="h-8 w-8 text-ember" />
+      <div className={frame}>
+        <Sparkles className="h-10 w-10 text-ember" />
       </div>
     );
   }
@@ -497,13 +525,13 @@ function IllustrationPane({
     <button
       type="button"
       onClick={onTap}
-      className="block aspect-[4/5] w-full cursor-pointer bg-muted md:aspect-auto md:min-h-[520px]"
+      className={`${frame} cursor-pointer`}
       aria-label="Tap to turn the page"
     >
       <img
         src={spread.imageUrl ?? fallback}
         alt={spread.label}
-        className="h-full w-full object-cover"
+        className="max-h-full max-w-full object-contain"
       />
     </button>
   );
@@ -530,7 +558,8 @@ function TextPane({
 
   if (spread.kind === "cover") {
     return (
-      <div className="flex flex-col justify-between gap-6 p-8 md:p-12">
+      <div className="flex h-full flex-col justify-between gap-6 overflow-auto p-8 md:p-12">
+
         <div className="text-xs uppercase tracking-wide text-muted-foreground">A storybook</div>
         <div>
           <h2 className="font-display text-4xl font-semibold leading-tight">{spread.text}</h2>
@@ -544,7 +573,8 @@ function TextPane({
   }
   if (spread.kind === "dedication") {
     return (
-      <div className="flex flex-col justify-center gap-4 p-8 md:p-12">
+      <div className="flex h-full flex-col justify-center gap-4 overflow-auto p-8 md:p-12">
+
         <div className="text-xs uppercase tracking-wide text-muted-foreground">Dedication</div>
         <p className="font-display text-2xl leading-snug">{spread.text}</p>
       </div>
@@ -552,7 +582,7 @@ function TextPane({
   }
   if (spread.kind === "ending") {
     return (
-      <div className="flex flex-col justify-center gap-4 p-8 md:p-12">
+      <div className="flex h-full flex-col justify-center gap-4 overflow-auto p-8 md:p-12">
         <div className="text-xs uppercase tracking-wide text-muted-foreground">The end</div>
         <p className="font-display text-2xl leading-snug">{spread.text}</p>
       </div>
@@ -560,7 +590,7 @@ function TextPane({
   }
   // Story page — editable
   return (
-    <div className="flex flex-col justify-between gap-6 p-8 md:p-12">
+    <div className="flex h-full flex-col justify-between gap-6 overflow-auto p-8 md:p-12">
       <div className="flex items-center justify-between gap-2">
         <div className="text-xs uppercase tracking-wide text-muted-foreground">{spread.label}</div>
         {onSaveText && !editing && (
