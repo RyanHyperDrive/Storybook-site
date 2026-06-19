@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { jsonrepair } from "https://esm.sh/jsonrepair@3";
 import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
 import {
@@ -146,7 +147,9 @@ Scoring rules:
 - Set flags.has_magic to true if any magical effect appears anywhere. Set flags.has_parent_lesson to true if the inputs include a parent situation/lesson to weave.
 - page_findings: include only pages with real issues; each finding cites the offending quote and gives a concrete, page-addressed fix instruction (what to add/cut/rewrite, never a vague "make it better").
 - Hard-fail flags (set to true when the corresponding craft violation is present anywhere): em_dash_present, stated_moral_or_label_present, physical_impossibility_present, state_contradiction_present, deus_ex_machina_present, unruled_magic_present, filler_page_present, dangling_introduction_present.
-- needs_rewrite is your own verdict; the server will recompute it from the scores and flags.`;
+- needs_rewrite is your own verdict; the server will recompute it from the scores and flags.
+
+JSON FORMATTING (HARD RULE): Return STRICTLY valid JSON. In the quote, explanation, and fix_instruction fields, do NOT include raw double-quote characters — use single quotes or paraphrase. Do not add trailing commas or comments.`;
 }
 
 function buildRewriteSystemPrompt(ageBand: string, targetPages: number, sentencesPerPage: string): string {
@@ -262,10 +265,25 @@ function extractJson(raw: string): any {
   try {
     return JSON.parse(s);
   } catch {
+    // Fallback 1: brace substring (handles trailing/leading prose).
     const first = s.indexOf("{");
     const last = s.lastIndexOf("}");
-    if (first === -1 || last <= first) throw new Error("no JSON object braces found");
-    return JSON.parse(s.slice(first, last + 1));
+    if (first !== -1 && last > first) {
+      const sub = s.slice(first, last + 1);
+      try {
+        return JSON.parse(sub);
+      } catch {
+        // Fallback 2: JSON repair pass (handles unescaped quotes,
+        // trailing commas, etc. — the common critique failure mode).
+        try {
+          return JSON.parse(jsonrepair(sub));
+        } catch {
+          // fall through to the outer repair attempt below
+        }
+      }
+    }
+    // Fallback 2 (no usable braces): repair the whole string.
+    return JSON.parse(jsonrepair(s));
   }
 }
 
@@ -286,7 +304,7 @@ async function callGateway(systemPrompt: string, userPrompt: string, apiKey: str
         body: JSON.stringify({
           model: "google/gemini-2.5-pro",
           response_format: { type: "json_object" },
-          max_tokens: 4000,
+          max_tokens: 8000,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -351,9 +369,7 @@ serve(async (req) => {
     const lvl = String(reading_level ?? book.reading_level ?? "ages_4_6");
     const target = READING_LEVEL_TARGETS[lvl] ?? READING_LEVEL_TARGETS.ages_4_6;
     const ageBand = getAgeBand(lvl);
-    const maxSentences = target.sentencesPerPage.includes("1")
-      ? target.sentencesPerPage.includes("5") ? 5 : 3
-      : 5;
+    const maxSentences = target.maxSentences;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);

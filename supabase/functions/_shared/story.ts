@@ -7,6 +7,7 @@ export type ReadingLevelTarget = {
   minPages: number;
   targetPages: number;
   sentencesPerPage: string;
+  maxSentences: number;
   toneNotes: string;
   safetyClause: string;
 };
@@ -32,27 +33,30 @@ export const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
     ageBand: "2-3",
     minPages: 8,
     targetPages: 8,
-    sentencesPerPage: "exactly 1 very short sentence (under 10 words)",
+    sentencesPerPage: "2 to 4 short, simple sentences (each under about 8 words)",
+    maxSentences: 4,
     toneNotes:
-      "Board-book voice. Repetition is welcome. Tiny vocabulary. Soft, simple ideas.",
+      "Warm board-book voice that is simple but NOT bare: use words a toddler knows, plus sound words (stomp, splash, rawr), gentle repetition, and a little simple dialogue, so a grown-up has something lovely to read aloud. Never just one flat sentence per page.",
     safetyClause: SAFETY_AGES_2_3,
   },
   ages_4_6: {
     ageBand: "4-6",
     minPages: 10,
     targetPages: 10,
-    sentencesPerPage: "1 to 3 short read-aloud sentences",
+    sentencesPerPage: "3 to 5 warm read-aloud sentences",
+    maxSentences: 5,
     toneNotes:
-      "Classic picture-book voice. Warm, calm, age-appropriate, positive resolution.",
+      "Classic picture-book voice, warm and rhythmic, a real little story on each page.",
     safetyClause: SAFETY_AGES_4_6,
   },
   ages_7_10: {
     ageBand: "7-10",
     minPages: 12,
     targetPages: 12,
-    sentencesPerPage: "2 to 5 sentences",
+    sentencesPerPage: "5 to 8 sentences",
+    maxSentences: 8,
     toneNotes:
-      "Early-reader voice. Slightly richer vocabulary, gentle wit, light suspense, always a kind resolution.",
+      "Early-reader voice, a real small paragraph per page, gentle wit and light suspense, always a kind resolution.",
     safetyClause: SAFETY_AGES_7_10,
   },
 };
@@ -125,7 +129,7 @@ Then write to these rules:
 
 10. EARN THE EMOTIONAL TURN AND THE ENDING. Establish the want and feeling, hit a real (age-safe) snag and feel it, then let the feeling shift as a RESULT of what the child does. The last page resolves the exact problem from the opening, and we FEEL the change in a concrete final image rather than being told its meaning.
 
-11. WRITE FOR THE ADULT'S MOUTH AND THE CHILD'S EAR. Vary sentence length and shape, build gentle rhythm, use strong concrete verbs and nouns a child can picture. Favor one true sensory image (rough bark under a palm, the squeak of a ball on a gym floor, the cool hush of shade) over generic sparkle. Use NO MORE THAN ONE glow/sparkle-type word per page ("glowing," "sparkly," "shiny," "magical," "shimmering"), and only when earned. Avoid clichéd filler ("a friendly squirrel with a sparkly tail chittered hello").
+11. WRITE FOR THE ADULT'S MOUTH AND THE CHILD'S EAR. Vary sentence length and shape, build gentle rhythm, use strong concrete verbs and nouns a child can picture. Favor one true sensory image (rough bark under a palm, the squeak of a ball on a gym floor, the cool hush of shade) over generic sparkle. Use NO MORE THAN ONE glow/sparkle-type word per page ("glowing," "sparkly," "shiny," "magical," "shimmering"), and only when earned. Avoid clichéd filler ("a friendly squirrel with a sparkly tail chittered hello"). Even at the youngest ages, keep the vocabulary simple but make every page rich and read-aloud-worthy. Simple WORDS, but not bare: use sound words, rhythm, gentle repetition, and a little simple dialogue so the adult reading aloud has something to perform. Never reduce a page to a single flat sentence.
 
 12. NO EM-DASHES. Never use an em-dash, en-dash, or double-hyphen anywhere in title, subtitle, dedication, style_notes, page_text, or any field. Use a period, a comma, or the word "and." Rewrite any sentence that wants a dash into shorter sentences.
 

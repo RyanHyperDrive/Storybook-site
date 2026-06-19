@@ -69,11 +69,7 @@ serve(async (req) => {
     const target =
       READING_LEVEL_TARGETS[String(reading_level ?? "ages_4_6")] ??
       READING_LEVEL_TARGETS.ages_4_6;
-    const maxSentences = target.sentencesPerPage.includes("1")
-      ? target.sentencesPerPage.includes("5")
-        ? 5
-        : 3
-      : 5;
+    const maxSentences = target.maxSentences;
 
     // If bookId is supplied, verify ownership before we spend tokens.
     if (bookId) {
