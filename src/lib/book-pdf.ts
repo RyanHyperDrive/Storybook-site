@@ -140,25 +140,26 @@ export async function buildBookPdf(input: BuildPdfInput): Promise<Uint8Array> {
     const coverImg = coverBytes ? await embedImage(doc, coverBytes) : null;
     drawContainedImage(page, coverImg, {
       x: MARGIN,
-      y: PAGE_H - MARGIN - IMG_AREA_H,
-      w: textWidth,
-      h: IMG_AREA_H,
+      y: PAGE_H - MARGIN - IMG_H,
+      w: IMG_W,
+      h: IMG_H,
     });
-    const titleSize = 28;
+    const titleSize = 22;
     const titleLines = wrapText(input.title, serifBold, titleSize, textWidth);
-    let cursorY = PAGE_H - MARGIN - IMG_AREA_H - 30;
+    let cursorY = PAGE_H - MARGIN - IMG_H - 22;
     titleLines.forEach((line) => {
       const w = serifBold.widthOfTextAtSize(line, titleSize);
       page.drawText(line, { x: (PAGE_W - w) / 2, y: cursorY, size: titleSize, font: serifBold, color: INK });
-      cursorY -= titleSize * 1.25;
+      cursorY -= titleSize * 1.2;
     });
     if (input.childName) {
       const sub = `Starring ${input.childName}`;
-      const subSize = 14;
+      const subSize = 12;
       const w = serif.widthOfTextAtSize(sub, subSize);
-      page.drawText(sub, { x: (PAGE_W - w) / 2, y: cursorY - 6, size: subSize, font: serif, color: MUTED });
+      page.drawText(sub, { x: (PAGE_W - w) / 2, y: cursorY - 4, size: subSize, font: serif, color: MUTED });
     }
   }
+
 
   // --- Dedication page ---
   {
