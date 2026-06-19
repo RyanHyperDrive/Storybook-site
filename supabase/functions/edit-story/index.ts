@@ -265,10 +265,25 @@ function extractJson(raw: string): any {
   try {
     return JSON.parse(s);
   } catch {
+    // Fallback 1: brace substring (handles trailing/leading prose).
     const first = s.indexOf("{");
     const last = s.lastIndexOf("}");
-    if (first === -1 || last <= first) throw new Error("no JSON object braces found");
-    return JSON.parse(s.slice(first, last + 1));
+    if (first !== -1 && last > first) {
+      const sub = s.slice(first, last + 1);
+      try {
+        return JSON.parse(sub);
+      } catch {
+        // Fallback 2: JSON repair pass (handles unescaped quotes,
+        // trailing commas, etc. — the common critique failure mode).
+        try {
+          return JSON.parse(jsonrepair(sub));
+        } catch {
+          // fall through to the outer repair attempt below
+        }
+      }
+    }
+    // Fallback 2 (no usable braces): repair the whole string.
+    return JSON.parse(jsonrepair(s));
   }
 }
 
