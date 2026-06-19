@@ -51,19 +51,33 @@ serve(async (req) => {
       return jsonResponse({ ok: true, done: true, job });
     }
 
+    // ── Per-job lock: only one run-book-step may advance this job at a time.
+    // Stale locks (>120s) are reclaimable so a crashed invocation can't pin it.
+    const staleCutoff = new Date(Date.now() - 120000).toISOString();
+    const { data: claim } = await admin.from("jobs")
+      .update({ locked_at: new Date().toISOString() })
+      .eq("id", jobId)
+      .or(`locked_at.is.null,locked_at.lt.${staleCutoff}`)
+      .select("id").maybeSingle();
+    if (!claim) return jsonResponse({ ok: true, busy: true });
+
     const bookId = job.book_id as string;
     const { data: book } = await admin.from("books").select("*").eq("id", bookId).maybeSingle();
-    if (!book) return errorResponse("Book missing", 404);
+    if (!book) {
+      await admin.from("jobs").update({ locked_at: null }).eq("id", jobId);
+      return errorResponse("Book missing", 404);
+    }
 
     const step = (job.current_step as string) || "photo_check";
 
     async function updateJob(patch: Record<string, any>) {
-      await admin.from("jobs").update({ ...patch, status: "running" }).eq("id", jobId);
+      await admin.from("jobs").update({ ...patch, status: "running", consecutive_errors: 0 }).eq("id", jobId);
     }
     async function finishJob(message?: string) {
       await admin.from("jobs").update({
         status: "done", progress: 100, current_step: "ready",
         message: message ?? "Your book is ready.",
+        consecutive_errors: 0,
       }).eq("id", jobId);
     }
     async function failJob(message: string) {
@@ -71,6 +85,7 @@ serve(async (req) => {
         status: "error", message,
       }).eq("id", jobId);
     }
+
 
     // Append a structured validation event to jobs.audit and bump counters.
     // Stored shape: { events: [...], totals: { validations, failures, retries } }
