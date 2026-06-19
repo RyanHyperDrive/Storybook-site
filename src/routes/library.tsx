@@ -232,6 +232,13 @@ function Inner() {
                     <div className="mt-1 text-xs text-muted-foreground">{statusLabel(b.status)}</div>
                   </div>
                 </Link>
+                {(b.status ?? "").toLowerCase() === "generating" && latestJobs[b.id] && (
+                  <div className="mt-2 pl-2">
+                    <Link to="/jobs/$jobId" params={{ jobId: latestJobs[b.id] }}>
+                      <Button variant="outline" size="sm" className="h-9">Watch progress</Button>
+                    </Link>
+                  </div>
+                )}
               </li>
             );
           })}
