@@ -390,6 +390,13 @@ serve(async (req) => {
           model,
           modalities: ["image", "text"],
           messages: [{ role: "user", content: userContent }],
+          // Force a 4:5 PORTRAIT page (taller than wide). Lovable AI gateway
+          // forwards these hints to the Gemini image models when supported;
+          // unknown fields are ignored. The prompt-level PAGE SHAPE HARD GATE
+          // above is the always-on fallback.
+          aspect_ratio: "4:5",
+          image_size: "1024x1280",
+          size: "1024x1280",
         }),
       });
       return res;
