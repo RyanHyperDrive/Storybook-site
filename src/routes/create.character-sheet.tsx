@@ -592,23 +592,62 @@ function CharacterCard({
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {hasCharacter && (
-          <Button size="sm" variant="outline" onClick={onGenerate} disabled={busy}>
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
-            Regenerate
-          </Button>
-        )}
-        <Link to="/create/profile">
-          <Button size="sm" variant="ghost">
-            <PencilLine className="h-3.5 w-3.5" /> Edit details
-          </Button>
-        </Link>
-        {(subject?.regenerations ?? 0) > 0 && (
-          <span className="text-[11px] text-muted-foreground">
-            Regenerations: {subject!.regenerations} (free)
-          </span>
-        )}
-      </div>
+      {hasCharacter && (
+        <div className="mt-4 rounded-md border border-ember/30 bg-ember/5 p-3">
+          <label className="text-xs font-medium text-foreground">
+            Want to change something? (optional)
+          </label>
+          <Input
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            placeholder="e.g. make his hair a lighter brown, add small glasses, bigger smile"
+            className="mt-2 bg-background"
+            disabled={busy}
+          />
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Type a small change in plain English. We'll redraw just that and keep everything else the same.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="ember"
+              onClick={async () => {
+                const text = instruction.trim();
+                if (!text) return;
+                await onGenerate(text);
+                setInstruction("");
+              }}
+              disabled={busy || !instruction.trim()}
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+              Regenerate with changes
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onGenerate()} disabled={busy}>
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
+              Regenerate
+            </Button>
+            <Link to="/create/profile">
+              <Button size="sm" variant="ghost">
+                <PencilLine className="h-3.5 w-3.5" /> Edit details
+              </Button>
+            </Link>
+            {(subject?.regenerations ?? 0) > 0 && (
+              <span className="text-[11px] text-muted-foreground">
+                Regenerations: {subject!.regenerations} (free)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      {!hasCharacter && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Link to="/create/profile">
+            <Button size="sm" variant="ghost">
+              <PencilLine className="h-3.5 w-3.5" /> Edit details
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
