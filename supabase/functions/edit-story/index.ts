@@ -7,7 +7,7 @@ import {
   READING_LEVEL_TARGETS,
   validateStory,
   getAgeBand,
-} from "../write-story/index.ts";
+} from "../_shared/story.ts";
 
 /**
  * POST /edit-story
