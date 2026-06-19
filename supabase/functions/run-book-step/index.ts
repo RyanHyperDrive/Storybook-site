@@ -51,19 +51,33 @@ serve(async (req) => {
       return jsonResponse({ ok: true, done: true, job });
     }
 
+    // ── Per-job lock: only one run-book-step may advance this job at a time.
+    // Stale locks (>120s) are reclaimable so a crashed invocation can't pin it.
+    const staleCutoff = new Date(Date.now() - 120000).toISOString();
+    const { data: claim } = await admin.from("jobs")
+      .update({ locked_at: new Date().toISOString() })
+      .eq("id", jobId)
+      .or(`locked_at.is.null,locked_at.lt.${staleCutoff}`)
+      .select("id").maybeSingle();
+    if (!claim) return jsonResponse({ ok: true, busy: true });
+
     const bookId = job.book_id as string;
     const { data: book } = await admin.from("books").select("*").eq("id", bookId).maybeSingle();
-    if (!book) return errorResponse("Book missing", 404);
+    if (!book) {
+      await admin.from("jobs").update({ locked_at: null }).eq("id", jobId);
+      return errorResponse("Book missing", 404);
+    }
 
     const step = (job.current_step as string) || "photo_check";
 
     async function updateJob(patch: Record<string, any>) {
-      await admin.from("jobs").update({ ...patch, status: "running" }).eq("id", jobId);
+      await admin.from("jobs").update({ ...patch, status: "running", consecutive_errors: 0 }).eq("id", jobId);
     }
     async function finishJob(message?: string) {
       await admin.from("jobs").update({
         status: "done", progress: 100, current_step: "ready",
         message: message ?? "Your book is ready.",
+        consecutive_errors: 0,
       }).eq("id", jobId);
     }
     async function failJob(message: string) {
@@ -71,6 +85,7 @@ serve(async (req) => {
         status: "error", message,
       }).eq("id", jobId);
     }
+
 
     // Append a structured validation event to jobs.audit and bump counters.
     // Stored shape: { events: [...], totals: { validations, failures, retries } }
@@ -527,9 +542,27 @@ serve(async (req) => {
       return jsonResponse({ ok: false });
     } catch (e: any) {
       console.error("run-book-step inner error", e);
-      await failJob(e?.message ?? "Unexpected error.");
-      return jsonResponse({ ok: false, error: e?.message ?? "Unexpected error." });
+      // Transient error: bump consecutive_errors and let the next driver tick
+      // retry the same step. Only permanently fail after 8 consecutive errors,
+      // so a single rate-limit / "Unexpected end of JSON input" blip doesn't
+      // kill the whole book.
+      const { data: jr } = await admin
+        .from("jobs").select("consecutive_errors").eq("id", jobId).maybeSingle();
+      const next = (jr?.consecutive_errors ?? 0) + 1;
+      if (next >= 8) {
+        await failJob(e?.message ?? "Unexpected error.");
+        return jsonResponse({ ok: false, error: e?.message ?? "Unexpected error." });
+      }
+      await admin.from("jobs").update({
+        consecutive_errors: next,
+        message: `Transient error (${next}/8): ${e?.message ?? "unknown"}. Retrying…`,
+      }).eq("id", jobId);
+      return jsonResponse({ ok: false, retry: true, error: e?.message ?? "Unexpected error." });
+    } finally {
+      // Always release the per-job lock so the next tick can proceed.
+      try { await admin.from("jobs").update({ locked_at: null }).eq("id", jobId); } catch { /* */ }
     }
+
   } catch (e: any) {
     if (e instanceof Response) return e;
     console.error("run-book-step error", e);
