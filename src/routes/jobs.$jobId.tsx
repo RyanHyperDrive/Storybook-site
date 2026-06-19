@@ -73,6 +73,10 @@ function Inner() {
     let active = true;
     let inFlight = false;
 
+    // Kick off the server-side driver once so generation continues even if
+    // the user closes the tab. The 3s poll below remains as live UI + backup.
+    supabase.functions.invoke("drive-book", { body: { jobId } }).catch(() => {});
+
     async function poll() {
       const { data, error } = await supabase
         .from("jobs").select("*").eq("id", jobId).maybeSingle();
