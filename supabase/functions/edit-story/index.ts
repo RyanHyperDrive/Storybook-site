@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { jsonrepair } from "https://esm.sh/jsonrepair@3";
 import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
 import {
