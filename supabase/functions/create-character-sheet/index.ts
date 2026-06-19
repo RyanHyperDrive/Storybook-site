@@ -230,7 +230,7 @@ serve(async (req) => {
       analysis?.outfit ? `Reference outfit: ${analysis.outfit}.` : "",
       child?.favorite_color ? `Include a tasteful outfit accent in ${child.favorite_color}.` : "",
       child?.accessibility_details ? `Include these parent-provided details: ${child.accessibility_details}.` : "",
-      "Single full-body child character, plain warm off-white background, friendly bedtime storybook mood, no UI, no text, no labels, no watermark.",
+      "Single full-body child character on a plain warm off-white background, portrait orientation, friendly bedtime storybook mood, no UI, no text, no labels, no watermark.",
     ].filter(Boolean).join("\n");
 
     await admin
