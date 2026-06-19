@@ -387,7 +387,8 @@ function Inner() {
         onNext={() => setIdx((i) => Math.min(spreads.length - 1, i + 1))}
       >
         <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
-          <div className="grid md:grid-cols-2">
+          {/* Fixed-size spread frame: every spread (cover / dedication / story / ending) uses the SAME dimensions, so the card never resizes between turns. */}
+          <div className="grid h-[640px] grid-rows-[1fr_1fr] md:h-[600px] md:grid-cols-2 md:grid-rows-1">
             <IllustrationPane
               spread={cur}
               fallback={s1}
