@@ -74,6 +74,7 @@ function Inner() {
   const [error, setError] = useState<string | null>(null);
   const [idx, setIdx] = useState(0);
   const [regenBusyKey, setRegenBusyKey] = useState<string | null>(null);
+  const [latestJobId, setLatestJobId] = useState<string | null>(null);
 
   async function load() {
     setError(null);
