@@ -351,9 +351,7 @@ serve(async (req) => {
     const lvl = String(reading_level ?? book.reading_level ?? "ages_4_6");
     const target = READING_LEVEL_TARGETS[lvl] ?? READING_LEVEL_TARGETS.ages_4_6;
     const ageBand = getAgeBand(lvl);
-    const maxSentences = target.sentencesPerPage.includes("1")
-      ? target.sentencesPerPage.includes("5") ? 5 : 3
-      : 5;
+    const maxSentences = target.maxSentences;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
