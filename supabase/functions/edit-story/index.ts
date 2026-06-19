@@ -147,7 +147,9 @@ Scoring rules:
 - Set flags.has_magic to true if any magical effect appears anywhere. Set flags.has_parent_lesson to true if the inputs include a parent situation/lesson to weave.
 - page_findings: include only pages with real issues; each finding cites the offending quote and gives a concrete, page-addressed fix instruction (what to add/cut/rewrite, never a vague "make it better").
 - Hard-fail flags (set to true when the corresponding craft violation is present anywhere): em_dash_present, stated_moral_or_label_present, physical_impossibility_present, state_contradiction_present, deus_ex_machina_present, unruled_magic_present, filler_page_present, dangling_introduction_present.
-- needs_rewrite is your own verdict; the server will recompute it from the scores and flags.`;
+- needs_rewrite is your own verdict; the server will recompute it from the scores and flags.
+
+JSON FORMATTING (HARD RULE): Return STRICTLY valid JSON. In the quote, explanation, and fix_instruction fields, do NOT include raw double-quote characters — use single quotes or paraphrase. Do not add trailing commas or comments.`;
 }
 
 function buildRewriteSystemPrompt(ageBand: string, targetPages: number, sentencesPerPage: string): string {
