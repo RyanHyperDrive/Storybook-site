@@ -590,7 +590,7 @@ function TextPane({
   }
   // Story page — editable
   return (
-    <div className="flex flex-col justify-between gap-6 p-8 md:p-12">
+    <div className="flex h-full flex-col justify-between gap-6 overflow-auto p-8 md:p-12">
       <div className="flex items-center justify-between gap-2">
         <div className="text-xs uppercase tracking-wide text-muted-foreground">{spread.label}</div>
         {onSaveText && !editing && (
