@@ -431,6 +431,7 @@ serve(async (req) => {
               String(avoid ?? ""),
             ),
             LOVABLE_API_KEY,
+            "re-critique",
           );
           finalCritique = validateCritique(nextRaw, lastGoodStory).critique;
         } catch (e) {
