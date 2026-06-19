@@ -15,8 +15,10 @@ import {
   PencilLine,
   RefreshCcw,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import { getArtStyle } from "@/lib/art-styles";
 import { saveApprovedCharacter } from "@/lib/saved-characters";
 
@@ -181,7 +183,7 @@ function Inner() {
     return data as Subject;
   }
 
-  async function generateFor(child: Child) {
+  async function generateFor(child: Child, instruction?: string) {
     if (!user) return;
     setBusyChild(child.id);
     try {
@@ -195,6 +197,9 @@ function Inner() {
       await load();
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
+      const trimmed = (instruction ?? "").trim();
+      const body: Record<string, unknown> = { childSubjectId: subject.id };
+      if (trimmed) body.instruction = trimmed;
       const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-character-sheet`, {
         method: "POST",
         headers: {
@@ -202,7 +207,7 @@ function Inner() {
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ childSubjectId: subject.id }),
+        body: JSON.stringify(body),
       });
       const payload = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(payload?.error ?? "Character generation failed");
@@ -409,7 +414,7 @@ function Inner() {
                 refUrl={subjectByChild[child.id]?.id ? refUrls[subjectByChild[child.id]!.id] : undefined}
                 characterUrl={subjectByChild[child.id]?.id ? characterUrls[subjectByChild[child.id]!.id] : undefined}
                 busy={busyChild === child.id}
-                onGenerate={() => generateFor(child)}
+                onGenerate={(instruction) => generateFor(child, instruction)}
               />
             ))}
           </div>
@@ -477,8 +482,9 @@ function CharacterCard({
   refUrl: string | undefined;
   characterUrl: string | undefined;
   busy: boolean;
-  onGenerate: () => void;
+  onGenerate: (instruction?: string) => void | Promise<void>;
 }) {
+  const [instruction, setInstruction] = useState("");
   const label = isTwins
     ? `Child ${index + 1}${child.name ? ` — ${child.name}` : ""}`
     : child.name || "Your child";
@@ -512,7 +518,7 @@ function CharacterCard({
           <Button
             variant="ember"
             size="lg"
-            onClick={onGenerate}
+            onClick={() => onGenerate()}
             disabled={busy || status === "generating"}
             className="mt-2 w-full text-base shadow-sm"
           >
@@ -585,24 +591,62 @@ function CharacterCard({
         </p>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {hasCharacter && (
-          <Button size="sm" variant="outline" onClick={onGenerate} disabled={busy}>
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
-            Regenerate
-          </Button>
-        )}
-        <Link to="/create/profile">
-          <Button size="sm" variant="ghost">
-            <PencilLine className="h-3.5 w-3.5" /> Edit details
-          </Button>
-        </Link>
-        {(subject?.regenerations ?? 0) > 0 && (
-          <span className="text-[11px] text-muted-foreground">
-            Regenerations: {subject!.regenerations} (free)
-          </span>
-        )}
-      </div>
+      {hasCharacter && (
+        <div className="mt-4 rounded-md border border-ember/30 bg-ember/5 p-3">
+          <label className="text-xs font-medium text-foreground">
+            Want to change something? (optional)
+          </label>
+          <Input
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            placeholder="e.g. make his hair a lighter brown, add small glasses, bigger smile"
+            className="mt-2 bg-background"
+            disabled={busy}
+          />
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Type a small change in plain English. We'll redraw just that and keep everything else the same.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="ember"
+              onClick={async () => {
+                const text = instruction.trim();
+                if (!text) return;
+                await onGenerate(text);
+                setInstruction("");
+              }}
+              disabled={busy || !instruction.trim()}
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+              Regenerate with changes
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onGenerate()} disabled={busy}>
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
+              Regenerate
+            </Button>
+            <Link to="/create/profile">
+              <Button size="sm" variant="ghost">
+                <PencilLine className="h-3.5 w-3.5" /> Edit details
+              </Button>
+            </Link>
+            {(subject?.regenerations ?? 0) > 0 && (
+              <span className="text-[11px] text-muted-foreground">
+                Regenerations: {subject!.regenerations} (free)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      {!hasCharacter && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Link to="/create/profile">
+            <Button size="sm" variant="ghost">
+              <PencilLine className="h-3.5 w-3.5" /> Edit details
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
