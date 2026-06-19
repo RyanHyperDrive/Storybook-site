@@ -97,6 +97,10 @@ function SuccessPage() {
         // "new book" starts fresh instead of reusing this one.
         clearDraftId();
 
+        // Fire-and-forget: start the server-side driver so generation
+        // continues even if the user closes the tab.
+        supabase.functions.invoke("drive-book", { body: { jobId: id } }).catch(() => {});
+
         setJobId(id);
         setState("done");
       } catch (e: any) {
