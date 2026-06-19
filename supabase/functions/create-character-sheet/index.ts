@@ -191,11 +191,35 @@ serve(async (req) => {
     const mySkin = pickStr(myV, "skin_tone_for_illustration") || pickStr(myV, "skin_tone");
     if (sibSkin && mySkin && sibSkin !== mySkin) sibCues.push(`sibling skin: ${sibSkin} / THIS child's skin: ${mySkin}`);
 
+    // When a parent typed an adjustment AND we already have a previous
+    // generated sheet for this child, feed that previous sheet in as an extra
+    // reference so the model makes a TARGETED tweak instead of a full redraw.
+    let prevSheetDataUrl: string | null = null;
+    if (instruction && subject.character_image_url) {
+      try {
+        const { data: sigPrev } = await admin.storage
+          .from(CHARACTER_BUCKET)
+          .createSignedUrl(subject.character_image_url, 60 * 10);
+        if (sigPrev?.signedUrl) {
+          const r = await fetch(sigPrev.signedUrl);
+          if (r.ok) {
+            const buf = new Uint8Array(await r.arrayBuffer());
+            let bin = "";
+            for (let i = 0; i < buf.length; i += 0x8000) {
+              bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+            }
+            prevSheetDataUrl = `data:${r.headers.get("content-type") ?? "image/png"};base64,${btoa(bin)}`;
+          }
+        }
+      } catch (_) { /* non-fatal */ }
+    }
+
     const isTwins = !!book?.is_twins;
     let refIdx = 1;
     const refLegend: string[] = [`- Image ${refIdx++}: photo of THIS child — match likeness exactly.`];
     if (siblingSheetDataUrl) refLegend.push(`- Image ${refIdx++}: APPROVED illustrated sheet of the sibling${siblingName ? ` (${siblingName})` : ""} — match its art style, lineweight, palette, shading, and rendering technique EXACTLY so both twins read as drawn by the same illustrator. Do NOT copy the sibling's face, hair, or outfit.`);
     if (togetherPhotoDataUrl) refLegend.push(`- Image ${refIdx++}: photo of BOTH twins together — use it to understand their relative size, posture, and how they actually differ in real life. THIS sheet is for ${child?.name ?? "this child"} only (do not draw the sibling).`);
+    if (prevSheetDataUrl) refLegend.push(`- Image ${refIdx++}: the previously generated character for this child — keep everything identical EXCEPT the parent's requested change.`);
 
     const prompt = [
       `Create a polished illustrated character sheet for ${child?.name ?? "the child"}${isTwins && siblingName ? ` (twin of ${siblingName})` : ""}.`,
