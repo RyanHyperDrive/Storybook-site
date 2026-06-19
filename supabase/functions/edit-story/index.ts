@@ -406,7 +406,7 @@ serve(async (req) => {
 
         let rewritten: any;
         try {
-          rewritten = await callGateway(rewriteSystem, rewriteUser, LOVABLE_API_KEY);
+          rewritten = await callGateway(rewriteSystem, rewriteUser, LOVABLE_API_KEY, "rewrite");
         } catch (e) {
           console.warn("edit-story rewrite gateway error, keeping last good story:", (e as Error).message);
           break;
