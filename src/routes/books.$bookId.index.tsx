@@ -387,8 +387,11 @@ function Inner() {
         onNext={() => setIdx((i) => Math.min(spreads.length - 1, i + 1))}
       >
         <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
-          {/* Fixed-size spread frame: every spread (cover / dedication / story / ending) uses the SAME dimensions, so the card never resizes between turns. */}
-          <div className="grid h-[640px] grid-rows-[1fr_1fr] md:h-[600px] md:grid-cols-2 md:grid-rows-1">
+          {/* Fixed-shape spread: the illustration pane is a 4:5 PORTRAIT frame
+              (matches the generated image aspect ratio so it fills cleanly with
+              no empty bands). The text pane stretches to match the picture
+              pane's height on desktop and stacks underneath it on mobile. */}
+          <div className="grid grid-cols-1 md:grid-cols-2">
             <IllustrationPane
               spread={cur}
               fallback={s1}
