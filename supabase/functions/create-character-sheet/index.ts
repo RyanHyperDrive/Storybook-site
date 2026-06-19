@@ -18,7 +18,6 @@ const STYLE_ANCHORS: Record<string, string> = {
     "Manga-inspired children's storybook illustration, expressive large eyes, clean precise linework, dynamic but gentle composition, age-appropriate soft mood, no readable text in image.",
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function buildDescription(child: any, analysis: any) {
   return [
