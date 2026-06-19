@@ -193,18 +193,39 @@ function Inner() {
     return () => window.removeEventListener("keydown", onKey);
   }, [spreads.length]);
 
+  const [pdfBusy, setPdfBusy] = useState(false);
   async function downloadPdf() {
     if (!book) return;
-    if (book.ebook_url) {
-      const url = await resolveSignedUrl(book.ebook_url);
-      if (url) {
-        window.open(url, "_blank", "noopener,noreferrer");
-        return;
-      }
+    if (book.status !== "ready") {
+      toast.message("Still being assembled", {
+        description: "Your downloadable PDF will be available once all pages finish.",
+      });
+      return;
     }
-    toast.message("PDF not ready yet", {
-      description: "Your downloadable PDF will appear here once assembly finishes.",
-    });
+    setPdfBusy(true);
+    try {
+      const { buildBookPdf, triggerPdfDownload, sanitizeFilename } = await import(
+        "@/lib/book-pdf"
+      );
+      const storyPages = [...pages].sort((a, b) => a.page_number - b.page_number);
+      const bytes = await buildBookPdf({
+        title: book.title ?? `${book.child_name ?? "Your child"}'s storybook`,
+        childName: book.child_name ?? null,
+        dedication: book.dedication ?? null,
+        coverUrl: coverUrl,
+        pages: storyPages.map((p, i) => ({
+          pageNumber: i + 1,
+          text: p.text_content ?? "",
+          imageUrl: imgUrls[p.id] ?? null,
+        })),
+      });
+      const name = sanitizeFilename(book.child_name || book.title || "storybook");
+      triggerPdfDownload(bytes, `${name}.pdf`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not build the PDF. Please try again.");
+    } finally {
+      setPdfBusy(false);
+    }
   }
 
   const [editorOpen, setEditorOpen] = useState(false);
