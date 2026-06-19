@@ -358,8 +358,9 @@ function Inner() {
               : <Wand2 className="h-4 w-4" />}
             Rewrite story
           </Button>
-          <Button variant="outline" size="sm" onClick={downloadPdf}>
-            <Download className="h-4 w-4" /> Download PDF
+          <Button variant="outline" size="sm" onClick={downloadPdf} disabled={pdfBusy}>
+            {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {pdfBusy ? "Building PDF…" : "Download PDF"}
           </Button>
           <Link to="/books/$bookId/manage" params={{ bookId }}>
             <Button variant="ghost" size="sm">
