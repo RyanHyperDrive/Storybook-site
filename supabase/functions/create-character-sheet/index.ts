@@ -223,6 +223,9 @@ serve(async (req) => {
 
     const prompt = [
       `Create a polished illustrated character sheet for ${child?.name ?? "the child"}${isTwins && siblingName ? ` (twin of ${siblingName})` : ""}.`,
+      instruction
+        ? `PARENT ADJUSTMENT (HIGHEST PRIORITY): apply this requested change to the character — "${instruction}". Apply ONLY this change; keep the child's identity and likeness faithful to the reference photo and keep everything else (pose, framing, outfit unless the change is about the outfit) the same as before.`
+        : "",
       "Reference images:",
       refLegend.join("\n"),
       styleAnchor,
