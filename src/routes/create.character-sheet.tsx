@@ -482,8 +482,9 @@ function CharacterCard({
   refUrl: string | undefined;
   characterUrl: string | undefined;
   busy: boolean;
-  onGenerate: () => void;
+  onGenerate: (instruction?: string) => void | Promise<void>;
 }) {
+  const [instruction, setInstruction] = useState("");
   const label = isTwins
     ? `Child ${index + 1}${child.name ? ` — ${child.name}` : ""}`
     : child.name || "Your child";
