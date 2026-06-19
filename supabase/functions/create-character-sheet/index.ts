@@ -4,9 +4,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
 import { assertOwnership, requireUser } from "../_shared/auth.ts";
 
-const KIE_CREATE_URL = "https://api.kie.ai/api/v1/jobs/createTask";
-const KIE_INFO_URL = "https://api.kie.ai/api/v1/jobs/recordInfo";
-const KIE_MODEL = "gpt-image-2-image-to-image";
 const RAW_BUCKET = "raw-uploads";
 const CHARACTER_BUCKET = "character-sheets";
 
