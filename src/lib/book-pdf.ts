@@ -23,7 +23,11 @@ export type BuildPdfInput = {
 const PAGE_W = 612;
 const PAGE_H = 792;
 const MARGIN = 48;
-const IMG_AREA_H = 460; // top image area, same on every page
+// Every page uses the SAME 4:5 PORTRAIT illustration block, the full content
+// width wide. Generated images are also 4:5 so they fill this block edge to
+// edge with no empty letterbox bands. Text sits in a clean band below it.
+const IMG_W = PAGE_W - MARGIN * 2; // 516
+const IMG_H = Math.round(IMG_W * 5 / 4); // 645  (4:5 portrait)
 const PAPER = rgb(0.98, 0.96, 0.92); // warm paper tone
 const INK = rgb(0.12, 0.1, 0.08);
 const MUTED = rgb(0.45, 0.42, 0.4);
@@ -136,25 +140,26 @@ export async function buildBookPdf(input: BuildPdfInput): Promise<Uint8Array> {
     const coverImg = coverBytes ? await embedImage(doc, coverBytes) : null;
     drawContainedImage(page, coverImg, {
       x: MARGIN,
-      y: PAGE_H - MARGIN - IMG_AREA_H,
-      w: textWidth,
-      h: IMG_AREA_H,
+      y: PAGE_H - MARGIN - IMG_H,
+      w: IMG_W,
+      h: IMG_H,
     });
-    const titleSize = 28;
+    const titleSize = 22;
     const titleLines = wrapText(input.title, serifBold, titleSize, textWidth);
-    let cursorY = PAGE_H - MARGIN - IMG_AREA_H - 30;
+    let cursorY = PAGE_H - MARGIN - IMG_H - 22;
     titleLines.forEach((line) => {
       const w = serifBold.widthOfTextAtSize(line, titleSize);
       page.drawText(line, { x: (PAGE_W - w) / 2, y: cursorY, size: titleSize, font: serifBold, color: INK });
-      cursorY -= titleSize * 1.25;
+      cursorY -= titleSize * 1.2;
     });
     if (input.childName) {
       const sub = `Starring ${input.childName}`;
-      const subSize = 14;
+      const subSize = 12;
       const w = serif.widthOfTextAtSize(sub, subSize);
-      page.drawText(sub, { x: (PAGE_W - w) / 2, y: cursorY - 6, size: subSize, font: serif, color: MUTED });
+      page.drawText(sub, { x: (PAGE_W - w) / 2, y: cursorY - 4, size: subSize, font: serif, color: MUTED });
     }
   }
+
 
   // --- Dedication page ---
   {
@@ -189,18 +194,18 @@ export async function buildBookPdf(input: BuildPdfInput): Promise<Uint8Array> {
     const img = bytes ? await embedImage(doc, bytes) : null;
     drawContainedImage(page, img, {
       x: MARGIN,
-      y: PAGE_H - MARGIN - IMG_AREA_H,
-      w: textWidth,
-      h: IMG_AREA_H,
+      y: PAGE_H - MARGIN - IMG_H,
+      w: IMG_W,
+      h: IMG_H,
     });
     const text = (p.text ?? "").trim();
     drawWrappedText(
       page,
       text,
       serif,
-      14,
+      12,
       MARGIN,
-      PAGE_H - MARGIN - IMG_AREA_H - 24,
+      PAGE_H - MARGIN - IMG_H - 14,
       textWidth,
     );
     const pageLabel = `${p.pageNumber}`;
@@ -213,6 +218,7 @@ export async function buildBookPdf(input: BuildPdfInput): Promise<Uint8Array> {
       color: MUTED,
     });
   }
+
 
   // --- The End ---
   {

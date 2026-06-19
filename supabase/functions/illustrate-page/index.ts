@@ -118,6 +118,7 @@ ${compositionFor(input.ageBand)}
 ${input.twinDifferentiator ? `\nTWIN DIFFERENTIATION (HARD GATE): ${input.twinDifferentiator}\n` : ""}
 Composition:
 - Full storybook page illustration.
+- PAGE SHAPE HARD GATE (non-negotiable): compose a VERTICAL / PORTRAIT page at a 4:5 aspect ratio (taller than wide, roughly 1024x1280). The illustrated scene MUST fill the ENTIRE frame edge to edge — paint all the way to every edge. NO borders, NO white/colored margins, NO letterboxing bands, NO empty sky/floor strips added just to pad the composition, NO framing inside the image. Background, environment, and atmosphere should extend to all four edges so the picture completely fills its page.
 - No page text embedded in the image. All titles and page text are rendered by the app over the image.
 - Keep the character clearly visible and on-model with the character sheet${input.hasCoverRef ? ", cover" : ""}${input.hasPrevPageRef ? ", and previous page" : ""}.
 - SAFE FRAMING HARD GATE (non-negotiable): the child's full head, hair, and face MUST be inside the frame with comfortable padding above the top of the head — NEVER let the scalp, hair, forehead, ears, chin, or cheeks touch or cross any image edge. In any standing, walking, running, jumping, or dancing scene, BOTH FEET (including shoes) must be fully visible above the bottom edge — do not crop at the ankles or shins. The only exception is when the scene description explicitly requests an extreme close-up portrait, and even then the head and face must remain the deliberate, fully-contained subject. For seated, lying-down, bedtime, or behind-an-object scenes, the head and upper body must be fully inside the frame with padding. A correct, on-model image with bad framing will be REJECTED and regenerated.
@@ -389,6 +390,13 @@ serve(async (req) => {
           model,
           modalities: ["image", "text"],
           messages: [{ role: "user", content: userContent }],
+          // Force a 4:5 PORTRAIT page (taller than wide). Lovable AI gateway
+          // forwards these hints to the Gemini image models when supported;
+          // unknown fields are ignored. The prompt-level PAGE SHAPE HARD GATE
+          // above is the always-on fallback.
+          aspect_ratio: "4:5",
+          image_size: "1024x1280",
+          size: "1024x1280",
         }),
       });
       return res;
