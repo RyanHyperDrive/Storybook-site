@@ -591,7 +591,6 @@ function CharacterCard({
         </p>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
       {hasCharacter && (
         <div className="mt-4 rounded-md border border-ember/30 bg-ember/5 p-3">
           <label className="text-xs font-medium text-foreground">
