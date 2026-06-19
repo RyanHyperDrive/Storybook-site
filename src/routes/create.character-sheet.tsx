@@ -414,7 +414,7 @@ function Inner() {
                 refUrl={subjectByChild[child.id]?.id ? refUrls[subjectByChild[child.id]!.id] : undefined}
                 characterUrl={subjectByChild[child.id]?.id ? characterUrls[subjectByChild[child.id]!.id] : undefined}
                 busy={busyChild === child.id}
-                onGenerate={() => generateFor(child)}
+                onGenerate={(instruction) => generateFor(child, instruction)}
               />
             ))}
           </div>
