@@ -7,6 +7,7 @@ export type ReadingLevelTarget = {
   minPages: number;
   targetPages: number;
   sentencesPerPage: string;
+  maxSentences: number;
   toneNotes: string;
   safetyClause: string;
 };
@@ -32,27 +33,30 @@ export const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
     ageBand: "2-3",
     minPages: 8,
     targetPages: 8,
-    sentencesPerPage: "exactly 1 very short sentence (under 10 words)",
+    sentencesPerPage: "2 to 4 short, simple sentences (each under about 8 words)",
+    maxSentences: 4,
     toneNotes:
-      "Board-book voice. Repetition is welcome. Tiny vocabulary. Soft, simple ideas.",
+      "Warm board-book voice that is simple but NOT bare: use words a toddler knows, plus sound words (stomp, splash, rawr), gentle repetition, and a little simple dialogue, so a grown-up has something lovely to read aloud. Never just one flat sentence per page.",
     safetyClause: SAFETY_AGES_2_3,
   },
   ages_4_6: {
     ageBand: "4-6",
     minPages: 10,
     targetPages: 10,
-    sentencesPerPage: "1 to 3 short read-aloud sentences",
+    sentencesPerPage: "3 to 5 warm read-aloud sentences",
+    maxSentences: 5,
     toneNotes:
-      "Classic picture-book voice. Warm, calm, age-appropriate, positive resolution.",
+      "Classic picture-book voice, warm and rhythmic, a real little story on each page.",
     safetyClause: SAFETY_AGES_4_6,
   },
   ages_7_10: {
     ageBand: "7-10",
     minPages: 12,
     targetPages: 12,
-    sentencesPerPage: "2 to 5 sentences",
+    sentencesPerPage: "5 to 8 sentences",
+    maxSentences: 8,
     toneNotes:
-      "Early-reader voice. Slightly richer vocabulary, gentle wit, light suspense, always a kind resolution.",
+      "Early-reader voice, a real small paragraph per page, gentle wit and light suspense, always a kind resolution.",
     safetyClause: SAFETY_AGES_7_10,
   },
 };
