@@ -542,9 +542,27 @@ serve(async (req) => {
       return jsonResponse({ ok: false });
     } catch (e: any) {
       console.error("run-book-step inner error", e);
-      await failJob(e?.message ?? "Unexpected error.");
-      return jsonResponse({ ok: false, error: e?.message ?? "Unexpected error." });
+      // Transient error: bump consecutive_errors and let the next driver tick
+      // retry the same step. Only permanently fail after 8 consecutive errors,
+      // so a single rate-limit / "Unexpected end of JSON input" blip doesn't
+      // kill the whole book.
+      const { data: jr } = await admin
+        .from("jobs").select("consecutive_errors").eq("id", jobId).maybeSingle();
+      const next = (jr?.consecutive_errors ?? 0) + 1;
+      if (next >= 8) {
+        await failJob(e?.message ?? "Unexpected error.");
+        return jsonResponse({ ok: false, error: e?.message ?? "Unexpected error." });
+      }
+      await admin.from("jobs").update({
+        consecutive_errors: next,
+        message: `Transient error (${next}/8): ${e?.message ?? "unknown"}. Retrying…`,
+      }).eq("id", jobId);
+      return jsonResponse({ ok: false, retry: true, error: e?.message ?? "Unexpected error." });
+    } finally {
+      // Always release the per-job lock so the next tick can proceed.
+      try { await admin.from("jobs").update({ locked_at: null }).eq("id", jobId); } catch { /* */ }
     }
+
   } catch (e: any) {
     if (e instanceof Response) return e;
     console.error("run-book-step error", e);
