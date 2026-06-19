@@ -44,16 +44,6 @@ function buildDescription(child: any, analysis: any) {
     .join("; ");
 }
 
-function resultUrlsFrom(data: any): string[] {
-  const raw = data?.resultJson ?? data?.result_json ?? data?.result;
-  if (!raw) return data?.resultUrls ?? data?.result_urls ?? [];
-  try {
-    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-    return parsed?.resultUrls ?? parsed?.result_urls ?? [];
-  } catch {
-    return [];
-  }
-}
 
 /**
  * POST /create-character-sheet
