@@ -23,7 +23,11 @@ export type BuildPdfInput = {
 const PAGE_W = 612;
 const PAGE_H = 792;
 const MARGIN = 48;
-const IMG_AREA_H = 460; // top image area, same on every page
+// Every page uses the SAME 4:5 PORTRAIT illustration block, the full content
+// width wide. Generated images are also 4:5 so they fill this block edge to
+// edge with no empty letterbox bands. Text sits in a clean band below it.
+const IMG_W = PAGE_W - MARGIN * 2; // 516
+const IMG_H = Math.round(IMG_W * 5 / 4); // 645  (4:5 portrait)
 const PAPER = rgb(0.98, 0.96, 0.92); // warm paper tone
 const INK = rgb(0.12, 0.1, 0.08);
 const MUTED = rgb(0.45, 0.42, 0.4);
