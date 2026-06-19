@@ -497,11 +497,16 @@ function IllustrationPane({
   fallback: string;
   onTap?: () => void;
 }) {
+  // Every spread uses the same fixed frame. Images are CONTAINED (never cropped),
+  // letterboxed on the paper-colored background. Non-image spreads show a
+  // centered glyph in the same frame so the card size stays constant.
+  const frame =
+    "relative flex h-full w-full items-center justify-center overflow-hidden bg-paper/60 p-6";
   if (spread.kind === "dedication") {
     return (
-      <div className="grid place-items-center bg-paper/60 p-10 text-center">
-        <div>
-          <Heart className="mx-auto h-8 w-8 text-ember" />
+      <div className={frame}>
+        <div className="text-center">
+          <Heart className="mx-auto h-10 w-10 text-ember" />
           <div className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
             Dedication
           </div>
@@ -511,8 +516,8 @@ function IllustrationPane({
   }
   if (spread.kind === "ending") {
     return (
-      <div className="grid place-items-center bg-paper/60 p-10 text-center">
-        <Sparkles className="h-8 w-8 text-ember" />
+      <div className={frame}>
+        <Sparkles className="h-10 w-10 text-ember" />
       </div>
     );
   }
@@ -520,13 +525,13 @@ function IllustrationPane({
     <button
       type="button"
       onClick={onTap}
-      className="block aspect-[4/5] w-full cursor-pointer bg-muted md:aspect-auto md:min-h-[520px]"
+      className={`${frame} cursor-pointer`}
       aria-label="Tap to turn the page"
     >
       <img
         src={spread.imageUrl ?? fallback}
         alt={spread.label}
-        className="h-full w-full object-cover"
+        className="max-h-full max-w-full object-contain"
       />
     </button>
   );
