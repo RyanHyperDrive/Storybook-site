@@ -252,36 +252,66 @@ function validateCritique(raw: any, story: any): { critique: any } {
   };
 }
 
-async function callGateway(systemPrompt: string, userPrompt: string, apiKey: string): Promise<any> {
-  const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-pro",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    }),
-  });
-  if (!aiRes.ok) {
-    const text = await aiRes.text();
-    const err = new Error(`AI gateway error ${aiRes.status}: ${text}`);
-    (err as any).status = aiRes.status;
-    throw err;
-  }
-  const payload = await aiRes.json();
-  const raw: string = payload?.choices?.[0]?.message?.content ?? "";
+function extractJson(raw: string): any {
+  if (typeof raw !== "string") throw new Error("non-string content");
+  let s = raw.trim();
+  if (!s) throw new Error("empty content");
+  // strip fences
+  s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  if (!s) throw new Error("empty content after fence strip");
   try {
-    return JSON.parse(raw);
+    return JSON.parse(s);
   } catch {
-    const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-    return JSON.parse(cleaned);
+    const first = s.indexOf("{");
+    const last = s.lastIndexOf("}");
+    if (first === -1 || last <= first) throw new Error("no JSON object braces found");
+    return JSON.parse(s.slice(first, last + 1));
   }
+}
+
+async function callGateway(systemPrompt: string, userPrompt: string, apiKey: string, label: string): Promise<any> {
+  const MAX_ATTEMPTS = 3;
+  let lastErr: unknown = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let status = 0;
+    let finishReason: string | undefined;
+    let rawContent = "";
+    try {
+      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          response_format: { type: "json_object" },
+          max_tokens: 4000,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+      status = aiRes.status;
+      if (!aiRes.ok) {
+        const text = await aiRes.text();
+        throw new Error(`AI gateway error ${aiRes.status}: ${text}`);
+      }
+      const payload = await aiRes.json();
+      finishReason = payload?.choices?.[0]?.finish_reason;
+      rawContent = payload?.choices?.[0]?.message?.content ?? "";
+      const parsed = extractJson(rawContent);
+      if (attempt > 1) console.log(`edit-story ${label} succeeded on attempt ${attempt}`);
+      return parsed;
+    } catch (e) {
+      lastErr = e;
+      console.warn(
+        `edit-story ${label} attempt ${attempt}/${MAX_ATTEMPTS} failed: ${(e as Error).message} | status=${status} finish_reason=${finishReason ?? "n/a"} raw="${String(rawContent).slice(0, 500)}"`,
+      );
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }
 
 serve(async (req) => {
