@@ -377,7 +377,7 @@ serve(async (req) => {
         String(favorites ?? ""),
         String(avoid ?? ""),
       );
-      const rawCritique = await callGateway(critiqueSystem, userPrompt, LOVABLE_API_KEY);
+      const rawCritique = await callGateway(critiqueSystem, userPrompt, LOVABLE_API_KEY, "critique");
       finalCritique = validateCritique(rawCritique, lastGoodStory).critique;
 
       while (finalCritique.needs_rewrite && passes < MAX_EDITOR_PASSES) {
