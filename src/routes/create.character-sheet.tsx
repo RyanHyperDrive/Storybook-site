@@ -518,7 +518,7 @@ function CharacterCard({
           <Button
             variant="ember"
             size="lg"
-            onClick={onGenerate}
+            onClick={() => onGenerate()}
             disabled={busy || status === "generating"}
             className="mt-2 w-full text-base shadow-sm"
           >
