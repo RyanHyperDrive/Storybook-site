@@ -268,7 +268,13 @@ function validateCritique(raw: any, story: any): { critique: any } {
     }))
     .filter((f) => f.page_number > 0);
 
-  const global_notes = arr(c.global_notes).map(String);
+  const global_notes = arr(c.global_notes).map((n: any) => {
+    if (typeof n === "string") return n;
+    if (n && typeof n === "object") {
+      return String(n.note ?? n.text ?? n.message ?? JSON.stringify(n));
+    }
+    return String(n);
+  });
 
   return {
     critique: {
