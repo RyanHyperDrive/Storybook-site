@@ -132,7 +132,12 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
     "lesson_woven": 0,
     "distinct_beats": 0,
     "sensory_quality": 0,
-    "earned_ending": 0
+    "earned_ending": 0,
+    "referential_clarity": 0,
+    "read_aloud_sense": 0,
+    "sound_word_fidelity": 0,
+    "dialogue_age_fit": 0,
+    "read_aloud_warmth": 0
   },
   "flags": {
     "has_magic": false,
@@ -144,7 +149,11 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
     "deus_ex_machina_present": false,
     "unruled_magic_present": false,
     "filler_page_present": false,
-    "dangling_introduction_present": false
+    "dangling_introduction_present": false,
+    "object_renaming": false,
+    "onomatopoeia_salad": false,
+    "age_inappropriate_dialogue": false,
+    "picture_text_contradiction": false
   },
   "declared_problem": "",
   "declared_magic_rule": "",
@@ -160,10 +169,18 @@ Scoring rules:
 - All scores are floats from 0.0 to 1.0 against THIS bar (not a generic "is it cute?" standard).
 - Set flags.has_magic to true if any magical effect appears anywhere. Set flags.has_parent_lesson to true if the inputs include a parent situation/lesson to weave.
 - page_findings: include only pages with real issues; each finding cites the offending quote and gives a concrete, page-addressed fix instruction (what to add/cut/rewrite, never a vague "make it better").
-- Hard-fail flags (set to true when the corresponding craft violation is present anywhere): em_dash_present, stated_moral_or_label_present, physical_impossibility_present, state_contradiction_present, deus_ex_machina_present, unruled_magic_present, filler_page_present, dangling_introduction_present.
+- Hard-fail flags (set to true when the corresponding craft violation is present anywhere): em_dash_present, stated_moral_or_label_present, physical_impossibility_present, state_contradiction_present, deus_ex_machina_present, unruled_magic_present, filler_page_present, dangling_introduction_present, object_renaming, onomatopoeia_salad, age_inappropriate_dialogue, picture_text_contradiction.
 - needs_rewrite is your own verdict; the server will recompute it from the scores and flags.
 
-JSON FORMATTING (HARD RULE): Return STRICTLY valid JSON. In the quote, explanation, and fix_instruction fields, do NOT include raw double-quote characters — use single quotes or paraphrase. Do not add trailing commas or comments.`;
+JSON FORMATTING (HARD RULE): Return STRICTLY valid JSON. In the quote, explanation, and fix_instruction fields, do NOT include raw double-quote characters — use single quotes or paraphrase. Do not add trailing commas or comments.
+
+CLARITY AND SENSE BAR (apply with extra strictness for the ages_2_3 band and any book whose child is a toddler). This is the word-learning, point-and-name stage, so the book's first duty is to give the TRUE, plain name of every pictured thing; a wrong label miseducates. Read each page against its OWN scene_description, as a tired grandparent reading aloud while pointing at the picture, and fill the new scores (referential_clarity, read_aloud_sense, sound_word_fidelity, dialogue_age_fit, read_aloud_warmth).
+(1) OBJECT NAMING: every object/animal/person must be called by the plain true word matching its scene_description. If the text renames a real object as a different object or creature (blocks to 'rocks', bear+bunny to 'sheep'), asserts a false identity even softened with 'like'/'pretend'/'are', or upgrades to a fancier synonym (including fancy VERBS/ADVERBS like 'nestled', 'cascaded', 'gingerly'), raise object_renaming (and picture_text_contradiction if it disagrees with the scene) and score referential_clarity below 0.7. A cozy/sleepy FEELING word on a correctly-named object ('the toys are snug now') is fine. Operational test for cozy anthropomorphism: strip the cozy framing; if what remains still asserts the object IS a different object or creature (soldiers, sheep, rocks), HARD-FAIL it. If a page has no usable scene_description, you cannot accept it: set needs_rewrite and note 'missing_scene_description' (do NOT silently pass on plausibility, because 'sleeping rocks' is plausible in a play scene).
+(2) SOUND WORDS: at most ONE sound per page TOTAL, counting any sound the child says; it must be a real pronounceable noise the depicted action actually makes. Repeating the SAME sound up to three times ('Click, click, click!') is allowed; stacked DIFFERENT sounds, invented blends ('flumpf'), action/feeling words used as sounds ('stack!', 'roll!', 'cuddle!'), or four-plus repetitions raise onomatopoeia_salad and score sound_word_fidelity below 0.6.
+(3) CHILD DIALOGUE: for the ages_2_3 band (or any child age 0-3), anything the child says aloud must be at most one or two real toddler words or a single sound; a full sentence, announced plan, or stated reasoning raises age_inappropriate_dialogue and scores dialogue_age_fit below 0.5. The meaning must move to the narrator's voice.
+(4) READ-ALOUD SENSE: no line may need a second read or a decoded conceit to parse; score read_aloud_sense accordingly.
+(5) WARMTH (do NOT over-correct into cold inventory): a page must still be warm and read-aloud-lovely with rhythm, a refrain, or tender narration and 2-4 short sentences. Score read_aloud_warmth below 0.7 for a bare, cold inventory line ('Next, the blocks. Then the soft toys.') even if perfectly literal, and require a rewrite for warmth.
+ANY hard flag (object_renaming, onomatopoeia_salad, age_inappropriate_dialogue, picture_text_contradiction) is an automatic page failure; do not return accepted or accepted_with_warnings while a hard flag is open. If your output cannot be produced as valid JSON, retry until it is valid rather than emitting a malformed or empty review.`;
 }
 
 function buildRewriteSystemPrompt(ageBand: string, targetPages: number, sentencesPerPage: string): string {
