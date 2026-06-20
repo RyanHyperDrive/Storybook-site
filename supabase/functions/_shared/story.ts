@@ -36,7 +36,7 @@ export const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
     sentencesPerPage: "2 to 4 short, simple sentences (each under about 8 words)",
     maxSentences: 4,
     toneNotes:
-      "Warm board-book voice that is simple but NOT bare: use words a toddler knows, plus sound words (stomp, splash, rawr), gentle repetition, and a little simple dialogue, so a grown-up has something lovely to read aloud. Never just one flat sentence per page.",
+      "Warm, cozy, read-aloud-lovely board-book voice for an adult reading to a 1-to-3-year-old. Build richness from rhythm, gentle repetition, a soft recurring refrain (a repeated 'Night-night,' a repeated 'one by one'), and tender narration, NOT from clever words. Keep the richness floor: never a single flat sentence per page (up to 4 short sentences). This is the point-and-name age, so give every pictured thing its real, simple name and use that same name each time (blocks, teddy bear, bunny, dinosaur, ball, book, cup), matching the page's scene_description. Never rename a real thing into a different thing, never use a pretend-frame, never trade a plain word for a fancy synonym. At most ONE real, performable sound per page that the pictured action truly makes (tap, pat, plop, click, splash, rawr, shhh); a quiet tender page may carry zero sounds and lean on the refrain. Cozy, sleepy feeling words for real objects at bedtime are welcome; renaming objects is not.",
     safetyClause: SAFETY_AGES_2_3,
   },
   ages_4_6: {
