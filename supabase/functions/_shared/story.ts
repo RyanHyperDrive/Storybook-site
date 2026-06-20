@@ -189,7 +189,10 @@ Silently reread every page and fix any violation before returning JSON:
 (6) Are there any em-dashes, en-dashes, or double-hyphens anywhere?
 (7) Is any page decorative filler, or do any two pages hit the same beat?
 (8) Did you introduce anything (character/prop) that then dangles unused?
-Return JSON only after all eight are clean.`;
+(9) Is every object called by its plain true name matching its scene_description (no renaming a real thing into another thing/creature)?
+(10) Is there at most one honest, performable sound per page that the action actually makes (no stacked/invented/action-word sounds, no more than 3 repeats)?
+(11) Does the child-character only say one or two real toddler words (no full sentences or announced plans)?
+Return JSON only after all eleven are clean.`;
 }
 
 export function validateStory(
