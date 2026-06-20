@@ -36,7 +36,7 @@ export const READING_LEVEL_TARGETS: Record<string, ReadingLevelTarget> = {
     sentencesPerPage: "2 to 4 short, simple sentences (each under about 8 words)",
     maxSentences: 4,
     toneNotes:
-      "Warm board-book voice that is simple but NOT bare: use words a toddler knows, plus sound words (stomp, splash, rawr), gentle repetition, and a little simple dialogue, so a grown-up has something lovely to read aloud. Never just one flat sentence per page.",
+      "Warm, cozy, read-aloud-lovely board-book voice for an adult reading to a 1-to-3-year-old. Build richness from rhythm, gentle repetition, a soft recurring refrain (a repeated 'Night-night,' a repeated 'one by one'), and tender narration, NOT from clever words. Keep the richness floor: never a single flat sentence per page (up to 4 short sentences). This is the point-and-name age, so give every pictured thing its real, simple name and use that same name each time (blocks, teddy bear, bunny, dinosaur, ball, book, cup), matching the page's scene_description. Never rename a real thing into a different thing, never use a pretend-frame, never trade a plain word for a fancy synonym. At most ONE real, performable sound per page that the pictured action truly makes (tap, pat, plop, click, splash, rawr, shhh); a quiet tender page may carry zero sounds and lean on the refrain. Cozy, sleepy feeling words for real objects at bedtime are welcome; renaming objects is not.",
     safetyClause: SAFETY_AGES_2_3,
   },
   ages_4_6: {
@@ -133,6 +133,8 @@ Then write to these rules:
 
 12. NO EM-DASHES. Never use an em-dash, en-dash, or double-hyphen anywhere in title, subtitle, dedication, style_notes, page_text, or any field. Use a period, a comma, or the word "and." Rewrite any sentence that wants a dash into shorter sentences.
 
+13. PLAIN TRUE NAMES, HONEST SOUNDS, AND SIMPLE WORDS (literal-clarity rule; for the ages 2-3 band this OVERRIDES any 'make it richer' instruction). Name every object, animal, and person with the plain, true word that matches that page's scene_description, so a point-and-name toddler learns the correct label. NEVER relabel a real object as a different object or creature, not even softened with 'like,' 'pretend,' or a bare 'is/are' (blocks are 'blocks,' never 'rocks' or 'sleeping rocks'; a teddy bear and bunny are 'the teddy bear and the bunny' or 'the soft toys,' never 'sheep'). A cozy or sleepy FEELING word on a correctly-named object is fine ('the toys are snug now'); turning one real thing INTO another thing is not. Do not swap plain words for fancier synonyms a young child is not learning, and this includes VERBS and ADVERBS, not just nouns (say 'sleep' not 'slumber,' 'put' or 'set' not 'nestled' or 'cascaded,' 'gently' not 'gingerly'). Use at most ONE sound word per page TOTAL (counting any sound the child says), and it must be a real, sayable noise the depicted action actually makes, placed right next to that action; repeating the SAME sound up to three times is allowed and lovely ('Click, click, click!'), but stacking DIFFERENT sounds, inventing unpronounceable blends ('flumpf'), or using an action or feeling word as a sound ('stack!', 'roll!', 'cuddle!') is banned. A quiet page may have zero sounds and lean on a warm refrain instead. For the ages 2-3 band, anything the child-character SAYS OUT LOUD must be at most one or two real toddler words or a single real sound ('Rawr!', 'Night-night,' 'Up!', 'Uh-oh,' 'Mama'); never a full sentence, an announced plan, or stated reasoning. Carry any plan or idea in the narrator's voice or through action instead. Read every finished line aloud in your head as a tired grandparent pointing at the picture: if they would stall to decode it, rewrite it plainly. GOOD: 'Next, the blocks. Theodore puts them in the basket, one by one. Night-night, blocks.' BAD: 'Next are the sleeping rocks. Click, clack, stack!'
+
 ================  OUTPUT FORMAT  ================
 
 Output STRICT JSON only, no markdown, no commentary. The JSON must match the schema exactly:
@@ -187,7 +189,10 @@ Silently reread every page and fix any violation before returning JSON:
 (6) Are there any em-dashes, en-dashes, or double-hyphens anywhere?
 (7) Is any page decorative filler, or do any two pages hit the same beat?
 (8) Did you introduce anything (character/prop) that then dangles unused?
-Return JSON only after all eight are clean.`;
+(9) Is every object called by its plain true name matching its scene_description (no renaming a real thing into another thing/creature)?
+(10) Is there at most one honest, performable sound per page that the action actually makes (no stacked/invented/action-word sounds, no more than 3 repeats)?
+(11) Does the child-character only say one or two real toddler words (no full sentences or announced plans)?
+Return JSON only after all eleven are clean.`;
 }
 
 export function validateStory(
