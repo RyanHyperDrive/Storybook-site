@@ -48,6 +48,11 @@ const SCORE_KEYS = [
   "distinct_beats",
   "sensory_quality",
   "earned_ending",
+  "referential_clarity",
+  "read_aloud_sense",
+  "sound_word_fidelity",
+  "dialogue_age_fit",
+  "read_aloud_warmth",
 ] as const;
 
 const SCORE_THRESHOLDS: Record<string, number> = {
@@ -62,6 +67,11 @@ const SCORE_THRESHOLDS: Record<string, number> = {
   distinct_beats: 0.85,
   sensory_quality: 0.80,
   earned_ending: 0.90,
+  referential_clarity: 0.85,
+  read_aloud_sense: 0.85,
+  sound_word_fidelity: 0.90,
+  dialogue_age_fit: 0.90,
+  read_aloud_warmth: 0.80,
 };
 
 const HARD_FAIL_FLAGS = [
@@ -73,6 +83,10 @@ const HARD_FAIL_FLAGS = [
   "unruled_magic_present",
   "filler_page_present",
   "dangling_introduction_present",
+  "object_renaming",
+  "onomatopoeia_salad",
+  "age_inappropriate_dialogue",
+  "picture_text_contradiction",
 ] as const;
 
 const EM_DASH_RE = /[—–]|--/;
