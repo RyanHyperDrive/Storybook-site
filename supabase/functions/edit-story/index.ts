@@ -399,6 +399,8 @@ serve(async (req) => {
       favorites,
       avoid,
       parent_situation,
+      lesson,
+      rhyme,
       // cast is accepted for signature parity with write-story but the editor
       // only critiques/rewrites the already-written story.
     } = body ?? {};
@@ -423,10 +425,14 @@ serve(async (req) => {
     const ageBand = getAgeBand(lvl);
     const maxSentences = target.maxSentences;
 
+    const lessonStr = typeof lesson === "string" ? lesson : "";
+    const rhymeOn = rhyme === true;
+    const hasLesson = lessonStr.trim().length > 0;
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
-    const critiqueSystem = buildCritiqueSystemPrompt(ageBand);
+    const critiqueSystem = buildCritiqueSystemPrompt(ageBand, rhymeOn);
     const rewriteSystem = buildRewriteSystemPrompt(ageBand, target.targetPages, target.sentencesPerPage);
 
     let lastGoodStory: any = story;
@@ -441,18 +447,21 @@ serve(async (req) => {
       const userPrompt = recompose(
         lastGoodStory,
         String(parent_situation ?? ""),
+        lessonStr,
         String(child_details ?? ""),
         String(favorites ?? ""),
         String(avoid ?? ""),
       );
       const rawCritique = await callGateway(critiqueSystem, userPrompt, LOVABLE_API_KEY, "critique");
-      finalCritique = validateCritique(rawCritique, lastGoodStory).critique;
+      finalCritique = validateCritique(rawCritique, lastGoodStory, { hasLesson, rhyme: rhymeOn }).critique;
 
       while (finalCritique.needs_rewrite && passes < MAX_EDITOR_PASSES) {
         passes += 1;
         const rewriteUser = [
           `Age band: ${ageBand}. Pages: ${target.targetPages}. Sentences per page: ${target.sentencesPerPage}.`,
           `Parent situation (weave naturally, never name): ${String(parent_situation ?? "") || "(none)"}`,
+          `Lesson to weave (never name it, and never restate it as both subject and takeaway): ${lessonStr || "(none)"}`,
+          rhymeOn ? "RHYME MODE IS ON. Keep clarity above rhyme; prose fallback is allowed." : "",
           `Favorites to include: ${String(favorites ?? "") || "(none)"}`,
           `Things to avoid: ${String(avoid ?? "") || "(none)"}`,
           "",
@@ -470,7 +479,7 @@ serve(async (req) => {
           "",
           "CURRENT STORY JSON (rewrite this and return the FULL corrected story JSON):",
           JSON.stringify(lastGoodStory, null, 2),
-        ].join("\n");
+        ].filter(Boolean).join("\n");
 
         let rewritten: any;
         try {
@@ -494,6 +503,7 @@ serve(async (req) => {
             recompose(
               lastGoodStory,
               String(parent_situation ?? ""),
+              lessonStr,
               String(child_details ?? ""),
               String(favorites ?? ""),
               String(avoid ?? ""),
@@ -501,7 +511,7 @@ serve(async (req) => {
             LOVABLE_API_KEY,
             "re-critique",
           );
-          finalCritique = validateCritique(nextRaw, lastGoodStory).critique;
+          finalCritique = validateCritique(nextRaw, lastGoodStory, { hasLesson, rhyme: rhymeOn }).critique;
         } catch (e) {
           console.warn("edit-story re-critique gateway error, accepting current story:", (e as Error).message);
           break;
