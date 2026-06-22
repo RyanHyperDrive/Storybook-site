@@ -202,6 +202,8 @@ serve(async (req) => {
           bookId,
           reading_level: book.reading_level ?? "ages_4_6",
           cast,
+          lesson: book.story_lesson ?? "",
+          rhyme: book.rhyme === true,
         });
         if (r.status >= 400 || !r.json?.story) {
           await failJob(r.json?.error ?? "Story generation failed.");
