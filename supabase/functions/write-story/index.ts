@@ -589,24 +589,47 @@ serve(async (req) => {
       (child_details.match(/^([A-Z][a-zA-Z'\-]+)/)?.[1] ?? "");
     const comfortObject = (favorites?.match(/\b(teddy|blanket|bunny|bear|doll|dinosaur|truck|book)\b/i)?.[1]) ?? "";
 
-    // -------- generate N candidates in parallel --------
+    // -------- generate candidates (best-of-N or bake-off) --------
+    const bakeoff =
+      Deno.env.get("WRITE_STORY_BAKEOFF") === "true" || body?.bakeoff === true;
+    const defaultProvider: Provider =
+      (Deno.env.get("WRITE_STORY_MODEL") as Provider) || "gemini";
+
     const startedAt = Date.now();
-    const angles = pickAngles(CANDIDATE_COUNT);
+
+    type CandidatePlan = { provider: Provider; angle: string; temperature: number };
+    let plan: CandidatePlan[];
+    if (bakeoff) {
+      const neutralAngle =
+        "Write your strongest possible version against the system rules. No special angle bias.";
+      plan = (["gemini", "gpt", "claude"] as Provider[]).map((p) => ({
+        provider: p,
+        angle: neutralAngle,
+        temperature: 0.8,
+      }));
+    } else {
+      plan = pickAngles(CANDIDATE_COUNT).map((a) => ({
+        provider: defaultProvider,
+        angle: a.angle,
+        temperature: a.temperature,
+      }));
+    }
+
     const generation = Promise.allSettled(
-      angles.map((a) =>
+      plan.map((p) =>
         withTimeout(
           generateCandidate({
-            apiKey: LOVABLE_API_KEY,
+            provider: p.provider,
             systemPrompt: systemWithRhyme,
             userPrompt,
             target,
-            angle: a.angle,
-            temperature: a.temperature,
+            angle: p.angle,
+            temperature: p.temperature,
           }),
           PER_CANDIDATE_TIMEOUT_MS,
-          "candidate",
+          `candidate:${p.provider}`,
         ).catch((e) => {
-          console.warn("candidate timeout/err:", e?.message ?? e);
+          console.warn(`candidate ${p.provider} timeout/err:`, e?.message ?? e);
           return null;
         }),
       ),
@@ -620,53 +643,60 @@ serve(async (req) => {
       settled = [];
     }
 
-    let survivors: any[] = settled
-      .map((r) => (r.status === "fulfilled" ? r.value : null))
-      .filter((v): v is any => !!v)
-      .map((s) => normalizeCandidate(s));
+    type Survivor = { story: any; provider: Provider };
+    let survivors: Survivor[] = settled
+      .map((r, i) => {
+        const story = r.status === "fulfilled" ? r.value : null;
+        if (!story) return null;
+        return { story: normalizeCandidate(story), provider: plan[i].provider };
+      })
+      .filter((v): v is Survivor => !!v);
 
     if (survivors.length === 0) {
       return errorResponse("Story generation failed validation after retries", 502);
     }
 
-    // Top up to >=2 with one sequential extra if needed.
-    if (survivors.length < 2 && CANDIDATE_COUNT > 1) {
-      const a = angles[survivors.length % angles.length];
+    // Top up to >=2 with one sequential extra if needed (best-of-N mode only).
+    if (!bakeoff && survivors.length < 2 && CANDIDATE_COUNT > 1) {
+      const a = pickAngles(CANDIDATE_COUNT)[survivors.length % CANDIDATE_COUNT];
       const extra = await generateCandidate({
-        apiKey: LOVABLE_API_KEY,
+        provider: defaultProvider,
         systemPrompt: systemWithRhyme,
         userPrompt,
         target,
         angle: a.angle,
         temperature: a.temperature,
       }).catch(() => null);
-      if (extra) survivors.push(normalizeCandidate(extra));
+      if (extra) survivors.push({ story: normalizeCandidate(extra), provider: defaultProvider });
     }
 
     let winningStory: any;
     let selection: Selection;
     let rhymeFallback = false;
 
+    const survivorStories = () => survivors.map((s) => s.story);
+
     if (survivors.length === 1) {
-      winningStory = survivors[0];
+      winningStory = survivors[0].story;
       selection = { winnerIndex: 0, selectedBy: "judge" };
     } else {
       const judge = await judgeCandidates({
         apiKey: LOVABLE_API_KEY,
-        candidates: survivors,
+        candidates: survivorStories(),
         ageBand: target.ageBand,
         rhymeOn,
         childContext,
       });
 
       // Rhyme-all-forced special case: re-run ONE more round with rhyme OFF.
-      if (rhymeOn && judge && allFailedOnlyByForcedRhyme(judge)) {
+      if (rhymeOn && judge && allFailedOnlyByForcedRhyme(judge) && !bakeoff) {
         console.log("write-story: all candidates failed only on forced_rhyme; running prose fallback round");
+        const proseAngles = pickAngles(CANDIDATE_COUNT);
         const proseSettled = await Promise.allSettled(
-          angles.map((a) =>
+          proseAngles.map((a) =>
             withTimeout(
               generateCandidate({
-                apiKey: LOVABLE_API_KEY,
+                provider: defaultProvider,
                 systemPrompt: baseSystem,
                 userPrompt,
                 target,
@@ -678,10 +708,10 @@ serve(async (req) => {
             ).catch(() => null),
           ),
         );
-        const proseSurvivors: any[] = proseSettled
+        const proseSurvivors: Survivor[] = proseSettled
           .map((r) => (r.status === "fulfilled" ? r.value : null))
           .filter((v): v is any => !!v)
-          .map((s) => normalizeCandidate(s));
+          .map((s) => ({ story: normalizeCandidate(s), provider: defaultProvider }));
         if (proseSurvivors.length > 0) {
           rhymeFallback = true;
           survivors = proseSurvivors;
@@ -689,28 +719,27 @@ serve(async (req) => {
             proseSurvivors.length > 1
               ? await judgeCandidates({
                   apiKey: LOVABLE_API_KEY,
-                  candidates: proseSurvivors,
+                  candidates: proseSurvivors.map((s) => s.story),
                   ageBand: target.ageBand,
                   rhymeOn: false,
                   childContext,
                 })
               : null;
-          selection = selectWinner(proseSurvivors, proseJudge, false, {
+          selection = selectWinner(proseSurvivors.map((s) => s.story), proseJudge, false, {
             childName, namedPeople: castArr, comfortObject, rhymeOn: false, maxSentences: target.maxSentences,
           });
-          winningStory = proseSurvivors[selection.winnerIndex];
+          winningStory = proseSurvivors[selection.winnerIndex].story;
         } else {
-          // fall back to original survivors via standard selection
-          selection = selectWinner(survivors, judge, rhymeOn, {
+          selection = selectWinner(survivorStories(), judge, rhymeOn, {
             childName, namedPeople: castArr, comfortObject, rhymeOn, maxSentences: target.maxSentences,
           });
-          winningStory = survivors[selection.winnerIndex];
+          winningStory = survivors[selection.winnerIndex].story;
         }
       } else {
-        selection = selectWinner(survivors, judge, rhymeOn, {
+        selection = selectWinner(survivorStories(), judge, rhymeOn, {
           childName, namedPeople: castArr, comfortObject, rhymeOn, maxSentences: target.maxSentences,
         });
-        winningStory = survivors[selection.winnerIndex];
+        winningStory = survivors[selection.winnerIndex].story;
       }
     }
 
@@ -719,14 +748,15 @@ serve(async (req) => {
 
     const elapsedMs = Date.now() - startedAt;
     console.log(
-      `write-story best-of-N: ms=${elapsedMs} survivors=${survivors.length} selected_by=${selection.selectedBy} winner_index=${selection.winnerIndex} rhyme_fallback=${rhymeFallback}`,
+      `write-story ${bakeoff ? "bakeoff" : "best-of-N"}: ms=${elapsedMs} survivors=${survivors.length} selected_by=${selection.selectedBy} winner_index=${selection.winnerIndex} winner_model=${survivors[selection.winnerIndex]?.provider} rhyme_fallback=${rhymeFallback}`,
     );
 
     // Build audit payload (small).
     const judgeArr = selection.judge ?? null;
-    const auditCandidates = survivors.map((c) => ({
-      title: c?.title ?? "",
-      page_texts: (c?.pages ?? []).map((p: any) => String(p?.page_text ?? "")),
+    const auditCandidates = survivors.map((s) => ({
+      model: s.provider,
+      title: s.story?.title ?? "",
+      page_texts: (s.story?.pages ?? []).map((p: any) => String(p?.page_text ?? "")),
     }));
     const auditJudge = judgeArr
       ? {
@@ -737,8 +767,10 @@ serve(async (req) => {
       : null;
 
     const auditPayload = {
+      mode: bakeoff ? "bakeoff" : "best_of_n",
       n: survivors.length,
       winner_index: selection.winnerIndex,
+      winner_model: survivors[selection.winnerIndex]?.provider ?? null,
       selected_by: selection.selectedBy,
       rhyme_fallback: rhymeFallback,
       judge: auditJudge,
@@ -746,6 +778,7 @@ serve(async (req) => {
       merged: false,
       elapsed_ms: elapsedMs,
     };
+
 
     if (bookId) {
       const { error: persistErr } = await admin
