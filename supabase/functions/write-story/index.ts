@@ -29,6 +29,7 @@ import {
   READING_LEVEL_TARGETS,
   buildSystemPrompt,
   validateStory,
+  RHYME_MODULE,
 } from "../_shared/story.ts";
 
 function buildUserPrompt(input: {
@@ -37,6 +38,7 @@ function buildUserPrompt(input: {
   favorites?: string;
   avoid?: string;
   cast?: string[];
+  lesson?: string;
 }): string {
   const cast = (input.cast ?? []).filter(Boolean);
   return [
@@ -47,6 +49,7 @@ function buildUserPrompt(input: {
       : "",
     `Favorite details to include: ${input.favorites?.trim() || "(none provided)"}`,
     `Details to avoid: ${input.avoid?.trim() || "(none provided)"}`,
+    `Lesson to gently teach (this is the HIDDEN emotional spine; show it through the child's specific feelings and one planted action that resolves it; NEVER name it, moralize, or break frame; and if the story subject above already states this lesson, do NOT also state it on the surface, keep it buried): ${input.lesson?.trim() || "(none provided)"}`,
     "",
     "Write the storybook now. Return strict JSON only.",
   ].filter(Boolean).join("\n");
