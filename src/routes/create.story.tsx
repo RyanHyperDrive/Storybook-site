@@ -74,6 +74,8 @@ function StoryStep() {
       if (s.prompt) setPrompt(s.prompt);
       if (s.detailsInclude) setDetailsInclude(s.detailsInclude);
       if (s.dedication) setDedication(s.dedication);
+      if (typeof s.lesson === "string") setLesson(s.lesson);
+      if (typeof s.rhyme === "boolean") setRhyme(s.rhyme);
       if (s.consent) setConsent(true);
       if (s.theme || s.detailsInclude || s.dedication) setMoreOpen(true);
     } catch {
