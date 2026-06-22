@@ -1,36 +1,124 @@
 // deno-lint-ignore-file no-explicit-any
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { jsonrepair } from "https://esm.sh/jsonrepair@3";
 import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
 
 /**
  * POST /write-story
- * Body: {
- *   theme: string,
- *   child_details: string,        // parent-provided main character info
- *   favorites?: string,           // parent-provided favorite things
- *   avoid?: string,               // parent-provided things to avoid
- *   bookId?: string               // optional: persist onto books.story_json
- * }
  *
- * Generates a warm, parent-approved children's storybook (ages 2-10).
- * Returns strict JSON: title, subtitle, dedication, style_notes, 10 pages.
+ * Best-of-N writer:
+ *   1. Generate N candidate stories in parallel (different angles+temperatures).
+ *   2. Validate each; survivors only.
+ *   3. Ask a judge model to score each survivor on JUDGE_RUBRIC and set
+ *      hard-fail flags.
+ *   4. The SERVER deterministically picks the winner from the judge's scores
+ *      (weighted sum + hard-fail disqualification + tie-breakers).
+ *   5. On any judge/parse failure, fall back to a heuristic scorer. On any
+ *      catastrophic failure, fall back to the single best surviving candidate.
+ *      We NEVER 500 the book just because best-of-N machinery failed.
  *
- * The model is told NOT to invent sensitive facts (health, family, religion,
- * location, school, etc.) beyond what the parent provided. Output is
- * schema-validated before returning.
+ * The winning story is written to books.story_json + title exactly as today;
+ * the audit trail goes to books.story_candidates. The existing editor pass
+ * runs downstream unchanged.
  */
 
-// Story length, tone, age safety, prompt construction, and validator live in
-// ../_shared/story.ts so the second-pass editor can reuse them without
-// importing this file's serve() and accidentally starting a second server.
 import {
   READING_LEVEL_TARGETS,
   buildSystemPrompt,
   validateStory,
   RHYME_MODULE,
+  JUDGE_RUBRIC,
+  buildJudgePrompt,
+  EM_DASH_RE,
 } from "../_shared/story.ts";
+
+const CANDIDATE_COUNT = Number(Deno.env.get("WRITE_STORY_N")) || 3;
+const WRITE_STORY_MERGE = false;
+const PER_CANDIDATE_TIMEOUT_MS = 90_000;
+const TOTAL_STEP_TIMEOUT_MS = 180_000;
+const JUDGE_TIMEOUT_MS = 60_000;
+
+type AngleSpec = { temperature: number; angle: string };
+const ANGLES: AngleSpec[] = [
+  {
+    temperature: 0.7,
+    angle:
+      "Lean into the child's comfort object and build a gentle repeated refrain.",
+  },
+  {
+    temperature: 0.9,
+    angle:
+      "Lean into a named pet or loved one and the child's funny quirk for warmth and humor.",
+  },
+  {
+    temperature: 0.8,
+    angle:
+      "Lean into the real situation or feeling as the hidden emotional spine.",
+  },
+];
+
+function pickAngles(n: number): AngleSpec[] {
+  const out: AngleSpec[] = [];
+  for (let i = 0; i < n; i++) out.push(ANGLES[i % ANGLES.length]);
+  return out;
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
+function stripDashes(s: string): string {
+  if (typeof s !== "string") return s;
+  // Replace em/en/double-hyphen with a comma+space; collapse leftover spacing.
+  return s.replace(/\s*(?:—|–|--)\s*/g, ", ").replace(/,\s*,/g, ",").trim();
+}
+
+function normalizeCandidate(story: any): any {
+  if (!story || typeof story !== "object") return story;
+  for (const k of ["title", "subtitle", "dedication", "style_notes"]) {
+    if (typeof story[k] === "string" && EM_DASH_RE.test(story[k])) {
+      story[k] = stripDashes(story[k]);
+    }
+  }
+  if (Array.isArray(story.pages)) {
+    for (const p of story.pages) {
+      if (p && typeof p.page_text === "string" && EM_DASH_RE.test(p.page_text)) {
+        p.page_text = stripDashes(p.page_text);
+      }
+      if (p && typeof p.beat === "string" && EM_DASH_RE.test(p.beat)) {
+        p.beat = stripDashes(p.beat);
+      }
+    }
+  }
+  return story;
+}
+
+function extractJson(raw: string): any {
+  if (typeof raw !== "string") throw new Error("non-string content");
+  let s = raw.trim();
+  if (!s) throw new Error("empty content");
+  s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  try {
+    return JSON.parse(s);
+  } catch {
+    const first = s.indexOf("{");
+    const last = s.lastIndexOf("}");
+    if (first !== -1 && last > first) {
+      const sub = s.slice(first, last + 1);
+      try { return JSON.parse(sub); } catch {
+        try { return JSON.parse(jsonrepair(sub)); } catch { /* fall through */ }
+      }
+    }
+    return JSON.parse(jsonrepair(s));
+  }
+}
 
 function buildUserPrompt(input: {
   theme: string;
@@ -55,6 +143,313 @@ function buildUserPrompt(input: {
   ].filter(Boolean).join("\n");
 }
 
+// ---------------------------------------------------------------------------
+// Candidate generation
+// ---------------------------------------------------------------------------
+
+async function generateCandidate(opts: {
+  apiKey: string;
+  systemPrompt: string;
+  userPrompt: string;
+  target: { targetPages: number; maxSentences: number };
+  angle: string;
+  temperature: number;
+}): Promise<any | null> {
+  const { apiKey, systemPrompt, userPrompt, target, angle, temperature } = opts;
+  const fullUserPrompt =
+    userPrompt +
+    "\n\nANGLE FOR THIS DRAFT (make it genuinely distinct from other drafts): " +
+    angle;
+  let lastError = "";
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          response_format: { type: "json_object" },
+          temperature,
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content:
+                fullUserPrompt +
+                (lastError
+                  ? `\n\nPrevious attempt failed validation: ${lastError}. Please fix and return strict JSON.`
+                  : ""),
+            },
+          ],
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        console.warn(`write-story candidate fetch !ok status=${res.status} body=${text.slice(0, 200)}`);
+        return null;
+      }
+      const payload = await res.json();
+      const raw: string = payload?.choices?.[0]?.message?.content ?? "";
+      let parsed: any;
+      try { parsed = extractJson(raw); } catch (e) {
+        lastError = `invalid JSON: ${(e as Error).message}`;
+        continue;
+      }
+      const check = validateStory(parsed, target.targetPages, target.maxSentences);
+      if (!check.ok) {
+        lastError = check.error;
+        continue;
+      }
+      return check.data;
+    } catch (e: any) {
+      console.warn("write-story candidate error:", e?.message ?? e);
+      return null;
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Judge + winner selection
+// ---------------------------------------------------------------------------
+
+type JudgeScores = Record<string, number>;
+type JudgeFlags = {
+  exemplar_echo?: boolean;
+  object_renaming?: boolean;
+  stated_moral?: boolean;
+  age_inappropriate_dialogue?: boolean;
+  forced_rhyme?: boolean;
+};
+type JudgeEntry = { index: number; scores: JudgeScores; flags: JudgeFlags; reason?: string };
+
+const WEIGHTS: Record<string, number> = {
+  warmth_and_charm: 0.18,
+  specificity_personalization: 0.18,
+  originality_vs_exemplar: 0.14,
+  read_aloud_music: 0.12,
+  child_agency_and_structure: 0.12,
+  lesson_woven: 0.10,
+  show_dont_tell: 0.06,
+  literal_clarity: 0.06,
+  age_fit: 0.04,
+};
+
+function weightedScore(scores: JudgeScores | undefined): number {
+  if (!scores) return 0;
+  let total = 0;
+  for (const k of Object.keys(WEIGHTS)) {
+    const v = Number(scores[k]);
+    if (Number.isFinite(v)) total += v * WEIGHTS[k];
+  }
+  return total;
+}
+
+function isDisqualified(flags: JudgeFlags | undefined, rhymeOn: boolean): boolean {
+  if (!flags) return false;
+  if (flags.exemplar_echo) return true;
+  if (flags.object_renaming) return true;
+  if (flags.stated_moral) return true;
+  if (flags.age_inappropriate_dialogue) return true;
+  if (rhymeOn && flags.forced_rhyme) return true;
+  return false;
+}
+
+async function judgeCandidates(opts: {
+  apiKey: string;
+  candidates: any[];
+  ageBand: string;
+  rhymeOn: boolean;
+  childContext: string;
+}): Promise<JudgeEntry[] | null> {
+  const { apiKey, candidates, ageBand, rhymeOn, childContext } = opts;
+  const system = buildJudgePrompt(ageBand, rhymeOn);
+  const labelled = candidates
+    .map(
+      (c, i) =>
+        `=== CANDIDATE INDEX ${i} ===\n${JSON.stringify(
+          { title: c?.title, pages: (c?.pages ?? []).map((p: any) => ({ page_number: p?.page_number, page_text: p?.page_text })) },
+        )}`,
+    )
+    .join("\n\n");
+  const userMsg = `AGE BAND: ${ageBand}\nRHYME MODE: ${rhymeOn ? "ON" : "OFF"}\n\nCHILD AND STORY CONTEXT:\n${childContext}\n\nCANDIDATES TO SCORE (${candidates.length}):\n\n${labelled}\n\nReturn strict JSON only, matching the schema in the system prompt.`;
+  try {
+    const res = await withTimeout(
+      fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          response_format: { type: "json_object" },
+          temperature: 0.2,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: userMsg },
+          ],
+        }),
+      }),
+      JUDGE_TIMEOUT_MS,
+      "judge",
+    );
+    if (!res.ok) {
+      console.warn("write-story judge !ok status=", res.status);
+      return null;
+    }
+    const payload = await res.json();
+    const raw: string = payload?.choices?.[0]?.message?.content ?? "";
+    const parsed = extractJson(raw);
+    const arr = Array.isArray(parsed?.candidates) ? parsed.candidates : null;
+    if (!arr) return null;
+    const out: JudgeEntry[] = arr.map((e: any, i: number) => ({
+      index: Number.isFinite(e?.index) ? Number(e.index) : i,
+      scores: (e?.scores && typeof e.scores === "object") ? e.scores : {},
+      flags: (e?.flags && typeof e.flags === "object") ? e.flags : {},
+      reason: typeof e?.reason === "string" ? e.reason : "",
+    }));
+    return out;
+  } catch (e: any) {
+    console.warn("write-story judge error:", e?.message ?? e);
+    return null;
+  }
+}
+
+// HEURISTIC fallback (used only when the judge call/parse fails).
+function heuristicScore(candidate: any, ctx: {
+  childName: string;
+  namedPeople: string[];
+  comfortObject: string;
+  rhymeOn: boolean;
+  maxSentences: number;
+}): number {
+  const text = (candidate?.pages ?? [])
+    .map((p: any) => String(p?.page_text ?? ""))
+    .join("\n");
+  if (!text) return 0;
+  const lower = text.toLowerCase();
+  let s = 0;
+  if (ctx.childName && lower.includes(ctx.childName.toLowerCase())) s += 0.2;
+  for (const n of ctx.namedPeople) {
+    if (n && lower.includes(n.toLowerCase())) s += 0.08;
+  }
+  if (ctx.comfortObject && lower.includes(ctx.comfortObject.toLowerCase())) s += 0.12;
+  // Refrain detection: any line that appears twice.
+  const lines = text.split(/\n+/).map((l: string) => l.trim()).filter(Boolean);
+  const counts = new Map<string, number>();
+  for (const l of lines) counts.set(l, (counts.get(l) ?? 0) + 1);
+  if ([...counts.values()].some((v) => v >= 2)) s += 0.15;
+  // Sentence-length fit per page.
+  let fit = 0; let total = 0;
+  for (const p of candidate?.pages ?? []) {
+    total++;
+    const n = (String(p?.page_text ?? "").match(/[.!?]+/g) ?? []).length;
+    if (n >= 1 && n <= ctx.maxSentences + 1) fit++;
+  }
+  if (total > 0) s += 0.15 * (fit / total);
+  // Banned phrases penalty.
+  if (/learned that|discovered the importance|the moral|the lesson/i.test(text)) s -= 0.3;
+  // Cheap rhyme check (last-word matches between consecutive lines).
+  if (ctx.rhymeOn) {
+    let rh = 0; let pairs = 0;
+    for (const p of candidate?.pages ?? []) {
+      const pl = String(p?.page_text ?? "").split(/[.!?]+/).map((x: string) => x.trim()).filter(Boolean);
+      for (let i = 0; i < pl.length - 1; i += 2) {
+        pairs++;
+        const a = (pl[i].match(/(\w+)\W*$/)?.[1] ?? "").toLowerCase();
+        const b = (pl[i + 1].match(/(\w+)\W*$/)?.[1] ?? "").toLowerCase();
+        if (a && b && (a === b || a.slice(-2) === b.slice(-2))) rh++;
+      }
+    }
+    if (pairs > 0) s += 0.1 * (rh / pairs);
+  }
+  return s;
+}
+
+type Selection = {
+  winnerIndex: number;
+  selectedBy: "judge" | "heuristic" | "least_bad";
+  judge?: JudgeEntry[];
+};
+
+function selectWinner(
+  candidates: any[],
+  judge: JudgeEntry[] | null,
+  rhymeOn: boolean,
+  heuristicCtx: Parameters<typeof heuristicScore>[1],
+): Selection {
+  if (candidates.length === 1) {
+    return { winnerIndex: 0, selectedBy: judge ? "judge" : "heuristic", judge: judge ?? undefined };
+  }
+
+  // HEURISTIC fallback path.
+  if (!judge || judge.length === 0) {
+    const scored = candidates.map((c, i) => ({ i, s: heuristicScore(c, heuristicCtx) }));
+    scored.sort((a, b) => b.s - a.s);
+    return { winnerIndex: scored[0].i, selectedBy: "heuristic" };
+  }
+
+  // JUDGE path.
+  // Build per-index judge entry map.
+  const byIndex = new Map<number, JudgeEntry>();
+  for (const e of judge) byIndex.set(e.index, e);
+
+  type Row = { i: number; score: number; dq: boolean; entry: JudgeEntry | undefined };
+  const rows: Row[] = candidates.map((_, i) => {
+    const entry = byIndex.get(i);
+    return {
+      i,
+      score: weightedScore(entry?.scores),
+      dq: isDisqualified(entry?.flags, rhymeOn),
+      entry,
+    };
+  });
+
+  const clean = rows.filter((r) => !r.dq);
+  const pool = clean.length > 0 ? clean : rows;
+  const selectedBy: Selection["selectedBy"] = clean.length > 0 ? "judge" : "least_bad";
+
+  pool.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    const aw = Number(a.entry?.scores?.warmth_and_charm ?? 0);
+    const bw = Number(b.entry?.scores?.warmth_and_charm ?? 0);
+    if (bw !== aw) return bw - aw;
+    const asp = Number(a.entry?.scores?.specificity_personalization ?? 0);
+    const bsp = Number(b.entry?.scores?.specificity_personalization ?? 0);
+    if (bsp !== asp) return bsp - asp;
+    const alc = Number(a.entry?.scores?.literal_clarity ?? 0);
+    const blc = Number(b.entry?.scores?.literal_clarity ?? 0);
+    return blc - alc;
+  });
+
+  return { winnerIndex: pool[0].i, selectedBy, judge };
+}
+
+// Detect "every candidate disqualified solely by forced_rhyme" — the signal
+// for the rhyme-off fallback round.
+function allFailedOnlyByForcedRhyme(judge: JudgeEntry[] | null): boolean {
+  if (!judge || judge.length === 0) return false;
+  let any = false;
+  for (const e of judge) {
+    const f = e.flags ?? {};
+    if (!f.forced_rhyme) return false;
+    if (f.exemplar_echo || f.object_renaming || f.stated_moral || f.age_inappropriate_dialogue) {
+      // disqualified for some other reason too — handle via the usual least_bad path
+      return false;
+    }
+    any = true;
+  }
+  return any;
+}
+
+// ---------------------------------------------------------------------------
+// Handler
+// ---------------------------------------------------------------------------
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return errorResponse("Method not allowed", 405);
@@ -72,9 +467,8 @@ serve(async (req) => {
     const target =
       READING_LEVEL_TARGETS[String(reading_level ?? "ages_4_6")] ??
       READING_LEVEL_TARGETS.ages_4_6;
-    const maxSentences = target.maxSentences;
+    const rhymeOn = rhyme === true;
 
-    // If bookId is supplied, verify ownership before we spend tokens.
     if (bookId) {
       const { data: bookRow, error: bookErr } = await admin
         .from("books")
@@ -88,79 +482,214 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
+    const castArr: string[] = Array.isArray(cast) ? cast : [];
+    const lessonStr: string = typeof lesson === "string" ? lesson : "";
     const userPrompt = buildUserPrompt({
       theme,
       child_details,
       favorites,
       avoid,
-      cast: Array.isArray(cast) ? cast : [],
-      lesson: typeof lesson === "string" ? lesson : "",
+      cast: castArr,
+      lesson: lessonStr,
     });
-    const SYSTEM_PROMPT = rhyme === true
-      ? buildSystemPrompt(target) + "\n\n" + RHYME_MODULE
-      : buildSystemPrompt(target);
 
-    // Try up to 2 times if the model returns invalid JSON / wrong page count.
-    let lastError = "";
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: userPrompt + (lastError ? `\n\nPrevious attempt failed validation: ${lastError}. Please fix and return strict JSON.` : "") },
-          ],
+    const baseSystem = buildSystemPrompt(target);
+    const systemWithRhyme = rhymeOn ? baseSystem + "\n\n" + RHYME_MODULE : baseSystem;
+
+    const childContext = [
+      `Theme/subject: ${theme}`,
+      `Main character(s): ${child_details}`,
+      castArr.length ? `Approved cast: ${castArr.join(", ")}` : "",
+      `Favorites: ${favorites || "(none)"}`,
+      `Avoid: ${avoid || "(none)"}`,
+      `Lesson: ${lessonStr || "(none)"}`,
+    ].filter(Boolean).join("\n");
+
+    // Cheap heuristic-context derivations (best-effort guesses).
+    const childName = (castArr[0] ?? "").trim() ||
+      (child_details.match(/^([A-Z][a-zA-Z'\-]+)/)?.[1] ?? "");
+    const comfortObject = (favorites?.match(/\b(teddy|blanket|bunny|bear|doll|dinosaur|truck|book)\b/i)?.[1]) ?? "";
+
+    // -------- generate N candidates in parallel --------
+    const startedAt = Date.now();
+    const angles = pickAngles(CANDIDATE_COUNT);
+    const generation = Promise.allSettled(
+      angles.map((a) =>
+        withTimeout(
+          generateCandidate({
+            apiKey: LOVABLE_API_KEY,
+            systemPrompt: systemWithRhyme,
+            userPrompt,
+            target,
+            angle: a.angle,
+            temperature: a.temperature,
+          }),
+          PER_CANDIDATE_TIMEOUT_MS,
+          "candidate",
+        ).catch((e) => {
+          console.warn("candidate timeout/err:", e?.message ?? e);
+          return null;
         }),
-      });
+      ),
+    );
 
-      if (!aiRes.ok) {
-        const text = await aiRes.text();
-        if (aiRes.status === 429) return errorResponse("Rate limit exceeded, try again shortly", 429);
-        if (aiRes.status === 402) return errorResponse("AI credits exhausted", 402);
-        return errorResponse(`AI gateway error: ${text}`, 502);
-      }
-
-      const payload = await aiRes.json();
-      const raw: string = payload?.choices?.[0]?.message?.content ?? "";
-
-      let parsed: any;
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-        try {
-          parsed = JSON.parse(cleaned);
-        } catch (e) {
-          lastError = `invalid JSON: ${(e as Error).message}`;
-          continue;
-        }
-      }
-
-      const check = validateStory(parsed, target.targetPages, maxSentences);
-      if (!check.ok) {
-        lastError = check.error;
-        continue;
-      }
-
-      // Persist if bookId provided (best-effort; ignore column-not-exist).
-      if (bookId) {
-        const { error: persistErr } = await admin
-          .from("books")
-          .update({ story_json: check.data, title: check.data.title })
-          .eq("id", bookId);
-        if (persistErr) console.warn("write-story persist warning:", persistErr.message);
-      }
-
-      return jsonResponse({ ok: true, story: check.data, attempt });
+    let settled: PromiseSettledResult<any>[];
+    try {
+      settled = await withTimeout(generation, TOTAL_STEP_TIMEOUT_MS, "best-of-N total");
+    } catch (e: any) {
+      console.warn("write-story total step timeout:", e?.message ?? e);
+      settled = [];
     }
 
-    return errorResponse(`Story generation failed validation after retries: ${lastError}`, 502);
+    let survivors: any[] = settled
+      .map((r) => (r.status === "fulfilled" ? r.value : null))
+      .filter((v): v is any => !!v)
+      .map((s) => normalizeCandidate(s));
+
+    if (survivors.length === 0) {
+      return errorResponse("Story generation failed validation after retries", 502);
+    }
+
+    // Top up to >=2 with one sequential extra if needed.
+    if (survivors.length < 2 && CANDIDATE_COUNT > 1) {
+      const a = angles[survivors.length % angles.length];
+      const extra = await generateCandidate({
+        apiKey: LOVABLE_API_KEY,
+        systemPrompt: systemWithRhyme,
+        userPrompt,
+        target,
+        angle: a.angle,
+        temperature: a.temperature,
+      }).catch(() => null);
+      if (extra) survivors.push(normalizeCandidate(extra));
+    }
+
+    let winningStory: any;
+    let selection: Selection;
+    let rhymeFallback = false;
+
+    if (survivors.length === 1) {
+      winningStory = survivors[0];
+      selection = { winnerIndex: 0, selectedBy: "judge" };
+    } else {
+      const judge = await judgeCandidates({
+        apiKey: LOVABLE_API_KEY,
+        candidates: survivors,
+        ageBand: target.ageBand,
+        rhymeOn,
+        childContext,
+      });
+
+      // Rhyme-all-forced special case: re-run ONE more round with rhyme OFF.
+      if (rhymeOn && judge && allFailedOnlyByForcedRhyme(judge)) {
+        console.log("write-story: all candidates failed only on forced_rhyme; running prose fallback round");
+        const proseSettled = await Promise.allSettled(
+          angles.map((a) =>
+            withTimeout(
+              generateCandidate({
+                apiKey: LOVABLE_API_KEY,
+                systemPrompt: baseSystem,
+                userPrompt,
+                target,
+                angle: a.angle,
+                temperature: a.temperature,
+              }),
+              PER_CANDIDATE_TIMEOUT_MS,
+              "prose-candidate",
+            ).catch(() => null),
+          ),
+        );
+        const proseSurvivors: any[] = proseSettled
+          .map((r) => (r.status === "fulfilled" ? r.value : null))
+          .filter((v): v is any => !!v)
+          .map((s) => normalizeCandidate(s));
+        if (proseSurvivors.length > 0) {
+          rhymeFallback = true;
+          survivors = proseSurvivors;
+          const proseJudge =
+            proseSurvivors.length > 1
+              ? await judgeCandidates({
+                  apiKey: LOVABLE_API_KEY,
+                  candidates: proseSurvivors,
+                  ageBand: target.ageBand,
+                  rhymeOn: false,
+                  childContext,
+                })
+              : null;
+          selection = selectWinner(proseSurvivors, proseJudge, false, {
+            childName, namedPeople: castArr, comfortObject, rhymeOn: false, maxSentences: target.maxSentences,
+          });
+          winningStory = proseSurvivors[selection.winnerIndex];
+        } else {
+          // fall back to original survivors via standard selection
+          selection = selectWinner(survivors, judge, rhymeOn, {
+            childName, namedPeople: castArr, comfortObject, rhymeOn, maxSentences: target.maxSentences,
+          });
+          winningStory = survivors[selection.winnerIndex];
+        }
+      } else {
+        selection = selectWinner(survivors, judge, rhymeOn, {
+          childName, namedPeople: castArr, comfortObject, rhymeOn, maxSentences: target.maxSentences,
+        });
+        winningStory = survivors[selection.winnerIndex];
+      }
+    }
+
+    void WRITE_STORY_MERGE; // merge disabled by design
+    void JUDGE_RUBRIC;
+
+    const elapsedMs = Date.now() - startedAt;
+    console.log(
+      `write-story best-of-N: ms=${elapsedMs} survivors=${survivors.length} selected_by=${selection.selectedBy} winner_index=${selection.winnerIndex} rhyme_fallback=${rhymeFallback}`,
+    );
+
+    // Build audit payload (small).
+    const judgeArr = selection.judge ?? null;
+    const auditCandidates = survivors.map((c) => ({
+      title: c?.title ?? "",
+      page_texts: (c?.pages ?? []).map((p: any) => String(p?.page_text ?? "")),
+    }));
+    const auditJudge = judgeArr
+      ? {
+          scores_by_candidate: judgeArr.map((e) => ({ index: e.index, scores: e.scores })),
+          flags: judgeArr.map((e) => ({ index: e.index, flags: e.flags })),
+          reasons: judgeArr.map((e) => ({ index: e.index, reason: e.reason ?? "" })),
+        }
+      : null;
+
+    const auditPayload = {
+      n: survivors.length,
+      winner_index: selection.winnerIndex,
+      selected_by: selection.selectedBy,
+      rhyme_fallback: rhymeFallback,
+      judge: auditJudge,
+      candidates: auditCandidates,
+      merged: false,
+      elapsed_ms: elapsedMs,
+    };
+
+    if (bookId) {
+      const { error: persistErr } = await admin
+        .from("books")
+        .update({
+          story_json: winningStory,
+          title: winningStory.title,
+          story_candidates: auditPayload,
+        })
+        .eq("id", bookId);
+      if (persistErr) console.warn("write-story persist warning:", persistErr.message);
+    }
+
+    return jsonResponse({
+      ok: true,
+      story: winningStory,
+      best_of_n: {
+        n: survivors.length,
+        winner_index: selection.winnerIndex,
+        selected_by: selection.selectedBy,
+        rhyme_fallback: rhymeFallback,
+      },
+    });
   } catch (e: any) {
     if (e instanceof Response) return e;
     console.error("write-story error", e);

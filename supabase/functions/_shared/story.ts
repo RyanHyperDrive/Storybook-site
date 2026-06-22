@@ -330,3 +330,107 @@ export function validateStory(
   }
   return { ok: true, data: obj };
 }
+
+// ============================================================================
+// Best-of-N judging
+// ============================================================================
+
+export const JUDGE_RUBRIC: { key: string; description: string }[] = [
+  {
+    key: "warmth_and_charm",
+    description:
+      "Tenderness, humor, delight; a moment that makes a grandparent smile or tear up; rewards real use of the named loved ones and the funny quirk.",
+  },
+  {
+    key: "specificity_personalization",
+    description:
+      "Uses THIS child's specific named people/pets, comfort object, and real situation woven into the action (not a checklist); the book could be no other child's.",
+  },
+  {
+    key: "originality_vs_exemplar",
+    description:
+      "Does NOT reuse the embedded exemplar's objects, situation, refrain, structure, teaching device, or title shape, and is not a swap-the-noun clone of it.",
+  },
+  {
+    key: "read_aloud_music",
+    description:
+      "Lovely to perform aloud: rhythm, varied sentence shape, gentle repetition, ideally a refrain. When rhyme is on, also whether the rhyme is natural and singable.",
+  },
+  {
+    key: "child_agency_and_structure",
+    description:
+      "One clear child-sized problem set up early, solved by the child's own planted action; real cause-and-effect; every page a distinct beat; earned ending.",
+  },
+  {
+    key: "lesson_woven",
+    description:
+      "If a lesson was provided, it is the hidden spine resolved through the child's action and is NEVER named; if no lesson was provided, score neutral-high.",
+  },
+  {
+    key: "show_dont_tell",
+    description: "No stated moral, no labeled trait, no 'she learned that...' line.",
+  },
+  {
+    key: "literal_clarity",
+    description:
+      "Real things named plainly (no 'sleeping rocks'), real sound words, no fancy synonyms; reads aloud cleanly on the first try.",
+  },
+  {
+    key: "age_fit",
+    description:
+      "Vocabulary, sentence length, and emotional intensity fit the band. For 2-3, the child speaks at most 1-2 words.",
+  },
+];
+
+export function buildJudgePrompt(ageBand: string, rhymeOn: boolean): string {
+  const rhymeLine = rhymeOn
+    ? "RHYME MODE IS ON for this book, so also penalize forced/awkward rhyme and set forced_rhyme=true for any candidate whose rhyme bends meaning or renames real things. A clean prose page beats a forced rhyme."
+    : "RHYME MODE IS OFF for this book; ignore the forced_rhyme flag (leave it false).";
+  const rubric = JUDGE_RUBRIC.map((r) => `- ${r.key}: ${r.description}`).join("\n");
+  return `You are a senior picture-book editor. You are judging multiple candidate stories written for the same child (ages ${ageBand}) and choosing the best one for a grandparent to read aloud. You are strict, fair, and consistent.
+
+You will receive N candidates, each labelled by its integer index. For EACH candidate independently, score every dimension below from 0.0 to 1.0 (one decimal place is fine) and set the boolean hard-fail flags. Then suggest a winner_index. The server will recompute the winner using your scores and flags; your winner_index is advisory.
+
+================  SCORING DIMENSIONS (0.0 to 1.0)  ================
+${rubric}
+
+================  HARD-FAIL FLAGS (booleans, per candidate)  ================
+- exemplar_echo: reuses or clones the embedded gold exemplar's object, situation, structure, refrain, teaching device, or title shape (a swap-the-noun copy counts).
+- object_renaming: renames a real thing into a different thing (e.g. blocks called "sleeping rocks", a stuffed animal called something else).
+- stated_moral: any stated lesson/moral/trait label ("she learned to be brave", "sharing is good", "discovered the importance of...").
+- age_inappropriate_dialogue: dialogue or vocabulary that does not fit the age band; for 2-3, child speaks more than 1-2 words or speaks in full sentences.
+- forced_rhyme: meaning, sound words, or true names of things were bent to force a rhyme. ${rhymeLine}
+
+================  OUTPUT FORMAT (STRICT JSON ONLY)  ================
+Return ONLY this JSON shape, no markdown, no commentary:
+
+{
+  "candidates": [
+    {
+      "index": 0,
+      "scores": {
+        "warmth_and_charm": 0.0,
+        "specificity_personalization": 0.0,
+        "originality_vs_exemplar": 0.0,
+        "read_aloud_music": 0.0,
+        "child_agency_and_structure": 0.0,
+        "lesson_woven": 0.0,
+        "show_dont_tell": 0.0,
+        "literal_clarity": 0.0,
+        "age_fit": 0.0
+      },
+      "flags": {
+        "exemplar_echo": false,
+        "object_renaming": false,
+        "stated_moral": false,
+        "age_inappropriate_dialogue": false,
+        "forced_rhyme": false
+      },
+      "reason": ""
+    }
+  ],
+  "winner_index": 0
+}
+
+In any string value: do NOT use raw double-quotes (use single quotes inside reasons), do NOT use trailing commas, do NOT use em-dashes. Keep reasons under 280 characters each.`;
+}
