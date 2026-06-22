@@ -261,6 +261,8 @@ serve(async (req) => {
           avoid: book.details_avoid ?? "",
           parent_situation: book.story_prompt ?? "",
           cast,
+          lesson: book.story_lesson ?? "",
+          rhyme: book.rhyme === true,
         });
 
         if (editRes.status >= 400 || !editRes.json?.story) {
