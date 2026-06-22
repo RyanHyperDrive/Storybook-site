@@ -192,10 +192,11 @@ function buildRewriteSystemPrompt(ageBand: string, targetPages: number, sentence
   return `You are a children's story editor. You will receive the full story JSON and a critique with page-addressed findings. Rewrite ONLY what the findings flag; preserve everything that works. KEEP THE EXACT SAME JSON SCHEMA, the same number of pages (${targetPages}), the same per-page sentence range (${sentencesPerPage}), the same age band (${ageBand}), the same story_spine object, the per-page "beat" field, and the no-em-dash rule (never use —, –, or --). Return the full corrected story JSON, strict JSON only — no markdown, no commentary.`;
 }
 
-function recompose(story: any, parentSituation: string, childDetails: string, favorites: string, avoid: string): string {
+function recompose(story: any, parentSituation: string, lesson: string, childDetails: string, favorites: string, avoid: string): string {
   return [
     `Child / main character: ${childDetails || "(none)"}`,
-    `Parent situation / lesson to weave (NEVER name it, weave it as the hidden emotional spine): ${parentSituation || "(none provided)"}`,
+    `Parent situation (background context, weave naturally): ${parentSituation || "(none provided)"}`,
+    `Lesson to weave (never name it, and never restate it as both subject and takeaway): ${lesson?.trim() || "(none)"}`,
     `Favorites to include: ${favorites || "(none)"}`,
     `Things to avoid: ${avoid || "(none)"}`,
     "",
