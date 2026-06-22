@@ -207,12 +207,47 @@ function StoryStep() {
             maxLength={800}
             value={prompt}
             onChange={(e) => { setPrompt(e.target.value); persistLocal({ prompt: e.target.value }); }}
-            placeholder="They've been nervous about kindergarten. We'd love a story where they discover a kind classmate."
+            placeholder="e.g. Maya just got a baby brother and feels a bit left out. Her favorite person is Grandpa Joe."
           />
           <p className="mt-1 text-xs text-muted-foreground">
             A theme, a real situation, or a lesson to weave in — like "nervous about starting kindergarten," "had a rough day and needs a confidence boost," or "learning to share with the new baby." Leave it blank and we'll surprise them.
           </p>
         </div>
+
+        <div>
+          <Label htmlFor="lesson">Something to gently teach? (optional)</Label>
+          <Textarea
+            id="lesson"
+            rows={2}
+            maxLength={200}
+            value={lesson}
+            onChange={(e) => { setLesson(e.target.value); persistLocal({ lesson: e.target.value }); }}
+            placeholder="e.g. sharing with the new baby; being brave at the doctor."
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Like sharing with the new baby, or being brave at the doctor. We'll weave it in softly, never preachy. Leave blank to skip.
+          </p>
+        </div>
+
+        <div className="rounded-md border border-border bg-paper/40 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <Label htmlFor="rhyme" className="text-sm font-semibold">Make it rhyme</Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {rhyme
+                  ? "We'll rhyme wherever it stays clear and never force a line."
+                  : "A bouncy, rhyming read-aloud. Off = a gentle storybook voice."}
+              </p>
+            </div>
+            <Switch
+              id="rhyme"
+              checked={rhyme}
+              onCheckedChange={(v) => { setRhyme(v); persistLocal({ rhyme: v }); }}
+              aria-label="Make it rhyme"
+            />
+          </div>
+        </div>
+
 
         <div className="rounded-md border border-border bg-paper/40">
           <button
