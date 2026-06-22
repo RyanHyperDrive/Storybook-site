@@ -144,18 +144,118 @@ function buildUserPrompt(input: {
 }
 
 // ---------------------------------------------------------------------------
+// Provider abstraction (multi-model bake-off)
+// ---------------------------------------------------------------------------
+
+type Provider = "gemini" | "gpt" | "claude";
+
+async function callModel(
+  provider: Provider,
+  opts: { system: string; user: string; temperature: number },
+): Promise<string> {
+  const { system, user, temperature } = opts;
+
+  if (provider === "gemini") {
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-pro",
+        response_format: { type: "json_object" },
+        temperature,
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      }),
+    });
+    if (!res.ok) throw new Error(`gemini gateway ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+    const payload = await res.json();
+    return payload?.choices?.[0]?.message?.content ?? "";
+  }
+
+  if (provider === "gpt") {
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+    const model = Deno.env.get("WRITE_STORY_GPT_MODEL") || "openai/gpt-5";
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        response_format: { type: "json_object" },
+        temperature,
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      }),
+    });
+    if (!res.ok) throw new Error(`gpt gateway ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+    const payload = await res.json();
+    return payload?.choices?.[0]?.message?.content ?? "";
+  }
+
+  if (provider === "claude") {
+    const proxyBase = Deno.env.get("WRITER_CLAUDE_BASE_URL");
+    const proxyKey = Deno.env.get("WRITER_CLAUDE_API_KEY");
+    if (proxyBase && proxyKey) {
+      const model = Deno.env.get("WRITER_CLAUDE_MODEL") || "claude-sonnet-4-6";
+      const res = await fetch(proxyBase, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${proxyKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          response_format: { type: "json_object" },
+          temperature,
+          messages: [{ role: "system", content: system }, { role: "user", content: user }],
+        }),
+      });
+      if (!res.ok) throw new Error(`claude proxy ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+      const payload = await res.json();
+      return payload?.choices?.[0]?.message?.content ?? "";
+    }
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (anthropicKey) {
+      const model = Deno.env.get("WRITER_CLAUDE_MODEL") || "claude-sonnet-4-6";
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 8000,
+          temperature,
+          system,
+          messages: [{ role: "user", content: user }],
+        }),
+      });
+      if (!res.ok) throw new Error(`claude native ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+      const payload = await res.json();
+      const blocks = Array.isArray(payload?.content) ? payload.content : [];
+      const txt = blocks.map((b: any) => (typeof b?.text === "string" ? b.text : "")).join("");
+      return txt;
+    }
+    throw new Error("claude provider not configured");
+  }
+
+  throw new Error(`unknown provider: ${provider}`);
+}
+
+// ---------------------------------------------------------------------------
 // Candidate generation
 // ---------------------------------------------------------------------------
 
 async function generateCandidate(opts: {
-  apiKey: string;
+  provider?: Provider;
   systemPrompt: string;
   userPrompt: string;
   target: { targetPages: number; maxSentences: number };
   angle: string;
   temperature: number;
 }): Promise<any | null> {
-  const { apiKey, systemPrompt, userPrompt, target, angle, temperature } = opts;
+  const { systemPrompt, userPrompt, target, angle, temperature } = opts;
+  const provider: Provider =
+    opts.provider ?? ((Deno.env.get("WRITE_STORY_MODEL") as Provider) || "gemini");
   const fullUserPrompt =
     userPrompt +
     "\n\nANGLE FOR THIS DRAFT (make it genuinely distinct from other drafts): " +
@@ -163,36 +263,15 @@ async function generateCandidate(opts: {
   let lastError = "";
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
-          response_format: { type: "json_object" },
-          temperature,
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content:
-                fullUserPrompt +
-                (lastError
-                  ? `\n\nPrevious attempt failed validation: ${lastError}. Please fix and return strict JSON.`
-                  : ""),
-            },
-          ],
-        }),
+      const raw = await callModel(provider, {
+        system: systemPrompt,
+        user:
+          fullUserPrompt +
+          (lastError
+            ? `\n\nPrevious attempt failed validation: ${lastError}. Please fix and return strict JSON.`
+            : ""),
+        temperature,
       });
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        console.warn(`write-story candidate fetch !ok status=${res.status} body=${text.slice(0, 200)}`);
-        return null;
-      }
-      const payload = await res.json();
-      const raw: string = payload?.choices?.[0]?.message?.content ?? "";
       let parsed: any;
       try { parsed = extractJson(raw); } catch (e) {
         lastError = `invalid JSON: ${(e as Error).message}`;
@@ -205,7 +284,7 @@ async function generateCandidate(opts: {
       }
       return check.data;
     } catch (e: any) {
-      console.warn("write-story candidate error:", e?.message ?? e);
+      console.warn(`write-story candidate error (${provider}):`, e?.message ?? e);
       return null;
     }
   }
@@ -510,24 +589,47 @@ serve(async (req) => {
       (child_details.match(/^([A-Z][a-zA-Z'\-]+)/)?.[1] ?? "");
     const comfortObject = (favorites?.match(/\b(teddy|blanket|bunny|bear|doll|dinosaur|truck|book)\b/i)?.[1]) ?? "";
 
-    // -------- generate N candidates in parallel --------
+    // -------- generate candidates (best-of-N or bake-off) --------
+    const bakeoff =
+      Deno.env.get("WRITE_STORY_BAKEOFF") === "true" || body?.bakeoff === true;
+    const defaultProvider: Provider =
+      (Deno.env.get("WRITE_STORY_MODEL") as Provider) || "gemini";
+
     const startedAt = Date.now();
-    const angles = pickAngles(CANDIDATE_COUNT);
+
+    type CandidatePlan = { provider: Provider; angle: string; temperature: number };
+    let plan: CandidatePlan[];
+    if (bakeoff) {
+      const neutralAngle =
+        "Write your strongest possible version against the system rules. No special angle bias.";
+      plan = (["gemini", "gpt", "claude"] as Provider[]).map((p) => ({
+        provider: p,
+        angle: neutralAngle,
+        temperature: 0.8,
+      }));
+    } else {
+      plan = pickAngles(CANDIDATE_COUNT).map((a) => ({
+        provider: defaultProvider,
+        angle: a.angle,
+        temperature: a.temperature,
+      }));
+    }
+
     const generation = Promise.allSettled(
-      angles.map((a) =>
+      plan.map((p) =>
         withTimeout(
           generateCandidate({
-            apiKey: LOVABLE_API_KEY,
+            provider: p.provider,
             systemPrompt: systemWithRhyme,
             userPrompt,
             target,
-            angle: a.angle,
-            temperature: a.temperature,
+            angle: p.angle,
+            temperature: p.temperature,
           }),
           PER_CANDIDATE_TIMEOUT_MS,
-          "candidate",
+          `candidate:${p.provider}`,
         ).catch((e) => {
-          console.warn("candidate timeout/err:", e?.message ?? e);
+          console.warn(`candidate ${p.provider} timeout/err:`, e?.message ?? e);
           return null;
         }),
       ),
@@ -541,53 +643,60 @@ serve(async (req) => {
       settled = [];
     }
 
-    let survivors: any[] = settled
-      .map((r) => (r.status === "fulfilled" ? r.value : null))
-      .filter((v): v is any => !!v)
-      .map((s) => normalizeCandidate(s));
+    type Survivor = { story: any; provider: Provider };
+    let survivors: Survivor[] = settled
+      .map((r, i) => {
+        const story = r.status === "fulfilled" ? r.value : null;
+        if (!story) return null;
+        return { story: normalizeCandidate(story), provider: plan[i].provider };
+      })
+      .filter((v): v is Survivor => !!v);
 
     if (survivors.length === 0) {
       return errorResponse("Story generation failed validation after retries", 502);
     }
 
-    // Top up to >=2 with one sequential extra if needed.
-    if (survivors.length < 2 && CANDIDATE_COUNT > 1) {
-      const a = angles[survivors.length % angles.length];
+    // Top up to >=2 with one sequential extra if needed (best-of-N mode only).
+    if (!bakeoff && survivors.length < 2 && CANDIDATE_COUNT > 1) {
+      const a = pickAngles(CANDIDATE_COUNT)[survivors.length % CANDIDATE_COUNT];
       const extra = await generateCandidate({
-        apiKey: LOVABLE_API_KEY,
+        provider: defaultProvider,
         systemPrompt: systemWithRhyme,
         userPrompt,
         target,
         angle: a.angle,
         temperature: a.temperature,
       }).catch(() => null);
-      if (extra) survivors.push(normalizeCandidate(extra));
+      if (extra) survivors.push({ story: normalizeCandidate(extra), provider: defaultProvider });
     }
 
     let winningStory: any;
     let selection: Selection;
     let rhymeFallback = false;
 
+    const survivorStories = () => survivors.map((s) => s.story);
+
     if (survivors.length === 1) {
-      winningStory = survivors[0];
+      winningStory = survivors[0].story;
       selection = { winnerIndex: 0, selectedBy: "judge" };
     } else {
       const judge = await judgeCandidates({
         apiKey: LOVABLE_API_KEY,
-        candidates: survivors,
+        candidates: survivorStories(),
         ageBand: target.ageBand,
         rhymeOn,
         childContext,
       });
 
       // Rhyme-all-forced special case: re-run ONE more round with rhyme OFF.
-      if (rhymeOn && judge && allFailedOnlyByForcedRhyme(judge)) {
+      if (rhymeOn && judge && allFailedOnlyByForcedRhyme(judge) && !bakeoff) {
         console.log("write-story: all candidates failed only on forced_rhyme; running prose fallback round");
+        const proseAngles = pickAngles(CANDIDATE_COUNT);
         const proseSettled = await Promise.allSettled(
-          angles.map((a) =>
+          proseAngles.map((a) =>
             withTimeout(
               generateCandidate({
-                apiKey: LOVABLE_API_KEY,
+                provider: defaultProvider,
                 systemPrompt: baseSystem,
                 userPrompt,
                 target,
@@ -599,10 +708,10 @@ serve(async (req) => {
             ).catch(() => null),
           ),
         );
-        const proseSurvivors: any[] = proseSettled
+        const proseSurvivors: Survivor[] = proseSettled
           .map((r) => (r.status === "fulfilled" ? r.value : null))
           .filter((v): v is any => !!v)
-          .map((s) => normalizeCandidate(s));
+          .map((s) => ({ story: normalizeCandidate(s), provider: defaultProvider }));
         if (proseSurvivors.length > 0) {
           rhymeFallback = true;
           survivors = proseSurvivors;
@@ -610,28 +719,27 @@ serve(async (req) => {
             proseSurvivors.length > 1
               ? await judgeCandidates({
                   apiKey: LOVABLE_API_KEY,
-                  candidates: proseSurvivors,
+                  candidates: proseSurvivors.map((s) => s.story),
                   ageBand: target.ageBand,
                   rhymeOn: false,
                   childContext,
                 })
               : null;
-          selection = selectWinner(proseSurvivors, proseJudge, false, {
+          selection = selectWinner(proseSurvivors.map((s) => s.story), proseJudge, false, {
             childName, namedPeople: castArr, comfortObject, rhymeOn: false, maxSentences: target.maxSentences,
           });
-          winningStory = proseSurvivors[selection.winnerIndex];
+          winningStory = proseSurvivors[selection.winnerIndex].story;
         } else {
-          // fall back to original survivors via standard selection
-          selection = selectWinner(survivors, judge, rhymeOn, {
+          selection = selectWinner(survivorStories(), judge, rhymeOn, {
             childName, namedPeople: castArr, comfortObject, rhymeOn, maxSentences: target.maxSentences,
           });
-          winningStory = survivors[selection.winnerIndex];
+          winningStory = survivors[selection.winnerIndex].story;
         }
       } else {
-        selection = selectWinner(survivors, judge, rhymeOn, {
+        selection = selectWinner(survivorStories(), judge, rhymeOn, {
           childName, namedPeople: castArr, comfortObject, rhymeOn, maxSentences: target.maxSentences,
         });
-        winningStory = survivors[selection.winnerIndex];
+        winningStory = survivors[selection.winnerIndex].story;
       }
     }
 
@@ -640,14 +748,15 @@ serve(async (req) => {
 
     const elapsedMs = Date.now() - startedAt;
     console.log(
-      `write-story best-of-N: ms=${elapsedMs} survivors=${survivors.length} selected_by=${selection.selectedBy} winner_index=${selection.winnerIndex} rhyme_fallback=${rhymeFallback}`,
+      `write-story ${bakeoff ? "bakeoff" : "best-of-N"}: ms=${elapsedMs} survivors=${survivors.length} selected_by=${selection.selectedBy} winner_index=${selection.winnerIndex} winner_model=${survivors[selection.winnerIndex]?.provider} rhyme_fallback=${rhymeFallback}`,
     );
 
     // Build audit payload (small).
     const judgeArr = selection.judge ?? null;
-    const auditCandidates = survivors.map((c) => ({
-      title: c?.title ?? "",
-      page_texts: (c?.pages ?? []).map((p: any) => String(p?.page_text ?? "")),
+    const auditCandidates = survivors.map((s) => ({
+      model: s.provider,
+      title: s.story?.title ?? "",
+      page_texts: (s.story?.pages ?? []).map((p: any) => String(p?.page_text ?? "")),
     }));
     const auditJudge = judgeArr
       ? {
@@ -658,8 +767,10 @@ serve(async (req) => {
       : null;
 
     const auditPayload = {
+      mode: bakeoff ? "bakeoff" : "best_of_n",
       n: survivors.length,
       winner_index: selection.winnerIndex,
+      winner_model: survivors[selection.winnerIndex]?.provider ?? null,
       selected_by: selection.selectedBy,
       rhyme_fallback: rhymeFallback,
       judge: auditJudge,
@@ -667,6 +778,7 @@ serve(async (req) => {
       merged: false,
       elapsed_ms: elapsedMs,
     };
+
 
     if (bookId) {
       const { error: persistErr } = await admin
