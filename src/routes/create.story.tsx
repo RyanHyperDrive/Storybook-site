@@ -144,6 +144,8 @@ function StoryStep() {
       prompt,
       details_include: detailsInclude,
       dedication,
+      lesson,
+      rhyme,
       guardian_consent: consent as true,
     });
     if (!parsed.success) {
@@ -168,6 +170,8 @@ function StoryStep() {
         story_prompt: prompt,
         details_include: detailsInclude || null,
         dedication: dedication || null,
+        story_lesson: lesson || null,
+        rhyme,
         reading_level: derivedReadingLevel,
         guardian_consent_at: new Date().toISOString(),
       })
