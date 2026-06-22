@@ -262,7 +262,16 @@ Silently reread every page and fix any violation before returning JSON:
 (9) Is every object called by its plain true name matching its scene_description (no renaming a real thing into another thing/creature)?
 (10) Is there at most one honest, performable sound per page that the action actually makes (no stacked/invented/action-word sounds, no more than 3 repeats)?
 (11) Does the child-character only say one or two real toddler words (no full sentences or announced plans)?
-Return JSON only after all eleven are clean.`;
+(12) Did I reuse the exemplar's object, situation, structure, or teaching device? If yes, rebuild with a different shape.
+(13) Could this book be any other child's? If yes, add a specific named detail.
+(14) Did I choose a deliberate story shape, not just default to problem-then-fix?
+Return JSON only after all fourteen are clean.
+
+================  GOLD EXEMPLAR (study the craft, do NOT copy the matter)  ================
+
+${EXEMPLAR_INTRO}${t.ageBand === "2-3" ? "\n\n" + EXEMPLAR_INTRO_2_3_EXTRA : ""}
+
+${getGoldExemplarFor(t.ageBand)}`;
 }
 
 export function validateStory(
