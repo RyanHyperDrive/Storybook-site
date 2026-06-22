@@ -290,7 +290,7 @@ function StoryStep() {
                   maxLength={400}
                   value={detailsInclude}
                   onChange={(e) => { setDetailsInclude(e.target.value); persistLocal({ detailsInclude: e.target.value }); }}
-                  placeholder="Grandma Rose, our cabin by the lake, the red rain boots."
+                  placeholder="e.g. her one-eared bunny named Flop; he roars like a dinosaur before breakfast; our cat Pickle."
                 />
               </div>
 
