@@ -29,6 +29,7 @@ import {
   READING_LEVEL_TARGETS,
   buildSystemPrompt,
   validateStory,
+  RHYME_MODULE,
 } from "../_shared/story.ts";
 
 function buildUserPrompt(input: {
@@ -37,6 +38,7 @@ function buildUserPrompt(input: {
   favorites?: string;
   avoid?: string;
   cast?: string[];
+  lesson?: string;
 }): string {
   const cast = (input.cast ?? []).filter(Boolean);
   return [
@@ -47,6 +49,7 @@ function buildUserPrompt(input: {
       : "",
     `Favorite details to include: ${input.favorites?.trim() || "(none provided)"}`,
     `Details to avoid: ${input.avoid?.trim() || "(none provided)"}`,
+    `Lesson to gently teach (this is the HIDDEN emotional spine; show it through the child's specific feelings and one planted action that resolves it; NEVER name it, moralize, or break frame; and if the story subject above already states this lesson, do NOT also state it on the surface, keep it buried): ${input.lesson?.trim() || "(none provided)"}`,
     "",
     "Write the storybook now. Return strict JSON only.",
   ].filter(Boolean).join("\n");
@@ -59,7 +62,7 @@ serve(async (req) => {
   try {
     const { user, admin } = await requireUser(req);
     const body = await req.json();
-    const { theme, child_details, favorites, avoid, bookId, reading_level, cast } = body ?? {};
+    const { theme, child_details, favorites, avoid, bookId, reading_level, cast, lesson, rhyme } = body ?? {};
 
     if (typeof theme !== "string" || !theme.trim()) return errorResponse("theme is required");
     if (typeof child_details !== "string" || !child_details.trim()) {
@@ -85,8 +88,17 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
-    const userPrompt = buildUserPrompt({ theme, child_details, favorites, avoid, cast: Array.isArray(cast) ? cast : [] });
-    const SYSTEM_PROMPT = buildSystemPrompt(target);
+    const userPrompt = buildUserPrompt({
+      theme,
+      child_details,
+      favorites,
+      avoid,
+      cast: Array.isArray(cast) ? cast : [],
+      lesson: typeof lesson === "string" ? lesson : "",
+    });
+    const SYSTEM_PROMPT = rhyme === true
+      ? buildSystemPrompt(target) + "\n\n" + RHYME_MODULE
+      : buildSystemPrompt(target);
 
     // Try up to 2 times if the model returns invalid JSON / wrong page count.
     let lastError = "";

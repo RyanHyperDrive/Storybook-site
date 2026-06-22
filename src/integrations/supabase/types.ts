@@ -93,8 +93,10 @@ export type Database = {
           is_twins: boolean
           page_count: number | null
           reading_level: string | null
+          rhyme: boolean
           status: string
           story_json: Json | null
+          story_lesson: string | null
           story_prompt: string | null
           story_review: Json | null
           story_theme: string | null
@@ -122,8 +124,10 @@ export type Database = {
           is_twins?: boolean
           page_count?: number | null
           reading_level?: string | null
+          rhyme?: boolean
           status?: string
           story_json?: Json | null
+          story_lesson?: string | null
           story_prompt?: string | null
           story_review?: Json | null
           story_theme?: string | null
@@ -151,8 +155,10 @@ export type Database = {
           is_twins?: boolean
           page_count?: number | null
           reading_level?: string | null
+          rhyme?: boolean
           status?: string
           story_json?: Json | null
+          story_lesson?: string | null
           story_prompt?: string | null
           story_review?: Json | null
           story_theme?: string | null

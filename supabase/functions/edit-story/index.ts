@@ -101,8 +101,8 @@ function arr(v: unknown): any[] {
   return Array.isArray(v) ? v : [];
 }
 
-function buildCritiqueSystemPrompt(ageBand: string): string {
-  return `You are a senior children's book editor critiquing a finished story manuscript intended for ages ${ageBand}. Read the WHOLE story (all pages + the story_spine) and judge it against this craft bar exactly as a great picture-book editor would, page by page, with quote-level findings.
+function buildCritiqueSystemPrompt(ageBand: string, rhyme: boolean): string {
+  const base = `You are a senior children's book editor critiquing a finished story manuscript intended for ages ${ageBand}. Read the WHOLE story (all pages + the story_spine) and judge it against this craft bar exactly as a great picture-book editor would, page by page, with quote-level findings.
 
 THE BAR (judge strictly against each):
 1. ONE CLEAR CHILD-SIZED PROBLEM, set up early and kept as the spine of every page. No scenic tour with a problem bolted on at the end.
@@ -153,7 +153,8 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
     "object_renaming": false,
     "onomatopoeia_salad": false,
     "age_inappropriate_dialogue": false,
-    "picture_text_contradiction": false
+    "picture_text_contradiction": false,
+    "forced_rhyme": false
   },
   "declared_problem": "",
   "declared_magic_rule": "",
@@ -167,7 +168,7 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
 
 Scoring rules:
 - All scores are floats from 0.0 to 1.0 against THIS bar (not a generic "is it cute?" standard).
-- Set flags.has_magic to true if any magical effect appears anywhere. Set flags.has_parent_lesson to true if the inputs include a parent situation/lesson to weave.
+- Set flags.has_magic to true if any magical effect appears anywhere. Set flags.has_parent_lesson to true if a dedicated "Lesson to weave" was provided (not merely a situation).
 - page_findings: include only pages with real issues; each finding cites the offending quote and gives a concrete, page-addressed fix instruction (what to add/cut/rewrite, never a vague "make it better").
 - Hard-fail flags (set to true when the corresponding craft violation is present anywhere): em_dash_present, stated_moral_or_label_present, physical_impossibility_present, state_contradiction_present, deus_ex_machina_present, unruled_magic_present, filler_page_present, dangling_introduction_present, object_renaming, onomatopoeia_salad, age_inappropriate_dialogue, picture_text_contradiction.
 - needs_rewrite is your own verdict; the server will recompute it from the scores and flags.
@@ -181,16 +182,21 @@ CLARITY AND SENSE BAR (apply with extra strictness for the ages_2_3 band and any
 (4) READ-ALOUD SENSE: no line may need a second read or a decoded conceit to parse; score read_aloud_sense accordingly.
 (5) WARMTH (do NOT over-correct into cold inventory): a page must still be warm and read-aloud-lovely with rhythm, a refrain, or tender narration and 2-4 short sentences. Score read_aloud_warmth below 0.7 for a bare, cold inventory line ('Next, the blocks. Then the soft toys.') even if perfectly literal, and require a rewrite for warmth.
 ANY hard flag (object_renaming, onomatopoeia_salad, age_inappropriate_dialogue, picture_text_contradiction) is an automatic page failure; do not return accepted or accepted_with_warnings while a hard flag is open. If your output cannot be produced as valid JSON, retry until it is valid rather than emitting a malformed or empty review.`;
+  const rhymeBar = rhyme
+    ? `\n\nThis book is in RHYME MODE. Also score whether the rhyme is natural and singable, and FLAG forced_rhyme for any line whose rhyme distorts meaning, grammar, word order, or renames/invents a word. A page written in clear prose under rhyme mode is ACCEPTABLE (the allowed fallback) and must NOT be flagged as a failure to rhyme.`
+    : "";
+  return base + rhymeBar;
 }
 
 function buildRewriteSystemPrompt(ageBand: string, targetPages: number, sentencesPerPage: string): string {
   return `You are a children's story editor. You will receive the full story JSON and a critique with page-addressed findings. Rewrite ONLY what the findings flag; preserve everything that works. KEEP THE EXACT SAME JSON SCHEMA, the same number of pages (${targetPages}), the same per-page sentence range (${sentencesPerPage}), the same age band (${ageBand}), the same story_spine object, the per-page "beat" field, and the no-em-dash rule (never use —, –, or --). Return the full corrected story JSON, strict JSON only — no markdown, no commentary.`;
 }
 
-function recompose(story: any, parentSituation: string, childDetails: string, favorites: string, avoid: string): string {
+function recompose(story: any, parentSituation: string, lesson: string, childDetails: string, favorites: string, avoid: string): string {
   return [
     `Child / main character: ${childDetails || "(none)"}`,
-    `Parent situation / lesson to weave (NEVER name it, weave it as the hidden emotional spine): ${parentSituation || "(none provided)"}`,
+    `Parent situation (background context, weave naturally): ${parentSituation || "(none provided)"}`,
+    `Lesson to weave (never name it, and never restate it as both subject and takeaway): ${lesson?.trim() || "(none)"}`,
     `Favorites to include: ${favorites || "(none)"}`,
     `Things to avoid: ${avoid || "(none)"}`,
     "",
@@ -213,16 +219,19 @@ function emDashSweep(story: any): boolean {
   return false;
 }
 
-function validateCritique(raw: any, story: any): { critique: any } {
+function validateCritique(raw: any, story: any, opts: { hasLesson: boolean; rhyme: boolean }): { critique: any } {
   const c: any = raw && typeof raw === "object" ? { ...raw } : {};
   const scoresIn = c.scores && typeof c.scores === "object" ? c.scores : {};
   const scores: Record<string, number> = {};
   for (const k of SCORE_KEYS) scores[k] = clamp01(scoresIn[k], 0);
 
   const flagsIn = c.flags && typeof c.flags === "object" ? c.flags : {};
+  // has_parent_lesson is driven by the SERVER (whether a lesson param was
+  // provided), never trusted from the model. has_magic still comes from the model.
   const flags: Record<string, boolean> = {
     has_magic: Boolean(flagsIn.has_magic),
-    has_parent_lesson: Boolean(flagsIn.has_parent_lesson),
+    has_parent_lesson: opts.hasLesson === true,
+    forced_rhyme: Boolean(flagsIn.forced_rhyme),
   };
   for (const f of HARD_FAIL_FLAGS) flags[f] = Boolean(flagsIn[f]);
 
@@ -231,7 +240,8 @@ function validateCritique(raw: any, story: any): { critique: any } {
     scores.magic_rule_consistency = 1.0;
     flags.unruled_magic_present = false;
   }
-  // If no parent lesson to weave, force lesson_woven clean.
+  // If no parent lesson to weave, force lesson_woven clean — books with no
+  // lesson are never penalized.
   if (!flags.has_parent_lesson) {
     scores.lesson_woven = 1.0;
   }
@@ -254,6 +264,11 @@ function validateCritique(raw: any, story: any): { critique: any } {
       needs_rewrite = true;
       failingFlags.push(f);
     }
+  }
+  // forced_rhyme is a hard-fail only when rhyme mode is ON.
+  if (opts.rhyme && flags.forced_rhyme) {
+    needs_rewrite = true;
+    failingFlags.push("forced_rhyme");
   }
 
   const overall = SCORE_KEYS.reduce((s, k) => s + scores[k], 0) / SCORE_KEYS.length;
@@ -384,6 +399,8 @@ serve(async (req) => {
       favorites,
       avoid,
       parent_situation,
+      lesson,
+      rhyme,
       // cast is accepted for signature parity with write-story but the editor
       // only critiques/rewrites the already-written story.
     } = body ?? {};
@@ -408,10 +425,14 @@ serve(async (req) => {
     const ageBand = getAgeBand(lvl);
     const maxSentences = target.maxSentences;
 
+    const lessonStr = typeof lesson === "string" ? lesson : "";
+    const rhymeOn = rhyme === true;
+    const hasLesson = lessonStr.trim().length > 0;
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return errorResponse("LOVABLE_API_KEY not configured", 500);
 
-    const critiqueSystem = buildCritiqueSystemPrompt(ageBand);
+    const critiqueSystem = buildCritiqueSystemPrompt(ageBand, rhymeOn);
     const rewriteSystem = buildRewriteSystemPrompt(ageBand, target.targetPages, target.sentencesPerPage);
 
     let lastGoodStory: any = story;
@@ -426,18 +447,21 @@ serve(async (req) => {
       const userPrompt = recompose(
         lastGoodStory,
         String(parent_situation ?? ""),
+        lessonStr,
         String(child_details ?? ""),
         String(favorites ?? ""),
         String(avoid ?? ""),
       );
       const rawCritique = await callGateway(critiqueSystem, userPrompt, LOVABLE_API_KEY, "critique");
-      finalCritique = validateCritique(rawCritique, lastGoodStory).critique;
+      finalCritique = validateCritique(rawCritique, lastGoodStory, { hasLesson, rhyme: rhymeOn }).critique;
 
       while (finalCritique.needs_rewrite && passes < MAX_EDITOR_PASSES) {
         passes += 1;
         const rewriteUser = [
           `Age band: ${ageBand}. Pages: ${target.targetPages}. Sentences per page: ${target.sentencesPerPage}.`,
           `Parent situation (weave naturally, never name): ${String(parent_situation ?? "") || "(none)"}`,
+          `Lesson to weave (never name it, and never restate it as both subject and takeaway): ${lessonStr || "(none)"}`,
+          rhymeOn ? "RHYME MODE IS ON. Keep clarity above rhyme; prose fallback is allowed." : "",
           `Favorites to include: ${String(favorites ?? "") || "(none)"}`,
           `Things to avoid: ${String(avoid ?? "") || "(none)"}`,
           "",
@@ -455,7 +479,7 @@ serve(async (req) => {
           "",
           "CURRENT STORY JSON (rewrite this and return the FULL corrected story JSON):",
           JSON.stringify(lastGoodStory, null, 2),
-        ].join("\n");
+        ].filter(Boolean).join("\n");
 
         let rewritten: any;
         try {
@@ -479,6 +503,7 @@ serve(async (req) => {
             recompose(
               lastGoodStory,
               String(parent_situation ?? ""),
+              lessonStr,
               String(child_details ?? ""),
               String(favorites ?? ""),
               String(avoid ?? ""),
@@ -486,7 +511,7 @@ serve(async (req) => {
             LOVABLE_API_KEY,
             "re-critique",
           );
-          finalCritique = validateCritique(nextRaw, lastGoodStory).critique;
+          finalCritique = validateCritique(nextRaw, lastGoodStory, { hasLesson, rhyme: rhymeOn }).critique;
         } catch (e) {
           console.warn("edit-story re-critique gateway error, accepting current story:", (e as Error).message);
           break;

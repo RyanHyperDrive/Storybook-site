@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, ArrowRight, ChevronDown, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { storySchema, readingLevelForAge, THEMES } from "@/lib/create-schema";
@@ -30,6 +31,8 @@ function StoryStep() {
   const [prompt, setPrompt] = useState("");
   const [detailsInclude, setDetailsInclude] = useState("");
   const [dedication, setDedication] = useState("");
+  const [lesson, setLesson] = useState("");
+  const [rhyme, setRhyme] = useState(false);
   const [childAge, setChildAge] = useState<number | null>(null);
   const [consent, setConsent] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -71,6 +74,8 @@ function StoryStep() {
       if (s.prompt) setPrompt(s.prompt);
       if (s.detailsInclude) setDetailsInclude(s.detailsInclude);
       if (s.dedication) setDedication(s.dedication);
+      if (typeof s.lesson === "string") setLesson(s.lesson);
+      if (typeof s.rhyme === "boolean") setRhyme(s.rhyme);
       if (s.consent) setConsent(true);
       if (s.theme || s.detailsInclude || s.dedication) setMoreOpen(true);
     } catch {
@@ -92,6 +97,8 @@ function StoryStep() {
         if (data.story_prompt) setPrompt(data.story_prompt);
         if (data.details_include) setDetailsInclude(data.details_include);
         if (data.dedication) setDedication(data.dedication);
+        if (typeof data.story_lesson === "string") setLesson(data.story_lesson);
+        if (typeof data.rhyme === "boolean") setRhyme(data.rhyme);
         if (typeof data.child_age === "number") setChildAge(data.child_age);
         if (data.guardian_consent_at) setConsent(true);
         if (data.story_theme || data.details_include || data.dedication) setMoreOpen(true);
@@ -103,6 +110,8 @@ function StoryStep() {
     prompt: string;
     detailsInclude: string;
     dedication: string;
+    lesson: string;
+    rhyme: boolean;
     consent: boolean;
   }>) {
     if (typeof window === "undefined") return;
@@ -111,6 +120,8 @@ function StoryStep() {
       prompt,
       detailsInclude,
       dedication,
+      lesson,
+      rhyme,
       consent,
       ...next,
     };
@@ -133,6 +144,8 @@ function StoryStep() {
       prompt,
       details_include: detailsInclude,
       dedication,
+      lesson,
+      rhyme,
       guardian_consent: consent as true,
     });
     if (!parsed.success) {
@@ -157,6 +170,8 @@ function StoryStep() {
         story_prompt: prompt,
         details_include: detailsInclude || null,
         dedication: dedication || null,
+        story_lesson: lesson || null,
+        rhyme,
         reading_level: derivedReadingLevel,
         guardian_consent_at: new Date().toISOString(),
       })
@@ -192,12 +207,47 @@ function StoryStep() {
             maxLength={800}
             value={prompt}
             onChange={(e) => { setPrompt(e.target.value); persistLocal({ prompt: e.target.value }); }}
-            placeholder="They've been nervous about kindergarten. We'd love a story where they discover a kind classmate."
+            placeholder="e.g. Maya just got a baby brother and feels a bit left out. Her favorite person is Grandpa Joe."
           />
           <p className="mt-1 text-xs text-muted-foreground">
             A theme, a real situation, or a lesson to weave in — like "nervous about starting kindergarten," "had a rough day and needs a confidence boost," or "learning to share with the new baby." Leave it blank and we'll surprise them.
           </p>
         </div>
+
+        <div>
+          <Label htmlFor="lesson">Something to gently teach? (optional)</Label>
+          <Textarea
+            id="lesson"
+            rows={2}
+            maxLength={200}
+            value={lesson}
+            onChange={(e) => { setLesson(e.target.value); persistLocal({ lesson: e.target.value }); }}
+            placeholder="e.g. sharing with the new baby; being brave at the doctor."
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Like sharing with the new baby, or being brave at the doctor. We'll weave it in softly, never preachy. Leave blank to skip.
+          </p>
+        </div>
+
+        <div className="rounded-md border border-border bg-paper/40 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <Label htmlFor="rhyme" className="text-sm font-semibold">Make it rhyme</Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {rhyme
+                  ? "We'll rhyme wherever it stays clear and never force a line."
+                  : "A bouncy, rhyming read-aloud. Off = a gentle storybook voice."}
+              </p>
+            </div>
+            <Switch
+              id="rhyme"
+              checked={rhyme}
+              onCheckedChange={(v) => { setRhyme(v); persistLocal({ rhyme: v }); }}
+              aria-label="Make it rhyme"
+            />
+          </div>
+        </div>
+
 
         <div className="rounded-md border border-border bg-paper/40">
           <button
@@ -240,7 +290,7 @@ function StoryStep() {
                   maxLength={400}
                   value={detailsInclude}
                   onChange={(e) => { setDetailsInclude(e.target.value); persistLocal({ detailsInclude: e.target.value }); }}
-                  placeholder="Grandma Rose, our cabin by the lake, the red rain boots."
+                  placeholder="e.g. her one-eared bunny named Flop; he roars like a dinosaur before breakfast; our cat Pickle."
                 />
               </div>
 
