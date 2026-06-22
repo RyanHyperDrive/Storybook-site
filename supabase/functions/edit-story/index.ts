@@ -101,8 +101,8 @@ function arr(v: unknown): any[] {
   return Array.isArray(v) ? v : [];
 }
 
-function buildCritiqueSystemPrompt(ageBand: string): string {
-  return `You are a senior children's book editor critiquing a finished story manuscript intended for ages ${ageBand}. Read the WHOLE story (all pages + the story_spine) and judge it against this craft bar exactly as a great picture-book editor would, page by page, with quote-level findings.
+function buildCritiqueSystemPrompt(ageBand: string, rhyme: boolean): string {
+  const base = `You are a senior children's book editor critiquing a finished story manuscript intended for ages ${ageBand}. Read the WHOLE story (all pages + the story_spine) and judge it against this craft bar exactly as a great picture-book editor would, page by page, with quote-level findings.
 
 THE BAR (judge strictly against each):
 1. ONE CLEAR CHILD-SIZED PROBLEM, set up early and kept as the spine of every page. No scenic tour with a problem bolted on at the end.
@@ -153,7 +153,8 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
     "object_renaming": false,
     "onomatopoeia_salad": false,
     "age_inappropriate_dialogue": false,
-    "picture_text_contradiction": false
+    "picture_text_contradiction": false,
+    "forced_rhyme": false
   },
   "declared_problem": "",
   "declared_magic_rule": "",
@@ -167,7 +168,7 @@ Return STRICT JSON only — no markdown, no commentary — matching this schema 
 
 Scoring rules:
 - All scores are floats from 0.0 to 1.0 against THIS bar (not a generic "is it cute?" standard).
-- Set flags.has_magic to true if any magical effect appears anywhere. Set flags.has_parent_lesson to true if the inputs include a parent situation/lesson to weave.
+- Set flags.has_magic to true if any magical effect appears anywhere. Set flags.has_parent_lesson to true if a dedicated "Lesson to weave" was provided (not merely a situation).
 - page_findings: include only pages with real issues; each finding cites the offending quote and gives a concrete, page-addressed fix instruction (what to add/cut/rewrite, never a vague "make it better").
 - Hard-fail flags (set to true when the corresponding craft violation is present anywhere): em_dash_present, stated_moral_or_label_present, physical_impossibility_present, state_contradiction_present, deus_ex_machina_present, unruled_magic_present, filler_page_present, dangling_introduction_present, object_renaming, onomatopoeia_salad, age_inappropriate_dialogue, picture_text_contradiction.
 - needs_rewrite is your own verdict; the server will recompute it from the scores and flags.
@@ -181,6 +182,10 @@ CLARITY AND SENSE BAR (apply with extra strictness for the ages_2_3 band and any
 (4) READ-ALOUD SENSE: no line may need a second read or a decoded conceit to parse; score read_aloud_sense accordingly.
 (5) WARMTH (do NOT over-correct into cold inventory): a page must still be warm and read-aloud-lovely with rhythm, a refrain, or tender narration and 2-4 short sentences. Score read_aloud_warmth below 0.7 for a bare, cold inventory line ('Next, the blocks. Then the soft toys.') even if perfectly literal, and require a rewrite for warmth.
 ANY hard flag (object_renaming, onomatopoeia_salad, age_inappropriate_dialogue, picture_text_contradiction) is an automatic page failure; do not return accepted or accepted_with_warnings while a hard flag is open. If your output cannot be produced as valid JSON, retry until it is valid rather than emitting a malformed or empty review.`;
+  const rhymeBar = rhyme
+    ? `\n\nThis book is in RHYME MODE. Also score whether the rhyme is natural and singable, and FLAG forced_rhyme for any line whose rhyme distorts meaning, grammar, word order, or renames/invents a word. A page written in clear prose under rhyme mode is ACCEPTABLE (the allowed fallback) and must NOT be flagged as a failure to rhyme.`
+    : "";
+  return base + rhymeBar;
 }
 
 function buildRewriteSystemPrompt(ageBand: string, targetPages: number, sentencesPerPage: string): string {
