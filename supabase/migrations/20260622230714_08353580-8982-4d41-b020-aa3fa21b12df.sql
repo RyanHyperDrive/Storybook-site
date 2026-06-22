@@ -1,0 +1,1 @@
+ALTER TABLE public.books ADD COLUMN IF NOT EXISTS story_lesson text; ALTER TABLE public.books ADD COLUMN IF NOT EXISTS rhyme boolean NOT NULL DEFAULT false;
