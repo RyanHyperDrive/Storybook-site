@@ -219,16 +219,19 @@ function emDashSweep(story: any): boolean {
   return false;
 }
 
-function validateCritique(raw: any, story: any): { critique: any } {
+function validateCritique(raw: any, story: any, opts: { hasLesson: boolean; rhyme: boolean }): { critique: any } {
   const c: any = raw && typeof raw === "object" ? { ...raw } : {};
   const scoresIn = c.scores && typeof c.scores === "object" ? c.scores : {};
   const scores: Record<string, number> = {};
   for (const k of SCORE_KEYS) scores[k] = clamp01(scoresIn[k], 0);
 
   const flagsIn = c.flags && typeof c.flags === "object" ? c.flags : {};
+  // has_parent_lesson is driven by the SERVER (whether a lesson param was
+  // provided), never trusted from the model. has_magic still comes from the model.
   const flags: Record<string, boolean> = {
     has_magic: Boolean(flagsIn.has_magic),
-    has_parent_lesson: Boolean(flagsIn.has_parent_lesson),
+    has_parent_lesson: opts.hasLesson === true,
+    forced_rhyme: Boolean(flagsIn.forced_rhyme),
   };
   for (const f of HARD_FAIL_FLAGS) flags[f] = Boolean(flagsIn[f]);
 
@@ -237,7 +240,8 @@ function validateCritique(raw: any, story: any): { critique: any } {
     scores.magic_rule_consistency = 1.0;
     flags.unruled_magic_present = false;
   }
-  // If no parent lesson to weave, force lesson_woven clean.
+  // If no parent lesson to weave, force lesson_woven clean — books with no
+  // lesson are never penalized.
   if (!flags.has_parent_lesson) {
     scores.lesson_woven = 1.0;
   }
