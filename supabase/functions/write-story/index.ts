@@ -229,7 +229,7 @@ async function callModel(
       key = anthropicKey;
     } else {
       base = "https://api.kie.ai/claude";
-      key = kieKey;
+      key = kieKey!;
     }
     const isKie = base.includes("kie.ai");
     const url = base.replace(/\/$/, "") + "/v1/messages";
