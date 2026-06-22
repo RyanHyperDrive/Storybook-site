@@ -211,32 +211,50 @@ async function callModel(
       const payload = await res.json();
       return payload?.choices?.[0]?.message?.content ?? "";
     }
+
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (anthropicKey) {
-      const model = Deno.env.get("WRITER_CLAUDE_MODEL") || "claude-sonnet-4-6";
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": anthropicKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 8000,
-          temperature,
-          system,
-          messages: [{ role: "user", content: user }],
-        }),
-      });
-      if (!res.ok) throw new Error(`claude native ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
-      const payload = await res.json();
-      const blocks = Array.isArray(payload?.content) ? payload.content : [];
-      const txt = blocks.map((b: any) => (typeof b?.text === "string" ? b.text : "")).join("");
-      return txt;
+    const kieKey = Deno.env.get("KIE_API_KEY");
+    if (!anthropicKey && !kieKey) {
+      throw new Error("claude provider not configured");
     }
-    throw new Error("claude provider not configured");
+
+    const explicitBase = Deno.env.get("ANTHROPIC_BASE_URL");
+    let base: string;
+    let key: string;
+    if (explicitBase) {
+      base = explicitBase;
+      key = anthropicKey || kieKey || "";
+    } else if (anthropicKey) {
+      base = "https://api.anthropic.com";
+      key = anthropicKey;
+    } else {
+      base = "https://api.kie.ai/claude";
+      key = kieKey;
+    }
+    const isKie = base.includes("kie.ai");
+    const url = base.replace(/\/$/, "") + "/v1/messages";
+    const model = Deno.env.get("WRITER_CLAUDE_MODEL") || (isKie ? "claude-opus-4-5-20251101" : "claude-sonnet-4-6");
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+        ...(isKie ? { Authorization: `Bearer ${key}` } : { "x-api-key": key }),
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 8000,
+        temperature,
+        system,
+        messages: [{ role: "user", content: user }],
+      }),
+    });
+    if (!res.ok) throw new Error(`claude native ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+    const payload = await res.json();
+    const blocks = Array.isArray(payload?.content) ? payload.content : [];
+    return blocks.map((b: any) => (typeof b?.text === "string" ? b.text : "")).join("");
   }
+
 
   throw new Error(`unknown provider: ${provider}`);
 }
