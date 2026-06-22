@@ -88,6 +88,8 @@ export const PAGE_KEYS = [
 
 export const EM_DASH_RE = /[—–]|--/;
 
+export const RHYME_MODULE = `RHYME MODE IS ON. Write the whole book in rhyme. Choose ONE simple meter and keep it consistent on every page so it reads aloud like a steady heartbeat (couplets AABB or alternating ABCB; keep the same pattern throughout). CLARITY OUTRANKS RHYME, ALWAYS. Never bend a word, invent a meaning, or rename a real thing to make a rhyme land (remember: toy blocks must never become 'sleeping rocks' to force a fit). A tired grandparent must understand every line on the first read. No filler words shoveled in for meter (no empty 'so/very/oh', no padded inversions like 'the toys so bright'); every word earns its place and stays age-true. Keep sound words real. Near-rhymes and unrhymed lines are fine when they protect sense. THE ESCAPE HATCH IS REAL AND ALLOWED: if this particular name, situation, or age cannot be rhymed cleanly and clearly, WRITE IT IN WARM PROSE INSTEAD. Taking the prose fallback is following instructions correctly, not failing them. BAD RHYME IS WORSE THAN NO RHYME. For the youngest band (2-3) the constraint stack is tightest; if clean couplets are not achievable, fall back to prose without hesitation.`;
+
 export const GOLD_EXEMPLAR_2_3 = `Title: "Up We Go, Nell!"
 P1: Morning, Nell. The sun is up. Mama pulls the curtain wide. Warm yellow fills the room. Nell rubs her sleepy eyes.
 P2: On the rug sits a big box. Nell peeks inside. Ooh! Apples, round and red. Nell pats one. Pat, pat.
