@@ -39,6 +39,8 @@ export const storySchema = z.object({
   details_include: z.string().trim().max(400).optional().default(""),
   details_avoid: z.string().trim().max(400).optional().default(""),
   dedication: z.string().trim().max(280).optional().default(""),
+  lesson: z.string().trim().max(200).optional().default(""),
+  rhyme: z.boolean().optional().default(false),
   guardian_consent: z.literal(true, {
     errorMap: () => ({ message: "Please confirm guardian consent to continue" }),
   }),
