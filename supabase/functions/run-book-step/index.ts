@@ -162,11 +162,22 @@ serve(async (req) => {
           await updateJob({ current_step: "story_editing", progress: 38, message: "Story ready." });
           return jsonResponse({ ok: true, skipped: true });
         }
+        const { data: childProfile } = await admin
+          .from("child_profiles")
+          .select("favorite_color, favorite_activities, personality_traits, accessibility_details")
+          .eq("book_id", bookId)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
         const childDetails = [
           book.child_name && `Name: ${book.child_name}`,
           book.child_age != null && `Age: ${book.child_age}`,
           book.child_pronouns && `Pronouns: ${book.child_pronouns}`,
           book.child_loves && `Loves: ${book.child_loves}`,
+          childProfile?.favorite_color && `Favorite color: ${childProfile.favorite_color}`,
+          childProfile?.favorite_activities && `Favorite activities: ${childProfile.favorite_activities}`,
+          childProfile?.personality_traits && `Personality: ${childProfile.personality_traits}`,
+          childProfile?.accessibility_details && `Please respectfully include: ${childProfile.accessibility_details}`,
         ].filter(Boolean).join(". ");
 
         // #5 — constrain the writer's cast to the contract's approved subjects
