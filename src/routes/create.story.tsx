@@ -97,6 +97,8 @@ function StoryStep() {
         if (data.story_prompt) setPrompt(data.story_prompt);
         if (data.details_include) setDetailsInclude(data.details_include);
         if (data.dedication) setDedication(data.dedication);
+        if (typeof data.story_lesson === "string") setLesson(data.story_lesson);
+        if (typeof data.rhyme === "boolean") setRhyme(data.rhyme);
         if (typeof data.child_age === "number") setChildAge(data.child_age);
         if (data.guardian_consent_at) setConsent(true);
         if (data.story_theme || data.details_include || data.dedication) setMoreOpen(true);
