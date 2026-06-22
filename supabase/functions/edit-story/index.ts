@@ -265,6 +265,11 @@ function validateCritique(raw: any, story: any, opts: { hasLesson: boolean; rhym
       failingFlags.push(f);
     }
   }
+  // forced_rhyme is a hard-fail only when rhyme mode is ON.
+  if (opts.rhyme && flags.forced_rhyme) {
+    needs_rewrite = true;
+    failingFlags.push("forced_rhyme");
+  }
 
   const overall = SCORE_KEYS.reduce((s, k) => s + scores[k], 0) / SCORE_KEYS.length;
 
