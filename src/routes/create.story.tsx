@@ -31,6 +31,8 @@ function StoryStep() {
   const [prompt, setPrompt] = useState("");
   const [detailsInclude, setDetailsInclude] = useState("");
   const [dedication, setDedication] = useState("");
+  const [lesson, setLesson] = useState("");
+  const [rhyme, setRhyme] = useState(false);
   const [childAge, setChildAge] = useState<number | null>(null);
   const [consent, setConsent] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
