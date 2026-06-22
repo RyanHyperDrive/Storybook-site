@@ -144,18 +144,118 @@ function buildUserPrompt(input: {
 }
 
 // ---------------------------------------------------------------------------
+// Provider abstraction (multi-model bake-off)
+// ---------------------------------------------------------------------------
+
+type Provider = "gemini" | "gpt" | "claude";
+
+async function callModel(
+  provider: Provider,
+  opts: { system: string; user: string; temperature: number },
+): Promise<string> {
+  const { system, user, temperature } = opts;
+
+  if (provider === "gemini") {
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-pro",
+        response_format: { type: "json_object" },
+        temperature,
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      }),
+    });
+    if (!res.ok) throw new Error(`gemini gateway ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+    const payload = await res.json();
+    return payload?.choices?.[0]?.message?.content ?? "";
+  }
+
+  if (provider === "gpt") {
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+    const model = Deno.env.get("WRITE_STORY_GPT_MODEL") || "openai/gpt-5";
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        response_format: { type: "json_object" },
+        temperature,
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      }),
+    });
+    if (!res.ok) throw new Error(`gpt gateway ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+    const payload = await res.json();
+    return payload?.choices?.[0]?.message?.content ?? "";
+  }
+
+  if (provider === "claude") {
+    const proxyBase = Deno.env.get("WRITER_CLAUDE_BASE_URL");
+    const proxyKey = Deno.env.get("WRITER_CLAUDE_API_KEY");
+    if (proxyBase && proxyKey) {
+      const model = Deno.env.get("WRITER_CLAUDE_MODEL") || "claude-sonnet-4-6";
+      const res = await fetch(proxyBase, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${proxyKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          response_format: { type: "json_object" },
+          temperature,
+          messages: [{ role: "system", content: system }, { role: "user", content: user }],
+        }),
+      });
+      if (!res.ok) throw new Error(`claude proxy ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+      const payload = await res.json();
+      return payload?.choices?.[0]?.message?.content ?? "";
+    }
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (anthropicKey) {
+      const model = Deno.env.get("WRITER_CLAUDE_MODEL") || "claude-sonnet-4-6";
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 8000,
+          temperature,
+          system,
+          messages: [{ role: "user", content: user }],
+        }),
+      });
+      if (!res.ok) throw new Error(`claude native ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+      const payload = await res.json();
+      const blocks = Array.isArray(payload?.content) ? payload.content : [];
+      const txt = blocks.map((b: any) => (typeof b?.text === "string" ? b.text : "")).join("");
+      return txt;
+    }
+    throw new Error("claude provider not configured");
+  }
+
+  throw new Error(`unknown provider: ${provider}`);
+}
+
+// ---------------------------------------------------------------------------
 // Candidate generation
 // ---------------------------------------------------------------------------
 
 async function generateCandidate(opts: {
-  apiKey: string;
+  provider?: Provider;
   systemPrompt: string;
   userPrompt: string;
   target: { targetPages: number; maxSentences: number };
   angle: string;
   temperature: number;
 }): Promise<any | null> {
-  const { apiKey, systemPrompt, userPrompt, target, angle, temperature } = opts;
+  const { systemPrompt, userPrompt, target, angle, temperature } = opts;
+  const provider: Provider =
+    opts.provider ?? ((Deno.env.get("WRITE_STORY_MODEL") as Provider) || "gemini");
   const fullUserPrompt =
     userPrompt +
     "\n\nANGLE FOR THIS DRAFT (make it genuinely distinct from other drafts): " +
@@ -163,36 +263,15 @@ async function generateCandidate(opts: {
   let lastError = "";
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
-          response_format: { type: "json_object" },
-          temperature,
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content:
-                fullUserPrompt +
-                (lastError
-                  ? `\n\nPrevious attempt failed validation: ${lastError}. Please fix and return strict JSON.`
-                  : ""),
-            },
-          ],
-        }),
+      const raw = await callModel(provider, {
+        system: systemPrompt,
+        user:
+          fullUserPrompt +
+          (lastError
+            ? `\n\nPrevious attempt failed validation: ${lastError}. Please fix and return strict JSON.`
+            : ""),
+        temperature,
       });
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        console.warn(`write-story candidate fetch !ok status=${res.status} body=${text.slice(0, 200)}`);
-        return null;
-      }
-      const payload = await res.json();
-      const raw: string = payload?.choices?.[0]?.message?.content ?? "";
       let parsed: any;
       try { parsed = extractJson(raw); } catch (e) {
         lastError = `invalid JSON: ${(e as Error).message}`;
@@ -205,7 +284,7 @@ async function generateCandidate(opts: {
       }
       return check.data;
     } catch (e: any) {
-      console.warn("write-story candidate error:", e?.message ?? e);
+      console.warn(`write-story candidate error (${provider}):`, e?.message ?? e);
       return null;
     }
   }
