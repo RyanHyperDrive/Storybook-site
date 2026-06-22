@@ -110,6 +110,8 @@ function StoryStep() {
     prompt: string;
     detailsInclude: string;
     dedication: string;
+    lesson: string;
+    rhyme: boolean;
     consent: boolean;
   }>) {
     if (typeof window === "undefined") return;
@@ -118,6 +120,8 @@ function StoryStep() {
       prompt,
       detailsInclude,
       dedication,
+      lesson,
+      rhyme,
       consent,
       ...next,
     };
