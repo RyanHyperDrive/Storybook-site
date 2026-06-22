@@ -95,6 +95,7 @@ export type Database = {
           reading_level: string | null
           rhyme: boolean
           status: string
+          story_candidates: Json | null
           story_json: Json | null
           story_lesson: string | null
           story_prompt: string | null
@@ -126,6 +127,7 @@ export type Database = {
           reading_level?: string | null
           rhyme?: boolean
           status?: string
+          story_candidates?: Json | null
           story_json?: Json | null
           story_lesson?: string | null
           story_prompt?: string | null
@@ -157,6 +159,7 @@ export type Database = {
           reading_level?: string | null
           rhyme?: boolean
           status?: string
+          story_candidates?: Json | null
           story_json?: Json | null
           story_lesson?: string | null
           story_prompt?: string | null
