@@ -591,8 +591,11 @@ serve(async (req) => {
       }).eq("id", jobId);
       return jsonResponse({ ok: false, retry: true, error: e?.message ?? "Unexpected error." });
     } finally {
-      // Always release the per-job lock so the next tick can proceed.
-      try { await admin.from("jobs").update({ locked_at: null }).eq("id", jobId); } catch { /* */ }
+      // Release the per-job lock so the next tick can proceed — UNLESS we
+      // handed work off to a background task that still owns the lock.
+      if (!backgrounded) {
+        try { await admin.from("jobs").update({ locked_at: null }).eq("id", jobId); } catch { /* */ }
+      }
     }
 
   } catch (e: any) {
