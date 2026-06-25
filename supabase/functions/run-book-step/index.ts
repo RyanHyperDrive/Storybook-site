@@ -52,14 +52,20 @@ serve(async (req) => {
     }
 
     // ── Per-job lock: only one run-book-step may advance this job at a time.
-    // Stale locks (>120s) are reclaimable so a crashed invocation can't pin it.
-    const staleCutoff = new Date(Date.now() - 120000).toISOString();
+    // Stale locks (>300s) are reclaimable so a crashed invocation can't pin it.
+    // Bumped from 120s because long-running steps (story_writing, story_editing)
+    // now run in the background via EdgeRuntime.waitUntil and can exceed 150s.
+    const staleCutoff = new Date(Date.now() - 300000).toISOString();
     const { data: claim } = await admin.from("jobs")
       .update({ locked_at: new Date().toISOString() })
       .eq("id", jobId)
       .or(`locked_at.is.null,locked_at.lt.${staleCutoff}`)
       .select("id").maybeSingle();
     if (!claim) return jsonResponse({ ok: true, busy: true });
+
+    // When true, the request is handing work off to a background task that
+    // owns the lock; the finally block must NOT clear locked_at.
+    let backgrounded = false;
 
     const bookId = job.book_id as string;
     const { data: book } = await admin.from("books").select("*").eq("id", bookId).maybeSingle();
