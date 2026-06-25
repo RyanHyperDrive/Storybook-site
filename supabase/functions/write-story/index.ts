@@ -183,7 +183,6 @@ async function callModel(
       body: JSON.stringify({
         model,
         response_format: { type: "json_object" },
-        temperature,
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
       }),
     });
