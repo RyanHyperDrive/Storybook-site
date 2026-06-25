@@ -672,7 +672,24 @@ serve(async (req) => {
       .filter((v): v is Survivor => !!v);
 
     if (survivors.length === 0) {
-      return errorResponse("Story generation failed validation after retries", 502);
+      // Last resort: one plain gemini attempt with a generous timeout before giving up.
+      const fb = await withTimeout(
+        generateCandidate({
+          provider: "gemini",
+          systemPrompt: systemWithRhyme,
+          userPrompt,
+          target,
+          angle: "Write your single strongest version against the rules.",
+          temperature: 0.8,
+        }),
+        PER_CANDIDATE_TIMEOUT_MS,
+        "fallback-candidate",
+      ).catch(() => null);
+      if (fb) {
+        survivors = [{ story: normalizeCandidate(fb), provider: "gemini" }];
+      } else {
+        return errorResponse("Story generation failed validation after retries", 502);
+      }
     }
 
     // Top up to >=2 with one sequential extra if needed (best-of-N mode only).
