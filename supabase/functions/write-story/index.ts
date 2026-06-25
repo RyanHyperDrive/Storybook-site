@@ -607,7 +607,7 @@ serve(async (req) => {
     const comfortObject = (favorites?.match(/\b(teddy|blanket|bunny|bear|doll|dinosaur|truck|book)\b/i)?.[1]) ?? "";
 
     // -------- generate candidates (best-of-N or bake-off) --------
-    const BAKEOFF_FORCED_ON = true; // TEMP: bake-off testing — set back to false to return to normal single-model best-of-N
+    const BAKEOFF_FORCED_ON = false; // bake-off off by default; flip via WRITE_STORY_BAKEOFF secret or body.bakeoff
     const bakeoff =
       BAKEOFF_FORCED_ON || Deno.env.get("WRITE_STORY_BAKEOFF") === "true" || body?.bakeoff === true;
     const defaultProvider: Provider =
