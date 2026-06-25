@@ -36,9 +36,9 @@ import {
 
 const CANDIDATE_COUNT = Number(Deno.env.get("WRITE_STORY_N")) || 3;
 const WRITE_STORY_MERGE = false;
-const PER_CANDIDATE_TIMEOUT_MS = 90_000;
-const TOTAL_STEP_TIMEOUT_MS = 180_000;
-const JUDGE_TIMEOUT_MS = 60_000;
+const PER_CANDIDATE_TIMEOUT_MS = 130_000;
+const TOTAL_STEP_TIMEOUT_MS = 230_000;
+const JUDGE_TIMEOUT_MS = 75_000;
 
 type AngleSpec = { temperature: number; angle: string };
 const ANGLES: AngleSpec[] = [
@@ -183,7 +183,6 @@ async function callModel(
       body: JSON.stringify({
         model,
         response_format: { type: "json_object" },
-        temperature,
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
       }),
     });
@@ -673,7 +672,24 @@ serve(async (req) => {
       .filter((v): v is Survivor => !!v);
 
     if (survivors.length === 0) {
-      return errorResponse("Story generation failed validation after retries", 502);
+      // Last resort: one plain gemini attempt with a generous timeout before giving up.
+      const fb = await withTimeout(
+        generateCandidate({
+          provider: "gemini",
+          systemPrompt: systemWithRhyme,
+          userPrompt,
+          target,
+          angle: "Write your single strongest version against the rules.",
+          temperature: 0.8,
+        }),
+        PER_CANDIDATE_TIMEOUT_MS,
+        "fallback-candidate",
+      ).catch(() => null);
+      if (fb) {
+        survivors = [{ story: normalizeCandidate(fb), provider: "gemini" }];
+      } else {
+        return errorResponse("Story generation failed validation after retries", 502);
+      }
     }
 
     // Top up to >=2 with one sequential extra if needed (best-of-N mode only).
