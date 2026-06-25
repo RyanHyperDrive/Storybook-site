@@ -200,7 +200,11 @@ serve(async (req) => {
           parentPrompt && `Parent's story request (most important — the story should be about this): ${parentPrompt}`,
         ].filter(Boolean).join("\n") || "a gentle bedtime adventure";
 
-        const r = await callFn("write-story", authHeader, {
+        // write-story can take 60–230s (bake-off, retries). Run it in the
+        // background so this request returns within the 150s idle limit;
+        // the per-job lock is held (300s stale cutoff) so concurrent polls
+        // get { busy: true } until the background task finishes.
+        const writeBody = {
           theme: themeForWriter,
           child_details: childDetails || `A child named ${book.child_name ?? "the hero"}.`,
           favorites: book.details_include ?? "",
@@ -210,19 +214,53 @@ serve(async (req) => {
           cast,
           lesson: book.story_lesson ?? "",
           rhyme: book.rhyme === true,
-        });
-        if (r.status >= 400 || !r.json?.story) {
-          await failJob(r.json?.error ?? "Story generation failed.");
-          return jsonResponse({ ok: false });
+        };
+        backgrounded = true;
+        const bgWrite = (async () => {
+          try {
+            await admin.from("jobs").update({ message: "Writing the story…" }).eq("id", jobId);
+            const r = await callFn("write-story", authHeader, writeBody);
+            if (r.status >= 400 || !r.json?.story) {
+              const msg = r.json?.error ?? "Story generation failed.";
+              const { data: jr } = await admin.from("jobs").select("consecutive_errors").eq("id", jobId).maybeSingle();
+              const next = (jr?.consecutive_errors ?? 0) + 1;
+              if (next >= 8) {
+                await admin.from("jobs").update({ status: "error", message: msg }).eq("id", jobId);
+              } else {
+                await admin.from("jobs").update({
+                  consecutive_errors: next,
+                  message: `Transient error (${next}/8): ${msg}. Retrying…`,
+                }).eq("id", jobId);
+              }
+              return;
+            }
+            await admin.from("books").update({
+              story_json: r.json.story,
+              title: r.json.story.title ?? book.title,
+              dedication: book.dedication ?? r.json.story.dedication ?? null,
+            }).eq("id", bookId);
+            await admin.from("jobs").update({
+              status: "running",
+              current_step: "story_editing",
+              progress: 38,
+              message: "Story written.",
+              consecutive_errors: 0,
+            }).eq("id", jobId);
+          } catch (e: any) {
+            console.error("background write-story error", e);
+            await admin.from("jobs").update({
+              message: `Transient error: ${e?.message ?? "unknown"}. Retrying…`,
+            }).eq("id", jobId);
+          } finally {
+            try { await admin.from("jobs").update({ locked_at: null }).eq("id", jobId); } catch { /* */ }
+          }
+        })();
+        // @ts-ignore — EdgeRuntime is provided by Supabase Edge Functions
+        if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
+          // @ts-ignore
+          EdgeRuntime.waitUntil(bgWrite);
         }
-        await admin.from("books").update({
-          story_json: r.json.story,
-          title: r.json.story.title ?? book.title,
-          dedication: book.dedication ?? r.json.story.dedication ?? null,
-        }).eq("id", bookId);
-
-        await updateJob({ current_step: "story_editing", progress: 38, message: "Story written." });
-        return jsonResponse({ ok: true });
+        return jsonResponse({ ok: true, busy: true, backgrounded: "write-story" });
       }
 
       if (step === "story_editing") {
