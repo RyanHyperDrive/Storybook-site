@@ -36,9 +36,9 @@ import {
 
 const CANDIDATE_COUNT = Number(Deno.env.get("WRITE_STORY_N")) || 3;
 const WRITE_STORY_MERGE = false;
-const PER_CANDIDATE_TIMEOUT_MS = 90_000;
-const TOTAL_STEP_TIMEOUT_MS = 180_000;
-const JUDGE_TIMEOUT_MS = 60_000;
+const PER_CANDIDATE_TIMEOUT_MS = 130_000;
+const TOTAL_STEP_TIMEOUT_MS = 230_000;
+const JUDGE_TIMEOUT_MS = 75_000;
 
 type AngleSpec = { temperature: number; angle: string };
 const ANGLES: AngleSpec[] = [
