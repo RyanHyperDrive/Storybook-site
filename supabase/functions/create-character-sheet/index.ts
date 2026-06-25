@@ -222,7 +222,7 @@ serve(async (req) => {
     if (prevSheetDataUrl) refLegend.push(`- Image ${refIdx++}: the previously generated character for this child — keep everything identical EXCEPT the parent's requested change.`);
 
     const prompt = [
-      `Create a polished illustrated character sheet for ${child?.name ?? "the child"}${isTwins && siblingName ? ` (twin of ${siblingName})` : ""}.`,
+      `Create a single polished full-body illustrated portrait of ${child?.name ?? "the child"}${isTwins && siblingName ? ` (twin of ${siblingName})` : ""}.`,
       instruction
         ? `PARENT ADJUSTMENT (HIGHEST PRIORITY): apply this requested change to the character — "${instruction}". Apply ONLY this change; keep the child's identity and likeness faithful to the reference photo and keep everything else (pose, framing, outfit unless the change is about the outfit) the same as before.`
         : "",
@@ -247,7 +247,7 @@ serve(async (req) => {
       analysis?.outfit ? `Reference outfit: ${analysis.outfit}.` : "",
       child?.favorite_color ? `Include a tasteful outfit accent in ${child.favorite_color}.` : "",
       child?.accessibility_details ? `Include these parent-provided details: ${child.accessibility_details}.` : "",
-      "Single full-body child character on a plain warm off-white background, portrait orientation, friendly bedtime storybook mood, no UI, no text, no labels, no watermark.",
+      "EXACTLY ONE figure: one child, one pose, standing and facing forward, centered, full body from head to shoes with comfortable padding. Do NOT make a character sheet, model sheet, turnaround, or multiple poses; never show the child more than once; no duplicate figures, no inset or thumbnail poses. Plain warm off-white background, portrait orientation, friendly storybook mood, no UI, no text, no labels, no watermark.",
     ].filter(Boolean).join("\n");
 
     await admin
