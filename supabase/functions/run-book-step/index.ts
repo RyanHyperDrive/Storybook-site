@@ -297,7 +297,9 @@ serve(async (req) => {
           ? contract.subjects.map((s: any) => s.display_name).filter(Boolean)
           : [book.child_name].filter(Boolean);
 
-        const editRes = await callFn("edit-story", authHeader, {
+        // edit-story can take 60–120s; run in background to stay under the
+        // 150s idle limit. Lock is held by this job so polls return busy.
+        const editBody = {
           bookId,
           reading_level: book.reading_level ?? "ages_4_6",
           child_details: childDetails || `A child named ${book.child_name ?? "the hero"}.`,
@@ -307,43 +309,64 @@ serve(async (req) => {
           cast,
           lesson: book.story_lesson ?? "",
           rhyme: book.rhyme === true,
-        });
-
-        if (editRes.status >= 400 || !editRes.json?.story) {
-          // NEVER block — record the failure on the book and advance anyway.
-          const errMsg = editRes.json?.error ?? `edit-story failed (status ${editRes.status})`;
-          await admin.from("books").update({
-            story_review: { accepted_with_warnings: true, error: errMsg, edited_at: new Date().toISOString() },
-          }).eq("id", bookId);
-          await appendAudit({
-            target: "story",
-            attempt: 1,
-            passed: false,
-            will_retry: false,
-            shipped_with_warnings: true,
-            notes: [errMsg],
-          });
-          await updateJob({ current_step: "cover_illustration", progress: 40, message: "Story polished (best effort)." });
-          return jsonResponse({ ok: true, storyEditorSkipped: true });
+        };
+        backgrounded = true;
+        const bgEdit = (async () => {
+          try {
+            await admin.from("jobs").update({ message: "Polishing the story…" }).eq("id", jobId);
+            const editRes = await callFn("edit-story", authHeader, editBody);
+            if (editRes.status >= 400 || !editRes.json?.story) {
+              const errMsg = editRes.json?.error ?? `edit-story failed (status ${editRes.status})`;
+              await admin.from("books").update({
+                story_review: { accepted_with_warnings: true, error: errMsg, edited_at: new Date().toISOString() },
+              }).eq("id", bookId);
+              await appendAudit({
+                target: "story", attempt: 1, passed: false, will_retry: false,
+                shipped_with_warnings: true, notes: [errMsg],
+              });
+              await admin.from("jobs").update({
+                status: "running", current_step: "cover_illustration", progress: 40,
+                message: "Story polished (best effort).", consecutive_errors: 0,
+              }).eq("id", jobId);
+              return;
+            }
+            const review = editRes.json.review ?? {};
+            const accepted = review.accepted === true;
+            await appendAudit({
+              target: "story",
+              attempt: (review.passes_used ?? 0) + 1,
+              passed: accepted, will_retry: false, shipped_with_warnings: !accepted,
+              scores: review.scores ?? undefined,
+              notes: [
+                ...((Array.isArray(review.global_notes) ? review.global_notes : []) as string[]),
+                ...((Array.isArray(review.failing_flags) ? review.failing_flags.map((f: string) => `flag:${f}`) : []) as string[]),
+              ],
+            });
+            await admin.from("jobs").update({
+              status: "running", current_step: "cover_illustration", progress: 40,
+              message: accepted ? "Story polished." : "Story polished (best effort).",
+              consecutive_errors: 0,
+            }).eq("id", jobId);
+          } catch (e: any) {
+            console.error("background edit-story error", e);
+            // Editor failures must never block — advance with warnings.
+            await admin.from("books").update({
+              story_review: { accepted_with_warnings: true, error: e?.message ?? "edit-story crashed", edited_at: new Date().toISOString() },
+            }).eq("id", bookId);
+            await admin.from("jobs").update({
+              status: "running", current_step: "cover_illustration", progress: 40,
+              message: "Story polished (best effort).", consecutive_errors: 0,
+            }).eq("id", jobId);
+          } finally {
+            try { await admin.from("jobs").update({ locked_at: null }).eq("id", jobId); } catch { /* */ }
+          }
+        })();
+        // @ts-ignore — EdgeRuntime is provided by Supabase Edge Functions
+        if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
+          // @ts-ignore
+          EdgeRuntime.waitUntil(bgEdit);
         }
-
-        const review = editRes.json.review ?? {};
-        const accepted = review.accepted === true;
-        await appendAudit({
-          target: "story",
-          attempt: (review.passes_used ?? 0) + 1,
-          passed: accepted,
-          will_retry: false,
-          shipped_with_warnings: !accepted,
-          scores: review.scores ?? undefined,
-          notes: [
-            ...((Array.isArray(review.global_notes) ? review.global_notes : []) as string[]),
-            ...((Array.isArray(review.failing_flags) ? review.failing_flags.map((f: string) => `flag:${f}`) : []) as string[]),
-          ],
-        });
-
-        await updateJob({ current_step: "cover_illustration", progress: 40, message: accepted ? "Story polished." : "Story polished (best effort)." });
-        return jsonResponse({ ok: true, storyEdited: true, accepted });
+        return jsonResponse({ ok: true, busy: true, backgrounded: "edit-story" });
       }
 
 
